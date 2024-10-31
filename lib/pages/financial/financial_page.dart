@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/pages/financial/asset_detail_page.dart';
 import 'package:build_growth_mobile/pages/financial/debt_detail_page.dart';
+import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -46,7 +47,7 @@ class _FinancialPageState extends State<FinancialPage> {
         listener: (context, state) async {
           if (state is FinancialDataLoaded) {
             totalAssets = state.totalAssets;
-            totalDebts = state.totalAssets;
+            totalDebts = state.totalDebts;
           }
 
           setState(() {});
@@ -56,38 +57,40 @@ class _FinancialPageState extends State<FinancialPage> {
 
   Widget body() {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: Text("BUG"),
-      ),
+      backgroundColor: HIGHTLIGHT_COLOR,
+      appBar: BugAppBar("Financial Page"),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Total Assets Card
-
-              AssetCard('Total Assets', 'RM${totalAssets.toStringAsFixed(2)}',
-                  () => pushPage(const AssetDetailPage())),
-
-              SizedBox(height: ResStyle.spacing),
-
-              // Total Debts Card
-              AssetCard(
-                  'Total Debt/Bills',
-                  'RM${totalDebts.toStringAsFixed(2)}',
-                  () => pushPage(const DebtDetailPage())),
-
-              //GeneralCard('\$${totalDebts.toStringAsFixed(2)}',),
-
-              SizedBox(height: ResStyle.spacing),
-
-              // Chart Card
-              _buildLineChartCard(),
-
-              
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Total Assets Card
+            
+                AssetCard('Total Assets', 'RM${totalAssets.toStringAsFixed(2)}',
+                    () => pushPage(const AssetDetailPage())),
+            
+                SizedBox(height: ResStyle.spacing),
+            
+                // Total Debts Card
+            
+                AssetCard(
+                    'Total Debt/Bills',
+                    'RM${totalDebts.toStringAsFixed(2)}',
+                    () => pushPage(const DebtDetailPage()),
+                    color: (totalDebts == 0) ? RM5_COLOR : TITLE_COLOR,
+                    font_color:
+                        (totalDebts == 0) ? TEXT_COLOR:WHITE_TEXT_COLOR  ),
+            
+                //GeneralCard('\$${totalDebts.toStringAsFixed(2)}',),
+            
+                SizedBox(height: ResStyle.spacing),
+            
+                // Chart Card
+                _buildLineChartCard(),
+              ],
+            ),
           ),
         ),
       ),
@@ -139,6 +142,4 @@ class _FinancialPageState extends State<FinancialPage> {
       ),
     );
   }
-
-  
 }

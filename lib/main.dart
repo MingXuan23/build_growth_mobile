@@ -1,5 +1,6 @@
 
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
 import 'package:build_growth_mobile/repo/auth_repo.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
@@ -27,8 +28,8 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider<AuthBloc>(
             create: (context) => AuthBloc(LoginInitial(), AuthRepo())),
-        // BlocProvider<DermaBloc>(
-        //     create: (context) => DermaBloc(DermaInitial(), DermaRepo())),
+        BlocProvider<FinancialBloc>(
+            create: (context) => FinancialBloc(FinancialInitial(), null)),
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],
