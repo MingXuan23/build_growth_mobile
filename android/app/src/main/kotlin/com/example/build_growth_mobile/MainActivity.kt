@@ -1,4 +1,4 @@
-package com.example.build_growth_mobile
+package com.bug.build_growth_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

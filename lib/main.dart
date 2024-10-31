@@ -1,12 +1,18 @@
+
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
 import 'package:build_growth_mobile/repo/auth_repo.dart';
+import 'package:build_growth_mobile/services/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:upgrader/upgrader.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+ // Initialize the database
+  DatabaseHelper databaseHelper = DatabaseHelper();
+  await databaseHelper.database; // This ensures the database is initialized before running the app
+
 
   runApp(const MyApp(home: StartPage(),));
 }
