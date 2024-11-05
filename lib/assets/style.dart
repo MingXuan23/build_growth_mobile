@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 const Color PRIMARY_COLOR = Color(0xFFA1ABB3);
 const Color SECONDARY_COLOR = Color(0xFF565D6D);
@@ -13,7 +14,9 @@ const Color TITLE_COLOR = Color(0xFF3A3F4A);
 
 const Color ICON_BUTTON_COLOR = Color(0xFF3A3F4A);
 
-const Color RM1_COLOR = Color(0xFF819FCF);
+//const Color RM1_COLOR = Color(0xFF819FCF);
+const Color RM1_COLOR = Color(0xFF9BB7DE);
+
 const Color RM5_COLOR = Color(0xFF91BFA9);
 const Color RM10_COLOR = Color(0xFFFF8E80);
 const Color RM20_COLOR = Color(0xFFF0DC82);
@@ -43,6 +46,8 @@ class ResStyle {
 
   static double spacing =0.0;
 
+  static bool isVertical = true;
+
 
   static void initialise(double width, double height) {
     if (_initialised) {
@@ -50,11 +55,15 @@ class ResStyle {
     }
     ResStyle.width = width;
     ResStyle.height = height;
-    var pixels = width * height;
+    var pixels = min(500000, width * height) ;
+
+    if(pixels >=400000){
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
     // Adjust text size based on screen width
     font = pixels * _font_size;
 
-    header_font = pixels * _header_size;
+    header_font = pixels * _header_size ;
 
     body_font = pixels * _body_size;
     small_font = pixels * _small_size;

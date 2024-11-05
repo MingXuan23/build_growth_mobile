@@ -22,3 +22,7 @@ class LoginFailure extends AuthState {
   @override
   List<Object> get props => [error];
 }
+
+class RegisterSuccess extends AuthState {
+  
+}

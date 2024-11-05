@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/repo/auth_repo.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'auth_event.dart';
@@ -23,6 +24,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
       
     });
+    on<RegisterRequested>((event, emit) {
+      emit(RegisterSuccess());
+    },);
 
 
     on<LogoutRequested>(

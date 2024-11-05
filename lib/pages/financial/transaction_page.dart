@@ -91,46 +91,49 @@ class _TransactionPageState extends State<TransactionPage> {
 
   void _updateControllerValues() {
     final asset_value = _getCurrentValue();
-  
+
     if (_selectedDebtId != -1 && _selectedDebtId != 0) {
       final debt = _debtList.firstWhere((e) => e.id == _selectedDebtId);
-      _currentValueController.text = (asset_value -debt.monthly_payment ).toStringAsFixed(2);
-      _transactionValueController.text = (-debt.monthly_payment).toStringAsFixed(2);
-      
+      _currentValueController.text = FormatterHelper.toFixed2(
+          (asset_value - debt.monthly_payment).toStringAsFixed(2));
+      _transactionValueController.text =
+          FormatterHelper.toFixed2((-debt.monthly_payment).toStringAsFixed(2));
+
       _isTransactionValueLocked = true;
     } else {
-      _currentValueController.text = (asset_value).toStringAsFixed(2);
+      _currentValueController.text =
+          FormatterHelper.toFixed2((asset_value).toStringAsFixed(2));
       _transactionValueController.text = '0.00';
       _isTransactionValueLocked = false;
     }
   }
 
   double _getCurrentValue() {
-      final asset = _assetList.firstWhere((e) => e.id == _selectedAssetId);
-      return asset.value;
+    final asset = _assetList.firstWhere((e) => e.id == _selectedAssetId);
+    return asset.value;
   }
 
-  double _getDebtValue(){
-     final debt = _debtList.firstWhere((e) => e.id == _selectedDebtId);
-      return debt.monthly_payment;
+  double _getDebtValue() {
+    final debt = _debtList.firstWhere((e) => e.id == _selectedDebtId);
+    return debt.monthly_payment;
   }
 
-  void updateTransactionValue(String? value){
+  void updateTransactionValue(String? value) {
     var asset = _getCurrentValue();
     var debt = _getDebtValue();
     var transaction = "";
 
-    if(debt >0){
+    if (debt > 0) {
       transaction = (-debt).toString();
-    }else{
-      transaction =  _transactionValueController.text;
+    } else {
+      transaction = _transactionValueController.text;
     }
 
     _transactionValueController.text = FormatterHelper.toFixed2(transaction);
 
-    final newAssetValue = asset + double.parse(transaction);
-    _currentValueController.text = FormatterHelper.toFixed2(newAssetValue.toString());
-
+    final newAssetValue = asset + FormatterHelper.getAmountFromRM( FormatterHelper.toFixed2(transaction));
+    _currentValueController.text =
+        FormatterHelper.toFixed2(newAssetValue.toStringAsFixed(2));
   }
 
   // void _updateTransactionFromCurrent(String value) {
@@ -139,7 +142,7 @@ class _TransactionPageState extends State<TransactionPage> {
   //     final transactionValue = newCurrentValue - _getCurrentValue();
   //     _transactionValueController.text = transactionValue.toStringAsFixed(2);
   //    }
-   
+
   // }
 
   // void _updateCurrentFromTransaction(String value) {
@@ -152,7 +155,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
   bool _validateTransaction() {
     final transactionAmount =
-        double.tryParse(_transactionValueController.text) ?? 0.0;
+        FormatterHelper.getAmountFromRM(_transactionValueController.text);
 
     if (transactionAmount == 0.0) {
       _showError('Transaction amount cannot be zero');
@@ -172,7 +175,7 @@ class _TransactionPageState extends State<TransactionPage> {
 
     try {
       final transactionAmount =
-          double.tryParse(_transactionValueController.text) ?? 0.0;
+          FormatterHelper.getAmountFromRM(_transactionValueController.text);
 
       final asset = _assetList.firstWhere((e) => e.id == _selectedAssetId);
       final debt = _debtList.firstWhere((e) => e.id == _selectedDebtId);
@@ -197,19 +200,19 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   Future<void> _updateEntityValue() async {
-    final newValue = double.parse(_currentValueController.text);
+    final newValue =
+        FormatterHelper.getAmountFromRM(_currentValueController.text);
 
-  
     if (_selectedAssetId != -1) {
       final asset = _assetList.firstWhere((e) => e.id == _selectedAssetId);
       asset.value = newValue;
       await Asset.updateAsset(asset);
-    } 
-    
+    }
+
     if (_selectedDebtId != -1) {
       final debt = _debtList.firstWhere((e) => e.id == _selectedDebtId);
       debt.last_payment_date = DateTime.now();
-      debt.remaining_month = debt.remaining_month -1;
+      debt.remaining_month = debt.remaining_month - 1;
       await Debt.updateDebt(debt);
     }
   }
@@ -310,11 +313,9 @@ class _TransactionPageState extends State<TransactionPage> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: const InputDecoration(
             labelText: 'New Asset Value',
-            prefixText: 'RM',
             border: OutlineInputBorder(),
           ),
-          onChanged: _isTransactionValueLocked
-              ? null: updateTransactionValue,
+          onChanged: _isTransactionValueLocked ? null : updateTransactionValue,
           readOnly: _isTransactionValueLocked,
         ),
         const SizedBox(height: 16),
@@ -324,12 +325,9 @@ class _TransactionPageState extends State<TransactionPage> {
               decimal: true, signed: true),
           decoration: const InputDecoration(
             labelText: 'Transaction Value',
-            prefixText: 'RM',
             border: OutlineInputBorder(),
           ),
-          onChanged: _isTransactionValueLocked
-              ? null
-              : updateTransactionValue,
+          onChanged: _isTransactionValueLocked ? null : updateTransactionValue,
           readOnly: _isTransactionValueLocked,
         ),
       ],

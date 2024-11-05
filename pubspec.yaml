@@ -47,6 +47,7 @@ dependencies:
   fl_chart: ^0.69.0
   sqflite: ^2.3.3+1
   path: ^1.9.0
+  smooth_page_indicator: ^1.2.0+3
 
 dev_dependencies:
   flutter_test:

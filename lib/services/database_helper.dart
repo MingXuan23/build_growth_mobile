@@ -41,7 +41,8 @@ class DatabaseHelper {
         desc TEXT,
         type TEXT NOT NULL,
         status INTEGER NOT NULL,
-        user_code TEXT
+        user_code TEXT,
+        unique_code TEXT
       )
     ''');
 

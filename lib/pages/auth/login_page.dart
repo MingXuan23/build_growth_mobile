@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/pages/auth/register_page.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_text_input.dart';
 import 'package:flutter/material.dart';
@@ -37,6 +38,11 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void pushRegisterPage() {
+    Navigator.of(context)
+        .push(new MaterialPageRoute(builder: (context) => RegisterPage()));
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +51,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: PRIMARY_COLOR,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -55,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                   minHeight: constraints.maxHeight,
                 ),
                 child: Container(
-                  color: PRIMARY_COLOR,
+                  color: RM50_COLOR,
                   child: Padding(
                     padding: EdgeInsets.all(ResStyle.spacing),
                     child: Center(
@@ -66,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.all(2*ResStyle.spacing),
+                          padding: EdgeInsets.all(2 * ResStyle.spacing),
                           child: Form(
                             key: _formKey,
                             child: Column(
@@ -89,16 +94,18 @@ class _LoginPageState extends State<LoginPage> {
                                     hint: "Enter your password",
                                     obscureText: true,
                                     prefixIcon: Icon(Icons.lock)),
-                                SizedBox(height: 2* ResStyle.spacing),
+                                SizedBox(height: 2 * ResStyle.spacing),
                                 BugPrimaryButton(
                                     text: 'Log In', onPressed: _submitForm),
                                 SizedBox(height: ResStyle.spacing),
                                 BugPrimaryButton(
-                                    text: 'Register', onPressed: _submitForm),
-
+                                    text: 'Register',
+                                    onPressed: pushRegisterPage,
+                                    color: TITLE_COLOR),
                                 BugTextButton(
-                                  onPressed: _submitForm,
+                                  onPressed: ()=>{},
                                   text: "Forgot Password?",
+                                  underline: true
                                 ),
                               ],
                             ),
