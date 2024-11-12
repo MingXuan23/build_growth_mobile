@@ -1,8 +1,12 @@
+import 'dart:math';
+
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
+import 'package:build_growth_mobile/widget/bug_text_input.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -18,96 +22,177 @@ class DebtDetailPage extends StatefulWidget {
 class _DebtDetailPageState extends State<DebtDetailPage> {
   List<Debt> debts = [];
   bool _isExpanded = false;
-  final ScrollController scrollController = ScrollController();
+
+  bool isLoading = true;
   final List<String> debtTypes = [
-    'Repeated',
-    'One Time',
-    'Period'
+    'Expenses',
+    'Loans',
+    'Recurring Bills',
+    'Dynamic Bills',
   ];
 
-@override
-void initState() {
-  super.initState();
-  loadDebts();
-  
-}
+  final List<String> debtDesc = [
+    'Categorize and track daily expenses.',
+    'Fixed monthly payment over a set period.',
+    'Fixed amount paid monthly.',
+    'Variable amount paid monthly.',
+  ];
+
+  final page_controller = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    loadDebts();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+page_controller.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BugAppBar('Your Debts'),
-      body: Column(
-        children: [
-          _buildDebtTypeList(),
-          Expanded(child: _buildDebtList()),
-          
-        ],
-      ),
-    
-    );
+        backgroundColor: HIGHTLIGHT_COLOR,
+        appBar: BugAppBar('Your Debts',context),
+        body: Padding(
+            padding: EdgeInsets.all(ResStyle.spacing),
+            child: isLoading
+                ? BugLoading()
+                : debts.isNotEmpty
+                    ? Column(
+                        children: [
+                          BugPageIndicator(page_controller, 2),
+                          Expanded(
+                            child: PageView(
+                              controller: page_controller,
+                              children: [
+                                _buildDebtList(),
+                                _buildDebtTutorialPage(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : _buildDebtTutorialPage()));
   }
 
- Future<void> loadDebts() async {
+  Future<void> loadDebts() async {
     debts = await Debt.getDebtList();
+    isLoading = false;
+
     setState(() {});
   }
 
   Widget _buildDebtList() {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: debts.isNotEmpty 
-        ? ListView.builder(
-            itemCount: debts.length,
-            itemBuilder: (context, index) => DebtDetailCard(debts[index], ()=>showActionSheet(debts[index])),
-          )
-        : const Center(child: Text('No debts available')),
+    return Column(
+      children: [
+        Expanded(
+            child: ListView.builder(
+          itemCount: debts.length,
+          itemBuilder: (context, index) =>
+              DebtDetailCard(debts[index], () => showActionSheet(debts[index])),
+        )),
+        Padding(
+          padding: EdgeInsets.all(ResStyle.spacing),
+          child: BugPrimaryButton(
+              text: 'Add More Debts >>',
+              onPressed: _goToNextPage,
+              color: TITLE_COLOR),
+        ),
+      ],
     );
   }
 
- 
-  Widget _buildDebtTypeList() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        children: List.generate(debtTypes.length, (index) {
-          return GestureDetector(
-            onTap: () => _selectOption(debtTypes[index]),
-            child: Container(
-              margin: EdgeInsets.all(ResStyle.spacing),
-              padding: EdgeInsets.symmetric(
-                vertical: ResStyle.spacing,
-                horizontal: ResStyle.spacing,
+  void _goToNextPage() async {
+    // await page_controller.nextPage(
+    //     duration: Duration(milliseconds: 600), curve: Curves.fastOutSlowIn);
+
+    page_controller.nextPage(
+      duration: Duration(milliseconds: 700),
+      curve: Curves.fastOutSlowIn,
+    );
+  }
+
+  Widget _buildDebtTutorialPage() {
+    return Padding(
+      padding: EdgeInsets.all(ResStyle.spacing),
+      child: Column(
+        children: [
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: ResStyle.spacing,
+                crossAxisSpacing: ResStyle.spacing,
+                childAspectRatio: 0.7,
               ),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: TITLE_COLOR,
-                borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.3),
-                    spreadRadius: 1,
-                    blurRadius: 3,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.add, color: HIGHTLIGHT_COLOR),
-                  SizedBox(width: ResStyle.spacing / 2),
-                  Text(
-                    debtTypes[index],
-                    style: TextStyle(
-                      fontSize: ResStyle.font,
-                      color: HIGHTLIGHT_COLOR,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+              itemCount: debtTypes.length,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () => showAddDebtModal(debtTypes[index]),
+                  child: _buildDebtCard(context, index),
+                );
+              },
             ),
-          );
-        }),
+          ),
+          BugInfoCard(
+            'Your financial data will never be shared with third parties. '
+            'Any processing of your sensitive financial data on the server, '
+            'with your permission, will be securely encrypted. Thank you for your trust.',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDebtCard(BuildContext context, int index) {
+    // Description for each debt type
+    String description = debtDesc[index];
+    String debtType = debtTypes[index];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: TITLE_COLOR,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            blurRadius: 6,
+            spreadRadius: 3,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(ResStyle.spacing),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // Debt type text, bold and centered
+          Text(
+            debtType,
+            style: TextStyle(
+              fontSize: ResStyle.body_font,
+              fontWeight: FontWeight.bold,
+              color: HIGHTLIGHT_COLOR,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: ResStyle.spacing / 2),
+          // Description text, non-bold and centered
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: ResStyle.small_font,
+              fontWeight: FontWeight.normal,
+              color: HIGHTLIGHT_COLOR,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -122,7 +207,7 @@ void initState() {
           setState(() {
             _isExpanded = !_isExpanded;
             if (!_isExpanded) {
-              scrollController.animateTo(
+              page_controller.animateTo(
                 0,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOut,
@@ -139,49 +224,76 @@ void initState() {
     );
   }
 
- 
   void _selectOption(String option) {
-    showAddDebtDialog(option);
+    showAddDebtModal(option);
   }
 
-   void navigateToTransactionPage(Debt debt) {
+  void navigateToTransactionPage(Debt debt) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>  TransactionPage2(debt: debt, intention: "Debt Transaction"), //TransactionPage(debt: debt, type: "Debt"),
+        builder: (context) => TransactionPage2(
+            debt: debt,
+            intention:
+                "Debt Transaction"), //TransactionPage(debt: debt, type: "Debt"),
       ),
     ).then((_) => loadDebts());
   }
 
-void showActionSheet(Debt debt) {
+  void showActionSheet(Debt debt) {
     var paid = FormatterHelper.isSameMonthYear(debt.last_payment_date);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text(debt.name),
-        message: Text('\$${debt.monthly_payment.toStringAsFixed(2)}'),
+        title: Text(
+          debt.name,
+          style: TextStyle(color: TITLE_COLOR), // Title color
+        ),
+        message: Text(
+          '\$${debt.monthly_payment.toStringAsFixed(2)}',
+          style: TextStyle(
+              color: TITLE_COLOR, fontSize: ResStyle.font), // Message color
+        ),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              showEditDebtDetailsDialog(debt);
+              showEditDebtDetailsModal(debt);
             },
-            child: const Text('Edit Debt Details'),
+            child: Center(
+              child: Text(
+                'Edit Debt Details',
+                style: TextStyle(
+                    color: TITLE_COLOR, fontSize: ResStyle.font), // Text color
+              ),
+            ),
           ),
-          if ( debt.remaining_month != 0 && !paid) 
+          if ((debt.remaining_month != 0 && !paid) || debt.type == 'Expenses')
             CupertinoActionSheetAction(
               onPressed: () {
                 Navigator.pop(context);
                 navigateToTransactionPage(debt);
               },
-              child: const Text('Make Transaction'),
+              child: Center(
+                child: Text(
+                  'Make Transaction',
+                  style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
+                ),
+              ),
             ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
               showDeleteConfirmationDialog(debt);
             },
-            child: const Text('Delete Debt', style: TextStyle(color: Colors.red)),
+            child: Center(
+              child: Text(
+                'Delete Debt',
+                style: TextStyle(
+                    color: DANGER_COLOR,
+                    fontSize: ResStyle.font), // Danger color for delete action
+              ),
+            ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -189,31 +301,44 @@ void showActionSheet(Debt debt) {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancel'),
+          child: Center(
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                  color: DANGER_COLOR,
+                  fontSize: ResStyle.font), // Title color for cancel button
+            ),
+          ),
         ),
       ),
     );
   }
 
-   void showDeleteConfirmationDialog(Debt debt) {
+  void showDeleteConfirmationDialog(Debt debt) {
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Debt'),
-          content: const Text('Are you sure you want to delete this debt?'),
+        return BugInfoDialog(
+          main_color: DANGER_COLOR,
+          title: 'Delete Confirmation',
+          message: 'Are you sure you want to delete "${debt.name}"?',
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
+            BugPrimaryButton(
+              color: DANGER_COLOR,
               onPressed: () async {
-                await Debt.deleteDebt(debt.id!,false);
+                await Debt.deleteDebt(debt.id!, false);
                 await loadDebts();
                 Navigator.of(context).pop();
               },
-              child: const Text('Delete'),
+              text: 'Delete',
+            ),
+            SizedBox(height: ResStyle.spacing,),
+            BugPrimaryButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              color: PRIMARY_COLOR,
+              text: 'Cancel',
             ),
           ],
         );
@@ -221,154 +346,222 @@ void showActionSheet(Debt debt) {
     );
   }
 
-  void showEditDebtDetailsDialog(Debt debt) {
-    final TextEditingController nameController = TextEditingController(text: debt.name);
-    final TextEditingController descController = TextEditingController(text: debt.desc);
+  void showEditDebtDetailsModal(Debt debt) {
+    final TextEditingController nameController =
+        TextEditingController(text: debt.name);
+    final TextEditingController descController =
+        TextEditingController(text: debt.desc);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Debt Details'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+        return BugBottomModal(
+          context: context,
+          header: 'Edit Debt Details',
+          widgets: [
+            BugTextInput(
+              controller: nameController,
+              label: 'Debt Name',
+              hint: 'Enter Debt Name',
+              prefixIcon: Icon(Icons.monetization_on),
+            ),
+            SizedBox(height: ResStyle.spacing),
+            BugTextInput(
+              controller: descController,
+              label: 'Description',
+              hint: 'Enter Description',
+              prefixIcon: Icon(Icons.note_alt_sharp),
+              validator:(value){
+                  return null;
+                }
+            ),
+            SizedBox(height: ResStyle.spacing * 2),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      color: RM50_COLOR,
+                      onPressed: () async {
+                        debt.name = nameController.text;
+                        debt.desc = descController.text;
+                        await Debt.updateDebt(debt);
+                        await loadDebts();
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Update',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      color: DANGER_COLOR,
+                      text: 'Cancel',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showAddDebtModal(String selectedType) {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController descController = TextEditingController();
+    final TextEditingController monthlyPaymentController =
+        TextEditingController();
+
+    final TextEditingController remainingMonthController =
+        TextEditingController();
+    int? remainingMonths;
+    String warning = '';
+    // Set default remaining months based on type
+    if (selectedType != 'Loans') {
+      remainingMonths = -1;
+    }
+    final _formKey = GlobalKey<FormState>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return Form(
+          key: _formKey,
+          child: BugBottomModal(
+            context: context,
+            header: 'Add New $selectedType',
+            widgets: [
+              BugTextInput(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Debt Name'),
+                label: 'Debt Name',
+                hint: 'Enter Debt Name',
+                prefixIcon: Icon(Icons.monetization_on),
               ),
-              const SizedBox(height: 8),
-              TextField(
+              SizedBox(height: ResStyle.spacing),
+              if (selectedType == 'Recurring Bills' ||
+                  selectedType == 'Loans') ...[
+                BugTextInput(
+                  controller: monthlyPaymentController,
+                  label: 'Monthly Payment',
+                  hint: 'Enter Monthly Payment',
+                  keyboardType: TextInputType.number,
+                  prefixIcon: Icon(Icons.attach_money),
+                  onChanged: (value) {
+                    FormatterHelper.implement_RM_format(
+                        monthlyPaymentController, value);
+                  },
+                ),
+              ],
+              SizedBox(height: ResStyle.spacing),
+              BugTextInput(
                 controller: descController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 2,
+                label: 'Description',
+                hint: 'Enter Description',
+                prefixIcon: Icon(Icons.note_alt_sharp),
+                validator:(value){
+                  return null;
+                }
+              ),
+              SizedBox(height: ResStyle.spacing),
+              if (selectedType == 'Loans')
+                BugTextInput(
+                  controller: remainingMonthController,
+                  label: 'Remaining Month',
+                  hint: 'Enter Remaining Month',
+                  prefixIcon: Icon(Icons.calendar_month),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    if (value.isEmpty) {
+                      remainingMonthController.text = "";
+                      return;
+                    }
+                    var m = int.tryParse(value);
+                    if ((m ?? 0) <= 0) {
+                      m = 1;
+                    }
+
+                    m = min(m ?? 1, 9999);
+                    remainingMonths = m;
+                    remainingMonthController.text = remainingMonths.toString();
+                  },
+                ),
+              SizedBox(height: ResStyle.spacing * 2),
+              Text(
+                warning,
+                style: TextStyle(
+                    fontSize: ResStyle.small_font, color: DANGER_COLOR),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: ResStyle.spacing),
+                      child: BugPrimaryButton(
+                        color: RM50_COLOR,
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            Debt newDebt = Debt(
+                              'user_code',
+                              name: nameController.text,
+                              desc: descController.text,
+                              type: selectedType,
+                              monthly_payment: FormatterHelper.getAmountFromRM(
+                                  monthlyPaymentController.text),
+                              remaining_month: remainingMonths!,
+                              total_month: remainingMonths!,
+                              status: true,
+                            );
+                            await Debt.insertDebt(newDebt);
+                            await loadDebts();
+                            Navigator.of(context).pop();
+
+                            if (page_controller.hasClients) {
+                              page_controller.animateToPage(
+                                0,
+                                duration: const Duration(milliseconds: 700),
+                                curve: Curves.fastOutSlowIn,
+                              );
+                            }
+                          } else {}
+                        },
+                        text: 'Add',
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: ResStyle.spacing),
+                      child: BugPrimaryButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        color: DANGER_COLOR,
+                        text: 'Cancel',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                debt.name = nameController.text;
-                debt.desc = descController.text;
-                await Debt.updateDebt(debt);
-                await loadDebts();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
-
-  void showAddDebtDialog(String selectedType) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    final TextEditingController monthlyPaymentController = TextEditingController();
-    int? remainingMonths;
-
-    // Set default remaining months based on type
-    if (selectedType == 'Repeated') {
-      remainingMonths = -1;
-    } else if (selectedType == 'One Time') {
-      remainingMonths = 1;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Debt'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Debt Name'),
-                ),
-                TextField(
-                  controller: monthlyPaymentController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Monthly Payment'),
-                ),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  items: debtTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      selectedType = value;
-                      if (value == 'Repeated') {
-                        remainingMonths = -1;
-                      } else if (value == 'One Time') {
-                        remainingMonths = 1;
-                      } else {
-                        remainingMonths = null;
-                      }
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: 'Debt Type'),
-                ),
-                if (selectedType == 'Period')
-                  TextField(
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Remaining Months'),
-                    onChanged: (value) {
-                      remainingMonths = int.tryParse(value);
-                    },
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty &&
-                    monthlyPaymentController.text.isNotEmpty &&
-                    remainingMonths != null) {
-                  Debt newDebt = Debt(
-                    'user_code',
-                    name: nameController.text,
-                    desc: descController.text,
-                    type: selectedType,
-                    monthly_payment: double.tryParse(monthlyPaymentController.text) ?? 0.0,
-                    remaining_month: remainingMonths!,
-                    total_month: remainingMonths!,
-                    status: true,
-                  );
-                  await Debt.insertDebt(newDebt);
-                  await loadDebts();
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill all required fields')),
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
         );
       },
     );

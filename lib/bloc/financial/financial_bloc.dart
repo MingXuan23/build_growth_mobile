@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
+import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/repo/auth_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -14,7 +15,8 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
       (event, emit) async {
         var totalAssets = await Asset.getTotalAsset();
         var totalDebts = await Debt.getTotalDebt();
-        emit(FinancialDataLoaded(totalAssets: totalAssets, totalDebts: totalDebts));
+        var transcationList = await Transaction.getTransactionList();
+        emit(FinancialDataLoaded(totalAssets: totalAssets, totalDebts: totalDebts,transactionList:transcationList));
       },
     );
   }

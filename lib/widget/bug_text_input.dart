@@ -13,6 +13,10 @@ class BugTextInput extends StatefulWidget {
   final int? maxLength;
   final FocusNode? focusNode;
   final bool readOnly;
+  final int maxLine ;
+  final double? fontSize;
+  final Widget? suffixIcon;
+  final Function(String)? onChanged;
   const BugTextInput(
       {Key? key,
       required this.controller,
@@ -23,7 +27,11 @@ class BugTextInput extends StatefulWidget {
       this.keyboardType = TextInputType.text,
       this.validator,
       this.maxLength,
-      this.readOnly =false,
+      this.readOnly = false,
+      this.maxLine =1,
+      this.fontSize,
+      this.suffixIcon,
+      this.onChanged,
       this.focusNode})
       : super(key: key);
 
@@ -40,6 +48,9 @@ class _BugTextInputState extends State<BugTextInput> {
   void initState() {
     super.initState();
     // Initialize font size based on initial controller text
+    if(widget.fontSize !=null){
+      _fontSize = widget.fontSize!;
+    }
     _updateFontSize();
 
     // Add listener to update font size when text changes
@@ -54,9 +65,20 @@ class _BugTextInputState extends State<BugTextInput> {
 
   void _updateFontSize() {
     // Calculate and update font size
+
+    if(widget.fontSize != null){
+      return;
+    }
     setState(() {
       _fontSize = _calculateFontSize(widget.controller.text);
     });
+  }
+
+  void _update(String value) {
+    _updateFontSize();
+    if (widget.onChanged != null) {
+      widget.onChanged!(value); // Call onchangedfunction if provided
+    }
   }
 
   double _calculateFontSize(String text) {
@@ -79,7 +101,7 @@ class _BugTextInputState extends State<BugTextInput> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
-      onChanged: (value) => _updateFontSize(),
+      onChanged: (value) => _update(value),
       style: TextStyle(fontSize: _fontSize),
       decoration: InputDecoration(
         labelText: widget.label,
@@ -107,13 +129,14 @@ class _BugTextInputState extends State<BugTextInput> {
                   });
                 },
               )
-            : null,
+            : widget.suffixIcon,
       ),
       keyboardType: widget.keyboardType,
       readOnly: widget.readOnly,
       obscureText: widget.obscureText && !view_password,
       maxLength: widget.maxLength,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
+      maxLines: widget.maxLine ,
       focusNode: widget.focusNode,
       validator: widget.validator ??
           (value) {
@@ -126,12 +149,17 @@ class _BugTextInputState extends State<BugTextInput> {
   }
 }
 
-Widget BugComboBox({required Function(int?) onChanged, required int selected_value,
-    required List<DropdownMenuItem<int>> itemlist, required String labelText}) {
+Widget BugComboBox(
+    {required Function(int?) onChanged,
+    required int selected_value,
+    required List<DropdownMenuItem<int>> itemlist,
+    required String labelText,
+      String? Function(int?)? validator}) {
   return DropdownButtonFormField<int>(
     value: selected_value,
     items: itemlist,
     onChanged: (value) => onChanged(value),
+    validator: validator,
     decoration: InputDecoration(
       labelText: labelText,
       border: const OutlineInputBorder(),

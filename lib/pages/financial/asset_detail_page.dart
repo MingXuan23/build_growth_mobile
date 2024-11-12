@@ -2,9 +2,12 @@ import 'dart:async';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/models/card.dart';
 import 'package:build_growth_mobile/models/emv_card_reader.dart';
+import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
+import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
+import 'package:build_growth_mobile/widget/bug_text_input.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -32,8 +35,10 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     'Property',
     'Stock',
     'Digital Asset',
-    'Others'
+    'Other Asset'
   ];
+
+  bool isLoading = true;
 
   StreamSubscription<EmvCard?>? _subscription;
 
@@ -50,54 +55,53 @@ class _AssetDetailPageState extends State<AssetDetailPage>
   @override
   void dispose() {
     super.dispose();
+    page_controller.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: HIGHTLIGHT_COLOR,
-      appBar: BugAppBar('Your Assets'),
-      body: assets.isNotEmpty
-          ? Padding(
-              padding: EdgeInsets.all(ResStyle.spacing),
-              child: Column(
-                children: [
-                  BugPageIndicator(page_controller, 2),
-                  Expanded(
-                    child: PageView(
-                      controller: page_controller,
-                      children: [
-                        _buildAssetList(),
-                        _buildTutorialPage(),
-                      ],
-                    ),
+      appBar: BugAppBar('Your Assets',context),
+      body: (isLoading)
+          ? BugLoading()
+          : assets.isNotEmpty
+              ? Padding(
+                  padding: EdgeInsets.all(ResStyle.spacing),
+                  child: Column(
+                    children: [
+                      BugPageIndicator(page_controller, 2),
+                      Expanded(
+                        child: PageView(
+                          controller: page_controller,
+                          children: [
+                            _buildAssetList(),
+                            _buildTutorialPage(),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            )
-          : _buildTutorialPage(),
+                )
+              : _buildTutorialPage(),
     );
   }
 
   // ====== CORE FUNCTIONS ======
   Future<void> loadAssets() async {
     assets = await Asset.getAssetList();
+    isLoading = false;
     setState(() {});
   }
 
   void _selectOption(String option) {
-    showAddAssetDialog(option);
+    showAddAssetModal(option);
   }
 
-  void navigateToTransactionPage(Asset asset) {
+  void navigateToTransactionPage(Asset asset, Widget page) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => TransactionPage(
-          asset: asset,
-          type: "Asset",
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => page),
     ).then((_) => loadAssets());
   }
 
@@ -127,7 +131,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
           if (asset != null) {
             showActionSheet(asset);
           } else {
-            showAddAssetDialog(assetTypes[1], card: card);
+            showAddAssetModal(assetTypes[1], card: card);
             stopReading();
           }
         }
@@ -192,30 +196,71 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     showCupertinoModalPopup<void>(
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
-        title: Text(asset.name),
-        message: Text('RM${asset.value.toStringAsFixed(2)}'),
+        title: Text(
+          asset.name,
+          style: TextStyle(color: TITLE_COLOR), // Title color
+        ),
+        message: Text(
+          'RM${asset.value.toStringAsFixed(2)}',
+          style: TextStyle(
+              color: TITLE_COLOR, fontSize: ResStyle.font), // Title color
+        ),
         actions: <CupertinoActionSheetAction>[
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
               showEditAssetDetailsDialog(asset);
             },
-            child: const Text('Edit Asset Details'),
+            child: Text(
+              'Edit Asset Details',
+              style: TextStyle(
+                  color: TITLE_COLOR,
+                  fontSize: ResStyle.font), // Title color for regular actions
+            ),
           ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
-              navigateToTransactionPage(asset);
+              navigateToTransactionPage(
+                asset,
+                TransactionPage2(
+                  asset: asset,
+                  intention: "Asset Transaction",
+                ),
+              );
             },
-            child: const Text('Make Transaction'),
+            child: Text(
+              'Make Transaction',
+              style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
+            ),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              navigateToTransactionPage(
+                asset,
+                TransactionPage2(
+                  asset: asset,
+                  intention: "Asset Transfer",
+                ),
+              );
+            },
+            child: Text(
+              'Transfer Asset',
+              style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
+            ),
           ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
               showDeleteConfirmationDialog(asset);
             },
-            child:
-                const Text('Delete Asset', style: TextStyle(color: Colors.red)),
+            child: Text(
+              'Delete Asset',
+              style: TextStyle(
+                  color: DANGER_COLOR,
+                  fontSize: ResStyle.font), // Danger color for delete action
+            ),
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
@@ -223,7 +268,12 @@ class _AssetDetailPageState extends State<AssetDetailPage>
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+                color: DANGER_COLOR,
+                fontSize: ResStyle.font), // Title color for cancel button
+          ),
         ),
       ),
     );
@@ -233,24 +283,30 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Confirm Deletion'),
-          content: Text('Are you sure you want to delete "${asset.name}"?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+        return BugInfoDialog(
+          title: 'Delete Confirmation',
+          main_color: DANGER_COLOR, // Set a color for the delete confirmation
+          message: 'Are you sure you want to delete "${asset.name}"?',
+          actions: [
+            BugPrimaryButton(
+                onPressed: () async {
+                  // Perform delete action here
+
+                  await Asset.deleteAsset(asset.id!, false);
+                  await loadAssets();
+                  Navigator.of(context).pop(); // Close the dialog after delete
+                },
+                text: 'Delete',
+                color: DANGER_COLOR),
+            SizedBox(
+              height: ResStyle.spacing,
             ),
-            ElevatedButton(
-              onPressed: () async {
-                await Asset.deleteAsset(asset.id!, false);
-                await loadAssets();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Delete'),
-            ),
+            BugPrimaryButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                text: 'Cancel',
+                color: PRIMARY_COLOR),
           ],
         );
       },
@@ -263,50 +319,75 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     final TextEditingController descController =
         TextEditingController(text: asset.desc);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Asset Details'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
+        return BugBottomModal(
+            context: context,
+            header: 'Edit ${asset.type}\n${asset.name}',
+            widgets: [
+              BugTextInput(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Asset Name'),
+                label: 'Asset Name',
+                hint: 'Enter Asset Name',
+                prefixIcon: Icon(getIcon(asset.type)),
               ),
-              const SizedBox(height: 8),
-              TextField(
+              SizedBox(height: ResStyle.spacing),
+              BugTextInput(
                 controller: descController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 2,
+                label: 'Description',
+                hint: 'Enter Description',
+                prefixIcon: Icon(Icons.note_alt_sharp),
+                validator: (p0) {
+                  return null;
+                },
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                asset.name = nameController.text;
-                asset.desc = descController.text;
-                await Asset.updateAsset(asset);
-                await loadAssets();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
+              SizedBox(height: ResStyle.spacing * 2),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      color: RM50_COLOR,
+                      onPressed: () async {
+                        asset.name = nameController.text;
+                        asset.desc = descController.text;
+                        await Asset.updateAsset(asset);
+                        await loadAssets();
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Update',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      onPressed: () {
+                        startReading();
+                        Navigator.of(context).pop();
+                      },
+                      color: DANGER_COLOR,
+                      text: 'Cancel',
+                    ),
+                  ),
+                )
+              ])
+            ]);
       },
     );
   }
 
-  void showAddAssetDialog(String selectedType, {EmvCard? card}) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController valueController = TextEditingController();
+  void showAddAssetModal(String selectedType, {EmvCard? card}) {
+    final TextEditingController nameController =
+        TextEditingController(text: 'New ${selectedType}');
+    final TextEditingController valueController =
+        TextEditingController(text: 'RM 0.00');
     final TextEditingController descController = TextEditingController();
     String? unique_code;
 
@@ -314,80 +395,98 @@ class _AssetDetailPageState extends State<AssetDetailPage>
       nameController.text = 'Card ' + (card.number?.substring(12) ?? '');
       descController.text =
           (card.type ?? '') + " expired at " + (card.expire ?? '');
-
       unique_code = "${card.number?.substring(12)}-${(card.expire ?? '')}}";
     }
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Asset'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Asset Name'),
-                ),
-                TextField(
-                  controller: valueController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Value'),
-                ),
-                TextField(
-                  controller: descController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  items: assetTypes.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      selectedType = value;
-                    }
-                  },
-                  decoration: const InputDecoration(labelText: 'Asset Type'),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                startReading();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                Asset newAsset = Asset(
-                  'user_code',
-                  name: nameController.text,
-                  value: double.tryParse(valueController.text) ?? 0.0,
-                  desc: descController.text,
-                  type: selectedType,
-                  unique_code: unique_code,
-                  status: true,
-                );
+        return BugBottomModal(
+            context: context,
+            header: 'Add New ${selectedType}',
+            widgets: [
+              BugTextInput(
+                controller: nameController,
+                label: 'Asset Name',
+                hint: 'Enter Asset Name',
+                prefixIcon: Icon(getIcon(selectedType)),
+              ),
+              SizedBox(height: ResStyle.spacing),
+              BugTextInput(
+                controller: valueController,
+                label: 'Amount (RM)',
+                hint: 'Enter Amount (RM)',
+                prefixIcon: Icon(Icons.diamond_sharp),
+                onChanged: (value) {
+                  FormatterHelper.implement_RM_format(valueController, value);
+                },
+              ),
+              SizedBox(height: ResStyle.spacing),
+              BugTextInput(
+                controller: descController,
+                label: 'Description',
+                hint: 'Enter Description',
+                prefixIcon: Icon(Icons.note_alt_sharp),
+                validator: (p0) {
+                  return null;
+                },
+              ),
+              SizedBox(height: ResStyle.spacing),
+              SizedBox(height: ResStyle.spacing * 2),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      color: RM50_COLOR,
+                      onPressed: () async {
+                        Asset newAsset = Asset(
+                          'user_code',
+                          name: nameController.text,
+                          value: FormatterHelper.getAmountFromRM(
+                              valueController.text),
+                          desc: descController.text,
+                          type: selectedType,
+                          unique_code: unique_code,
+                          status: true,
+                        );
 
-                await Asset.insertAsset(newAsset);
-                await loadAssets();
-                startReading();
-                Navigator.of(context).pop();
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
+                        await Asset.insertAsset(newAsset);
+                        await loadAssets();
+                        startReading();
+                        Navigator.of(context).pop();
+
+                        if (page_controller.hasClients) {
+                          page_controller.animateToPage(
+                            0,
+                            duration: const Duration(milliseconds: 700),
+                            curve: Curves.fastOutSlowIn,
+                          );
+                        }
+                      },
+                      text: 'Add',
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      onPressed: () {
+                        startReading();
+                        Navigator.of(context).pop();
+                      },
+                      color: DANGER_COLOR,
+                      text: 'Cancel',
+                    ),
+                  ),
+                )
+              ])
+            ]);
       },
     );
   }
@@ -395,6 +494,11 @@ class _AssetDetailPageState extends State<AssetDetailPage>
   // ====== UI WIDGETS ======
 
   Widget _buildIcon(String assetType) {
+    IconData icon = getIcon(assetType);
+    return Icon(icon, size: ResStyle.spacing * 4, color: RM1_COLOR);
+  }
+
+  IconData getIcon(String assetType) {
     IconData icon;
     switch (assetType) {
       case 'Cash':
@@ -415,7 +519,8 @@ class _AssetDetailPageState extends State<AssetDetailPage>
       default:
         icon = Icons.category;
     }
-    return Icon(icon, size: ResStyle.spacing * 4, color: RM1_COLOR);
+
+    return icon;
   }
 
   Widget _buildAssetCard(BuildContext context, String assetType) {
@@ -436,13 +541,13 @@ class _AssetDetailPageState extends State<AssetDetailPage>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildIcon(assetType),
-          SizedBox(height: 8),
+          SizedBox(height: ResStyle.spacing / 2),
           Text(
             assetType,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: ResStyle.medium_font,
               fontWeight: FontWeight.w600,
-              color: Colors.black87,
+              color: TEXT_COLOR,
             ),
           ),
           if (assetType == 'Bank Card')
@@ -543,7 +648,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
               itemCount: assetTypes.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-                  onTap: () => showAddAssetDialog(assetTypes[index]),
+                  onTap: () => showAddAssetModal(assetTypes[index]),
                   child: _buildAssetCard(context, assetTypes[index]),
                 );
               },

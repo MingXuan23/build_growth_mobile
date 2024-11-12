@@ -11,8 +11,9 @@ final class FinancialInitial extends FinancialState {}
 final class FinancialDataLoaded extends FinancialState {
   final double totalAssets;
   final double totalDebts;
+  final List<Transaction> transactionList;
 
-  FinancialDataLoaded({required this.totalAssets, required this.totalDebts});
+  FinancialDataLoaded( {required this.totalAssets, required this.totalDebts, required this.transactionList,});
 
 
 

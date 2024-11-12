@@ -33,6 +33,12 @@ class RegisterRequested extends AuthEvent{
   final String email;
 
   const RegisterRequested({required this.name, required this.password, required this.telno, required this.address, required this.state, required this.email});
+
+  
+}
+
+class AutoLoginRequest extends AuthEvent{
+  
 }
 
 

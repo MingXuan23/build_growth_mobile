@@ -1,10 +1,12 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/services/location_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_text_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -22,9 +24,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final _stateController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _codeController = TextEditingController();
 
   final _focusNode = FocusNode();
 
+  String state_value = '';
   int _currentStep = 1;
   int _newStep = 1;
 
@@ -111,10 +115,45 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
-  void _nextStep() {
+  void fetchAddress() async {
+    var addr = await LocationHelper.getAddress();
+
+    if (addr.isEmpty) {
+      return;
+    }
+    _addressController.text = addr.join(',');
+
+    var list = states_list.where((e) => e.contains(addr.last)).toList();
+
+    if (list.isEmpty) {
+      return;
+    }
+
+    if (list.length == 1) {
+      _stateController.text = list.first;
+      state_value = _stateController.text;
+
+      return;
+    }
+
+    list = states_list.where((e) => e.contains(addr[addr.length - 2])).toList();
+
+    if (list.isNotEmpty) {
+      _stateController.text = list.first;
+      state_value = _stateController.text;
+
+      return;
+    }
+  }
+
+  void _nextStep() async {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
-      if (_currentStep < 3) {
+
+      if (_newStep == 1) {
+        ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Try Locate Your Address Instead Enter Address Manually', 5));
+      }
+      if (_currentStep <= 3) {
         setState(() {
           _currentStep++;
           _newStep = _currentStep;
@@ -187,19 +226,20 @@ class _RegisterPageState extends State<RegisterPage> {
                                 if (_currentStep == 1) _buildStep1(),
                                 if (_currentStep == 2) _buildStep2(),
                                 if (_currentStep == 3) _buildStep3(),
-                                SizedBox(height: 2 * ResStyle.spacing),
+                                if (_currentStep == 4) _buildStep4(),
+                                SizedBox(height: ResStyle.spacing),
                                 BugPrimaryButton(
-                                  text: _currentStep < 3 ? 'Next' : 'Register',
+                                  text: _currentStep != 3 ? 'Next' : 'Register',
                                   onPressed: _nextStep,
                                 ),
                                 SizedBox(height: ResStyle.spacing),
-                                BugTextButton(
+                                BugDoubleTapButton(
                                   onPressed: () {
-                                    Navigator.pop(context); // Go back to login
+                                    Navigator.pop(context);
                                   },
+                                  text: 'Back To Log In',
                                   underline: true,
-                                  text: "Back To Log In",
-                                ),
+                                )
                               ],
                             ),
                           ),
@@ -225,6 +265,8 @@ class _RegisterPageState extends State<RegisterPage> {
         _buildCircleIndicator(2),
         SizedBox(width: ResStyle.spacing),
         _buildCircleIndicator(3),
+        SizedBox(width: ResStyle.spacing),
+        _buildCircleIndicator(4),
       ],
     );
   }
@@ -232,6 +274,9 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildCircleIndicator(int step) {
     return GestureDetector(
       onTap: () {
+        if (_currentStep == 4) {
+          return;
+        }
         if (step < _newStep) {
           _currentStep = step;
         } else if (_newStep >= step && _formKey.currentState!.validate()) {
@@ -332,7 +377,12 @@ class _RegisterPageState extends State<RegisterPage> {
             return list;
           },
           onSelected: (selection) {
-            _stateController.text = selection;
+            var modification = (state_value != selection);
+            _stateController.text = state_value = selection;
+
+            if (modification) {
+              _addressController.text = '';
+            }
             _focusNode.unfocus();
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
@@ -342,6 +392,10 @@ class _RegisterPageState extends State<RegisterPage> {
               label: "State",
               hint: "Enter your state name",
               prefixIcon: const Icon(Icons.map_outlined),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: fetchAddress
+              ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Enter your state name';
@@ -403,13 +457,19 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           },
         ),
+      
         SizedBox(height: ResStyle.spacing),
         BugTextInput(
           controller: _addressController,
           label: "Address",
           hint: "Enter your address",
           prefixIcon: const Icon(Icons.location_on_outlined),
+          maxLine: 3,
+          fontSize: ResStyle.medium_font,
         ),
+        SizedBox(height: ResStyle.spacing),
+
+        BugPrimaryButton(text: 'Locate Address', onPressed: fetchAddress,color: SECONDARY_COLOR)
       ],
     );
   }
@@ -472,6 +532,81 @@ class _RegisterPageState extends State<RegisterPage> {
             }
             return null;
           },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStep4() {
+    return Column(
+      children: [
+        Text(
+          "Please enter the verification code sent to your email",
+          style: TextStyle(
+            fontSize: ResStyle.medium_font,
+            color: PRIMARY_COLOR,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        SizedBox(height: ResStyle.spacing),
+        PinCodeTextField(
+          appContext: context,
+          length: 6,
+          controller: _codeController,
+          keyboardType: TextInputType.number,
+          animationType: AnimationType.fade,
+          pinTheme: PinTheme(
+            shape: PinCodeFieldShape.box,
+            borderRadius: BorderRadius.circular(12),
+            fieldHeight: ResStyle.spacing * 2.5,
+            fieldWidth: ResStyle.spacing * 2.5,
+            activeFillColor: HIGHTLIGHT_COLOR,
+            inactiveFillColor: HIGHTLIGHT_COLOR,
+            selectedFillColor: HIGHTLIGHT_COLOR,
+            activeColor: ALTERNATIVE_COLOR,
+            inactiveColor: PRIMARY_COLOR,
+            selectedColor: ALTERNATIVE_COLOR,
+            borderWidth: 1,
+          ),
+          animationDuration: Duration(milliseconds: 300),
+          enableActiveFill: true,
+          onCompleted: (value) {
+            // Handle completion
+            print("Verification Code: $value");
+            // TODO: Add your verification logic here
+          },
+          onChanged: (value) {
+            // You can handle changes here if needed
+          },
+          beforeTextPaste: (text) {
+            // Return true if you want to allow pasting
+            return true;
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Verification code is required';
+            }
+            if (value.length != 6) {
+              return 'Code must be 6 digits';
+            }
+            if (!RegExp(r'^[0-9]+$').hasMatch(value)) {
+              return 'Code must contain only numbers';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: ResStyle.spacing),
+        TextButton(
+          onPressed: () {
+            // TODO: Implement resend logic
+          },
+          child: Text(
+            "Didn't receive the code? Resend",
+            style: TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );

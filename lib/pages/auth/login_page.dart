@@ -78,7 +78,7 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(height: ResStyle.spacing),
-                                Text('Logo here'),
+                                Image.asset('lib/assets/playstore-icon.png',height: ResStyle.spacing * 5 , width: ResStyle.spacing * 5,),
                                 SizedBox(height: ResStyle.spacing),
                                 BugTextInput(
                                   controller: _emailController,

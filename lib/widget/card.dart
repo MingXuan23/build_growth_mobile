@@ -50,7 +50,7 @@ Widget AssetCard(String header, String text, Function() func,
   );
 }
 
-Widget GeneralCard(String text, Function() func) {
+Widget GeneralCard(String text, Function() func, {String title = ''}) {
   return GestureDetector(
     onTap: () => func,
     child: Container(
@@ -72,7 +72,7 @@ Widget GeneralCard(String text, Function() func) {
           Row(
             children: [
               Text(
-                'Total Debts/Bills',
+                title,
                 style: TextStyle(
                   color: Colors.grey[600],
                   fontSize: 14,
@@ -153,8 +153,8 @@ Widget DebtDetailCard(Debt debt, VoidCallback func,
   return GestureDetector(
     onTap: () => func(),
     child: Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.symmetric(vertical:  ResStyle.spacing),
+      padding: EdgeInsets.all(ResStyle.spacing),
       decoration: BoxDecoration(
         color: paid
             ? RM5_COLOR

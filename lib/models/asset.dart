@@ -106,6 +106,37 @@ class Asset {
     });
   }
 
+
+  static Future<Asset?> getAssetById(int assetId) async {
+  var db = await DatabaseHelper().database;
+
+  // Query the database for an asset with the given id
+  final List<Map<String, dynamic>> maps = await db.query(
+    table,
+    where: 'id = ?', // Filter by asset id
+    whereArgs: [assetId], // Provide the asset id as a parameter
+  );
+
+  // If the result is empty, return null (asset not found)
+  if (maps.isNotEmpty) {
+    // Return the asset by mapping the first result
+    return Asset(
+      maps[0]['user_code'],
+      id: maps[0]['id'],
+      name: maps[0]['name'],
+      value: maps[0]['value'],
+      desc: maps[0]['desc'],
+      type: maps[0]['type'],
+      status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
+      unique_code: maps[0]['unique_code'] ?? '', // Handle null unique_code
+    );
+  }
+
+  // Return null if no asset is found
+  return null;
+}
+
+
   static Future<Asset?> getBankCardByUniqueCode(String code) async {
     var db = await DatabaseHelper().database;
 

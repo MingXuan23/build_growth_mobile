@@ -106,3 +106,70 @@ Widget BugPageIndicator(PageController page_controller, int page_count) {
     ),
   );
 }
+
+
+class BugDoubleTapButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  final String text;
+  final bool underline;
+
+  const BugDoubleTapButton({
+    Key? key,
+    required this.onPressed,
+    required this.text,
+    this.underline = false,
+  }) : super(key: key);
+
+  @override
+  State<BugDoubleTapButton> createState() => _DoubleTapButtonState();
+}
+
+class _DoubleTapButtonState extends State<BugDoubleTapButton> {
+  DateTime? _lastTapTime;
+  bool _isFirstTap = false;
+
+  int second = 2;
+
+  void _handleTap() {
+    final now = DateTime.now();
+    if (_lastTapTime != null && 
+        now.difference(_lastTapTime!) <= Duration(seconds: second)) {
+      setState(() {
+        _isFirstTap = false;
+      });
+      widget.onPressed();
+      _lastTapTime = null;
+    } else {
+      _lastTapTime = now;
+      setState(() {
+        _isFirstTap = true;
+      });
+      // Reset visual feedback after 2 seconds
+      Future.delayed(Duration(seconds: second), () {
+        if (mounted) {
+          setState(() {
+            _isFirstTap = false;
+          });
+          _lastTapTime = null;
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 200),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(4),
+        color: _isFirstTap ? Colors.grey.withOpacity(0.1) : Colors.transparent,
+      ),
+      child: BugTextButton(
+        onPressed: _handleTap,
+        underline: widget.underline,
+        text: _isFirstTap ? "Tap again to go back" : widget.text,
+      )
+      ,
+    );
+  }
+}

@@ -120,4 +120,38 @@ class Debt {
       );
     });
   }
+
+  static Future<Debt?> getDebtById(int debtId) async {
+  var db = await DatabaseHelper().database;
+
+  // Query the database for a debt with the given id
+  final List<Map<String, dynamic>> maps = await db.query(
+    table, // The table name for debts
+    where: 'id = ?', // Filter by debt id
+    whereArgs: [debtId], // Provide the debt id as a parameter
+  );
+
+  // If the result is empty, return null (debt not found)
+  if (maps.isNotEmpty) {
+    // Return the debt by mapping the first result
+    return Debt(
+      maps[0]['user_code'],
+      id: maps[0]['id'],
+      name: maps[0]['name'],
+      type: maps[0]['type'],
+      monthly_payment: maps[0]['monthly_payment'],
+      remaining_month: maps[0]['remaining_month'],
+      total_month: maps[0]['total_month'],
+      status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
+      desc: maps[0]['desc'],
+      last_payment_date: maps[0]['last_payment_date'] != null
+          ? DateTime.parse(maps[0]['last_payment_date']) // Convert ISO string back to DateTime
+          : null,
+    );
+  }
+
+  // Return null if no debt is found
+  return null;
+}
+
 }

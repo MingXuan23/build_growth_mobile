@@ -11,9 +11,14 @@ class ShowPayDebtPage extends TransactionEvent {}
 
 class ShowAssetIncrementPage extends TransactionEvent {}
 
+class ShowAssetTransactionPage extends TransactionEvent {}
+
+
 class ShowAssetReductionPage extends TransactionEvent {}
 
 class ShowAssetTransferPage extends TransactionEvent {}
+
+class CompleteTransactionAction extends TransactionEvent{}
 
 
 

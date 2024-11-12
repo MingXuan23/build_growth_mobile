@@ -23,7 +23,7 @@ class DatabaseHelper {
 
     // Concatenate the file path with the database name manually
     String path = join(databasesPath, 'demo.db');
-   //await databaseFactory.deleteDatabase(path); 
+  // await databaseFactory.deleteDatabase(path); 
     // Open the database
     return await openDatabase(
       path,

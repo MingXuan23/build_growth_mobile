@@ -8,7 +8,14 @@ sealed class TransactionState{
 
 final class TransactionInitial extends TransactionState {}
 
-final class TransactionDebtPage extends TransactionState{}
+final class TransactionDebtPageShow extends TransactionState{}
+
+final class AssetTransactionrPageShow extends TransactionState{}
+
+final class AssetTransferPageShow extends TransactionState{}
+
+
+final class TransactionCompleted extends TransactionState{}
 
 
 

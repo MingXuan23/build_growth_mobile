@@ -1,4 +1,4 @@
-import 'package:build_growth_mobile/repo/auth_repo.dart';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:equatable/equatable.dart';
@@ -11,10 +11,22 @@ class TransactionBloc extends Bloc<TransactionEvent, TransactionState> {
   TransactionBloc(TransactionState initial) : super(initial) {
     on<ShowPayDebtPage>(
       (event, emit) {
-        emit(TransactionDebtPage());
+        emit(TransactionDebtPageShow());
       },
     );
+
+    on<ShowAssetTransferPage>((event, emit) {
+      emit(AssetTransferPageShow());
+    },);
     
+    on<ShowAssetTransactionPage>((event, emit) {
+      emit(AssetTransactionrPageShow());
+    },);
+    
+
+    on<CompleteTransactionAction>((event, emit) {
+      emit(TransactionCompleted());
+    },);
   }
 }
 

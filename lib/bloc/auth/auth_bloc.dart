@@ -10,24 +10,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthRepo repo;
 
   AuthBloc(AuthState loginInitial, this.repo) : super(loginInitial) {
-    
     on<LoginRequested>((event, emit) async {
       emit(LoginLoading());
-      
+
       var result = true;
-      if(result){
+      if (result) {
         emit(LoginSuccess());
         return;
-      }
-      else{
+      } else {
         emit(LoginFailure('Invalid Lpgin'));
       }
-      
     });
-    on<RegisterRequested>((event, emit) {
-      emit(RegisterSuccess());
-    },);
+    on<RegisterRequested>(
+      (event, emit) {
+        emit(RegisterSuccess());
+      },
+    );
 
+    on<AutoLoginRequest>(
+      (event, emit) {
+        emit(LoginInitial());
+      },
+    );
 
     on<LogoutRequested>(
       (event, emit) async {

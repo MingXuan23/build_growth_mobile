@@ -1,9 +1,15 @@
+import 'dart:math';
+
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
+import 'package:build_growth_mobile/models/transaction.dart';
+import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/asset_detail_page.dart';
 import 'package:build_growth_mobile/pages/financial/debt_detail_page.dart';
+import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
+import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/card.dart';
@@ -24,18 +30,43 @@ class _FinancialPageState extends State<FinancialPage> {
   // You can add state variables here
   double totalAssets = 0; // Example variable
   double totalDebts = 0; // Example variable
+  List<Transaction> transaction_history = [];
   PageController _pageController = PageController(viewportFraction: 1.0);
-  List<Widget> quick_actions = [
-    BugIconButton(text: "Asset Transfer", onPressed: () {}, icon: Icons.tap_and_play),
-    BugIconButton(text: "Action adaasada", onPressed: () {}, icon: Icons.tap_and_play),
-    BugIconButton(text: "Action asdadwefcd", onPressed: () {}, icon: Icons.tap_and_play),
-    BugIconButton(text: "Action asdaasdaac", onPressed: () {}, icon: Icons.tap_and_play),
-  ];
+  List<Widget> quick_actions = [];
+
+  double? graph_selected_value;
+  int? graph_selected_index;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    quick_actions = [
+      BugIconButton(
+          text: "Manage Asset",
+          onPressed: () {
+            pushPage(const AssetDetailPage());
+          },
+          icon: Icons.monetization_on),
+      BugIconButton(
+          text: "Manage Debt",
+          onPressed: () {
+            pushPage(const DebtDetailPage());
+          },
+          icon: Icons.payment),
+      BugIconButton(
+          text: "Asset Transfer",
+          onPressed: () {
+            pushPage(TransactionPage2(intention: 'Asset Transfer'));
+          },
+          icon: Icons.tap_and_play),
+      BugIconButton(
+          text: "Transaction History",
+          onPressed: () {
+            pushPage(TransactionHistoryPage());
+          },
+          icon: Icons.book_online_outlined),
+    ];
     BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
   }
 
@@ -57,6 +88,7 @@ class _FinancialPageState extends State<FinancialPage> {
         if (state is FinancialDataLoaded) {
           totalAssets = state.totalAssets;
           totalDebts = state.totalDebts;
+          transaction_history = state.transactionList;
         }
 
         setState(() {});
@@ -75,20 +107,48 @@ class _FinancialPageState extends State<FinancialPage> {
   }
 
   Widget TransactionGraphSection() {
+    List<FlSpot> spots = transaction_history
+        .asMap()
+        .entries
+        .map((entry) => FlSpot(entry.key.toDouble(), entry.value.amount))
+        .toList();
+
     return Padding(
       padding: EdgeInsets.all(ResStyle.spacing),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Expanded(
+                  child: Container(
+                decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12)),
+                    color: TITLE_COLOR),
+                child: Text(
+                  'Cash Flow',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: ResStyle.medium_font,
+                      color: HIGHTLIGHT_COLOR,
+                      fontWeight: FontWeight.bold),
+                ),
+              )),
+            ],
+          ),
           Container(
-            height: ResStyle.height * 0.35,
-            padding: const EdgeInsets.all(16),
+            height: ResStyle.height * 0.3,
+            padding: EdgeInsets.symmetric(
+                vertical: ResStyle.spacing * 3,
+                horizontal: ResStyle.spacing * 1.5),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: HIGHTLIGHT_COLOR,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: TEXT_COLOR.withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -99,27 +159,55 @@ class _FinancialPageState extends State<FinancialPage> {
                 gridData: FlGridData(show: false),
                 titlesData: FlTitlesData(show: false),
                 borderData: FlBorderData(show: false),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: 0,
+                      color: SECONDARY_COLOR.withOpacity(0.5),
+                      strokeWidth: 1,
+                      dashArray: [5, 5],
+                    ),
+                  ],
+                ),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: [
-                      const FlSpot(0, 3),
-                      const FlSpot(1, 2.5),
-                      const FlSpot(2, 3.5),
-                      const FlSpot(3, 3.2),
-                      const FlSpot(4, 4),
-                      const FlSpot(5, 3.8),
-                      const FlSpot(6, 4.5),
-                    ],
+                    spots: spots,
                     isCurved: true,
-                    color: Colors.blue,
+                    color: PRIMARY_COLOR,
                     barWidth: 2,
-                    dotData: FlDotData(show: false),
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 6,
+                          color: Colors.white,
+                          strokeWidth: 3,
+                          strokeColor: PRIMARY_COLOR,
+                        );
+                      },
+                    ),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: Colors.blue.withOpacity(0.1),
+                      color: PRIMARY_COLOR.withOpacity(0.1),
                     ),
                   ),
                 ],
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((touchedSpot) {
+                        return LineTooltipItem(
+                          FormatterHelper.toDoubleString(touchedSpot.y),
+                          TextStyle(
+                            color: HIGHTLIGHT_COLOR,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -154,35 +242,34 @@ class _FinancialPageState extends State<FinancialPage> {
     );
   }
 
- Widget QuickActionSection(int column) {
-  return Padding(
-    padding: EdgeInsets.all(ResStyle.spacing),
-    child: SingleChildScrollView(
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        itemCount: quick_actions.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: column,
-          mainAxisSpacing: ResStyle.spacing,
-          crossAxisSpacing: ResStyle.spacing,
-          childAspectRatio: 2, // Maintain a 1:1 aspect ratio
+  Widget QuickActionSection(int column) {
+    return Padding(
+      padding: EdgeInsets.all(ResStyle.spacing),
+      child: SingleChildScrollView(
+        child: GridView.builder(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: quick_actions.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: column,
+            mainAxisSpacing: ResStyle.spacing,
+            crossAxisSpacing: ResStyle.spacing,
+            childAspectRatio: 2, // Maintain a 1:1 aspect ratio
+          ),
+          itemBuilder: (context, index) {
+            return SizedBox.expand(
+              child: quick_actions[index],
+            );
+          },
         ),
-        itemBuilder: (context, index) {
-          return SizedBox.expand(
-            child: quick_actions[index],
-          );
-        },
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget horizontal_body() {
     return Scaffold(
       backgroundColor: HIGHTLIGHT_COLOR,
-      appBar: BugAppBar("Financial Page"),
+      appBar: BugAppBar("Financial Page", context),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
@@ -214,7 +301,7 @@ class _FinancialPageState extends State<FinancialPage> {
   Widget vertical_body() {
     return Scaffold(
       backgroundColor: HIGHTLIGHT_COLOR,
-      appBar: BugAppBar("Financial Page"),
+      appBar: BugAppBar("Financial Page", context),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
@@ -235,7 +322,7 @@ class _FinancialPageState extends State<FinancialPage> {
                   ],
                 ),
               ),
-               
+
               Expanded(flex: 2, child: QuickActionSection(2))
               // Chart Card
             ],
