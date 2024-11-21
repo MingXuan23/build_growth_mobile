@@ -3,6 +3,8 @@ import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/pages/content/content_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
+import 'package:build_growth_mobile/pages/gpt/gpt_page.dart';
+import 'package:build_growth_mobile/pages/gpt/message_page.dart';
 import 'package:flutter/material.dart';
 
 class HomePage extends StatefulWidget {
@@ -16,7 +18,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  List<Widget> tabs = [FinancialPage(), TransactionHistoryPage(),ContentPage()];
+  List<Widget> tabs = [FinancialPage(), MessagePage(),ContentPage()];
   int currentIndex = 0;
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class _HomePageState extends State<HomePage> {
               color: currentIndex == 1 ? TITLE_COLOR : HIGHTLIGHT_COLOR,
               size: ResStyle.header_font,
             ),
-            label: 'Transaction',
+            label: 'Assistant',
             backgroundColor: RM50_COLOR
           ),
           BottomNavigationBarItem(

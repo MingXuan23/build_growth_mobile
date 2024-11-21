@@ -1,10 +1,10 @@
 
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/bloc/transaction/transaction_bloc.dart';
-import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
-import 'package:build_growth_mobile/repo/auth_repo.dart';
+import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,6 +40,8 @@ class MyApp extends StatelessWidget {
             create: (context) => FinancialBloc(FinancialInitial(), null)),
           BlocProvider<TransactionBloc>(
             create: (context) => TransactionBloc(TransactionInitial())),
+              BlocProvider<MessageBloc>(
+            create: (context) => MessageBloc(MessageInitial())),
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],

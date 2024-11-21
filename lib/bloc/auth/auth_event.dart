@@ -37,6 +37,29 @@ class RegisterRequested extends AuthEvent{
   
 }
 
+
+
+class CheckRegisterEmail extends AuthEvent{
+  final String email;
+
+  const CheckRegisterEmail({required this.email});
+}
+
+class SendVerificationCode extends AuthEvent{
+  final String code;
+  final String email;
+
+  const SendVerificationCode({required this.code, required this.email});
+
+}
+
+class ResendVerificationCode extends AuthEvent{
+  final String email;
+
+  ResendVerificationCode({required this.email});
+
+}
+
 class AutoLoginRequest extends AuthEvent{
   
 }

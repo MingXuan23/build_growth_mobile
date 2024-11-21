@@ -85,4 +85,56 @@ class Transaction {
 
     return transactions;
   }
+
+  Future<String> promptFromTransaction() async {
+    var prompt = '';
+
+    var total_asset = await Asset.getTotalAsset();
+    var total_debt = await Debt.getTotalDebt();
+
+    var cash_flow_percent = amount * 100 / (total_asset - total_debt);
+
+    if (amount < 0) {
+      prompt = 'I spent RM ${amount.abs().toStringAsFixed(2)}.';
+    } else {
+      prompt = 'I earned RM ${amount.abs().toStringAsFixed(2)}';
+    }
+
+    if (asset != null) {
+      prompt +=
+          'My ${asset!.name} (${asset!.type}) was changed to ${asset!.value} after transaction. It increase ${cash_flow_percent}% of my cash flow';
+    }
+    if (debt != null) {
+      prompt +=
+          'This transction is for ${debt!.name} (${debt!.type}). It decrease ${cash_flow_percent}% of my cash flow ';
+    }
+
+    if (cash_flow_percent <= 2) {
+      prompt += amount > 0
+          ? 'Please provide simple positive feedback using the Rich Dad mindset.'
+          : 'Please give neutral advice like a caring mom and call me "Dear."';
+    } else if (cash_flow_percent <= 5) {
+      prompt += amount > 0
+          ? 'Please provide positive feedback using the Rich Dad mindset.'
+          : 'Please give constructive advice like a thoughtful mom and call me "Dear."';
+    } else if (cash_flow_percent <= 10) {
+      prompt += amount > 0
+          ? 'Please provide uplifting feedback using the Rich Dad mindset.'
+          : 'Please give constructive advice like a thoughtful mom and call me "Dear."';
+    } else if (cash_flow_percent <= 30) {
+      prompt += amount > 0
+          ? 'Please provide encouraging suggestions using the Rich Dad mindset.'
+          : 'Please give stern advice like a firm mom and call me "Dear."';
+    } else if (cash_flow_percent <= 50) {
+      prompt += amount > 0
+          ? 'Please provide inspirational suggestions using the Rich Dad mindset.'
+          : 'Please give a warning like a concerned mom and call me "Dear."';
+    } else {
+      prompt += amount > 0
+          ? 'Please provide highly motivational suggestions using the Rich Dad mindset.'
+          : 'Please give an immediate warning like an anxious mom and call me "Dear."';
+    }
+
+    return prompt;
+  }
 }

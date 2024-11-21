@@ -151,15 +151,9 @@ class _RegisterPageState extends State<RegisterPage> {
       FocusScope.of(context).unfocus();
 
       if (_newStep == 1) {
-        ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Try Locate Your Address Instead Enter Address Manually', 5));
-      }
-      if (_currentStep <= 3) {
-        setState(() {
-          _currentStep++;
-          _newStep = _currentStep;
-        });
-      } else {
-        // Final step - register the user
+        BlocProvider.of<AuthBloc>(context)
+            .add(CheckRegisterEmail(email: _emailController.text));
+      } else if (_newStep == 3) {
         BlocProvider.of<AuthBloc>(context).add(
           RegisterRequested(
             name: _nameController.text,
@@ -170,12 +164,14 @@ class _RegisterPageState extends State<RegisterPage> {
             password: _passwordController.text,
           ),
         );
-
-        if (true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              BugSnackBar('Register Successfully. Please Log In now.', 8));
-          Navigator.of(context).pop();
-        }
+      }
+      if (_currentStep <= 3) {
+        setState(() {
+          _currentStep++;
+          _newStep = _currentStep;
+        });
+      } else {
+        // Final step - register the user
       }
     }
   }
@@ -186,73 +182,105 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: Container(
-                  color: RM50_COLOR,
-                  child: Padding(
-                    padding: EdgeInsets.all(ResStyle.spacing),
-                    child: Center(
-                      child: Card(
-                        color: HIGHTLIGHT_COLOR,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(2 * ResStyle.spacing),
-                          child: Form(
-                            key: _formKey,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  'Register',
-                                  style: TextStyle(
-                                      fontSize: ResStyle.header_font,
-                                      color: TEXT_COLOR,
-                                      fontWeight: FontWeight.bold),
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is RegisterPendingCodeWithMessgae) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(BugSnackBar(state.message, 5));
+          _newStep = _currentStep = 4;
+          setState(() {});
+        } else if (state is RegisterFailure) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(BugSnackBar(state.error, 5));
+          if (_currentStep == 2) {
+            _currentStep = _newStep = 1;
+            setState(() {});
+          } else if(_currentStep !=4) {
+            Navigator.of(context).pop();
+          }
+        } else if (state is RegisterContinued) {
+          if (_currentStep == 2) {
+            ScaffoldMessenger.of(context).showSnackBar(BugSnackBar(
+                'Try Locate Your Address Instead Enter Address Manually', 5));
+          }
+        }
+      },
+      child: BlocBuilder<AuthBloc, AuthState>(builder: (context, state) {
+        return Scaffold(
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Container(
+                      color: RM50_COLOR,
+                      child: Padding(
+                        padding: EdgeInsets.all(ResStyle.spacing),
+                        child: Center(
+                          child: Card(
+                            color: HIGHTLIGHT_COLOR,
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: EdgeInsets.all(2 * ResStyle.spacing),
+                              child: Form(
+                                key: _formKey,
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      'Register',
+                                      style: TextStyle(
+                                          fontSize: ResStyle.header_font,
+                                          color: TEXT_COLOR,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    SizedBox(height: ResStyle.spacing),
+                                    _buildProgressIndicator(),
+                                    SizedBox(height: ResStyle.spacing),
+                                    if (state is AuthLoading) ...[
+                                      BugLoading()
+                                    ] else ...[
+                                      if (_currentStep == 1) _buildStep1(),
+                                      if (_currentStep == 2) _buildStep2(),
+                                      if (_currentStep == 3) _buildStep3(),
+                                      if (_currentStep == 4) _buildStep4(),
+                                      SizedBox(height: ResStyle.spacing),
+                                      BugPrimaryButton(
+                                        text: _currentStep != 3
+                                            ? 'Next'
+                                            : 'Register',
+                                        onPressed: _nextStep,
+                                      ),
+                                      SizedBox(height: ResStyle.spacing),
+                                      BugDoubleTapButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        text: 'Back To Log In',
+                                        underline: true,
+                                      )
+                                    ],
+                                  ],
                                 ),
-                                SizedBox(height: ResStyle.spacing),
-                                _buildProgressIndicator(),
-                                SizedBox(height: ResStyle.spacing),
-                                if (_currentStep == 1) _buildStep1(),
-                                if (_currentStep == 2) _buildStep2(),
-                                if (_currentStep == 3) _buildStep3(),
-                                if (_currentStep == 4) _buildStep4(),
-                                SizedBox(height: ResStyle.spacing),
-                                BugPrimaryButton(
-                                  text: _currentStep != 3 ? 'Next' : 'Register',
-                                  onPressed: _nextStep,
-                                ),
-                                SizedBox(height: ResStyle.spacing),
-                                BugDoubleTapButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  text: 'Back To Log In',
-                                  underline: true,
-                                )
-                              ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
+                );
+              },
+            ),
+          ),
+        );
+      }),
     );
   }
 
@@ -393,9 +421,7 @@ class _RegisterPageState extends State<RegisterPage> {
               hint: "Enter your state name",
               prefixIcon: const Icon(Icons.map_outlined),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: fetchAddress
-              ),
+                  icon: const Icon(Icons.search), onPressed: fetchAddress),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Enter your state name';
@@ -457,7 +483,6 @@ class _RegisterPageState extends State<RegisterPage> {
             );
           },
         ),
-      
         SizedBox(height: ResStyle.spacing),
         BugTextInput(
           controller: _addressController,
@@ -468,8 +493,10 @@ class _RegisterPageState extends State<RegisterPage> {
           fontSize: ResStyle.medium_font,
         ),
         SizedBox(height: ResStyle.spacing),
-
-        BugPrimaryButton(text: 'Locate Address', onPressed: fetchAddress,color: SECONDARY_COLOR)
+        BugPrimaryButton(
+            text: 'Locate Address',
+            onPressed: fetchAddress,
+            color: SECONDARY_COLOR)
       ],
     );
   }
@@ -490,7 +517,8 @@ class _RegisterPageState extends State<RegisterPage> {
             bool hasUppercase = value.contains(RegExp(r'[A-Z]'));
             bool hasLowercase = value.contains(RegExp(r'[a-z]'));
             bool hasDigits = value.contains(RegExp(r'\d'));
-            bool hasSpecialCharacters = value.contains(RegExp(r'[@$!%*?&]'));
+            bool hasSpecialCharacters =
+                value.contains(RegExp(r'[@$!%*?&#^_=+-]'));
             bool hasMinLength = value.length >= 8;
 
             List<String> errors = [];
@@ -598,7 +626,9 @@ class _RegisterPageState extends State<RegisterPage> {
         SizedBox(height: ResStyle.spacing),
         TextButton(
           onPressed: () {
-            // TODO: Implement resend logic
+           BlocProvider.of<AuthBloc>(context).add(
+            ResendVerificationCode(email: _emailController.text)
+        );
           },
           child: Text(
             "Didn't receive the code? Resend",

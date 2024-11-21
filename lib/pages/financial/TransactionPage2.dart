@@ -143,7 +143,7 @@ class _TransactionPage2State extends State<TransactionPage2> {
       if (selected_asset_id != -1) {
         asset.value = asset.value +
             transactionAmount; //because transactionAmount was negative now
-        await Asset.updateAsset(asset);
+        await Asset.updateAsset(asset, t: transaction);
       }
 
       if (selected_debt_id != -1) {
@@ -216,7 +216,7 @@ class _TransactionPage2State extends State<TransactionPage2> {
       from_asset.value = from_asset.value - transactionAmount;
       to_asset.value = to_asset.value + transactionAmount;
 
-      await Asset.updateAsset(from_asset);
+      await Asset.updateAsset(from_asset,);
       await Asset.updateAsset(to_asset);
 
       BlocProvider.of<TransactionBloc>(context)
@@ -539,7 +539,7 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
 
       var asset = widget.asset;
       asset.value = asset.value + transactionAmount;
-      await Asset.updateAsset(asset);
+      await Asset.updateAsset(asset, t: transaction);
 
       BlocProvider.of<TransactionBloc>(context)
           .add(CompleteTransactionAction());

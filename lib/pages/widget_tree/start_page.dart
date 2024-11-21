@@ -1,6 +1,7 @@
 import 'package:build_growth_mobile/assets/color_sample.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/pages/auth/login_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
 import 'package:build_growth_mobile/pages/financial/nfc_card_example.dart';
@@ -27,6 +28,10 @@ class _StartPageState extends State<StartPage> {
     super.initState();
     BlocProvider.of<AuthBloc>(context).add(
       AutoLoginRequest(),
+    );
+
+     BlocProvider.of<MessageBloc>(context).add(
+      LoadMessageModel(),
     );
   }
 
