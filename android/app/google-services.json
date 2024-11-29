@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "236043855734",
+    "project_id": "build-growth-mobile-2a6ab",
+    "storage_bucket": "build-growth-mobile-2a6ab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:236043855734:android:a86469d3fb747a81e93c57",
+        "android_client_info": {
+          "package_name": "com.bug.build_growth_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmh2LTLi5mtPIn5Di8B_w5aW6nodar5l4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,5 @@
 
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 
 class Chat_History {
@@ -20,7 +21,7 @@ class Chat_History {
       'transaction_id': transaction_id,
       'create_at': create_at.toIso8601String(),
       'status': status,
-      'user_code': user_code
+      'user_code':  UserToken.user_code
     };
   }
 

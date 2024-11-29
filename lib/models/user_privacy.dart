@@ -2,8 +2,13 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPrivacy {
-  static bool useGPT = true;
+  static bool useGPT = false;
   static bool pushContent = true;
+  static String backUpFrequency = "First Transaction In A Day";
+  // static String backUpFrequency = "No Backup";
+
+  // static String backUpFrequency = "First Transaction In A Month";
+  // static String backUpFrequency = "Every Transaction";
 
   // Convert the current settings to a Map
   static Map<String, dynamic> toMap() {

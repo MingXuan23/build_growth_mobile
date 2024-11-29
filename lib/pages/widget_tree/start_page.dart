@@ -29,32 +29,57 @@ class _StartPageState extends State<StartPage> {
     BlocProvider.of<AuthBloc>(context).add(
       AutoLoginRequest(),
     );
+  }
 
-     BlocProvider.of<MessageBloc>(context).add(
-      LoadMessageModel(),
-    );
+  @override
+  void dispose() {
+    // Dispose of any resources here
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) async {
-        if (state is LoginInitial) {
-          page = LoginPage();
-        } else if (state is LoginSuccess) {
-          page = HomePage();
-        } else if (state is RegisterSuccess) {
-          page = LoginPage();
+        if (state is LoginFailure) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(BugSnackBar(state.error, 5));
+        } else if (state is LoginInitial) {
+          if (state.message?.isNotEmpty ?? false) {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(BugSnackBar(state.message ?? '', 5));
+          }
+        } else if (state is AuthForgetPasswordResult) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(BugSnackBar(state.message, 5));
         }
 
         setState(() {});
       },
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          ResStyle.initialise(MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height);
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (context, state) {
+          return LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              ResStyle.initialise(MediaQuery.of(context).size.width,
+                  MediaQuery.of(context).size.height);
 
-          return page;
+              if (state is LoginInitial) {
+                return LoginPage(
+                  email: state.email,
+                );
+              } else if (state is LoginSuccess) {
+                return HomePage();
+              } else if (state is RegisterSuccess) {
+                return LoginPage();
+              } else if (state is AuthLoading) {
+                return Scaffold(
+                  body: BugLoading(),
+                );
+              }
+
+              return LoginPage();
+            },
+          );
         },
       ),
     );

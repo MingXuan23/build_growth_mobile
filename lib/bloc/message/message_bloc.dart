@@ -16,6 +16,10 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
   MessageBloc(MessageState messageInitial) : super(messageInitial) {
     on<SendMessageEvent>((event, emit) async {
+
+      if(state is MessageSending || state is MessageReply){
+        return;
+      }
       emit(MessageSending());
 
       try {
@@ -50,6 +54,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
             }
             emit(MessageReply([...userMessages], [...gptReplies]));
             completer.complete(); // Complete when done
+
+            emit(MessageCompleted());
           },
           cancelOnError: true,
         );

@@ -1,10 +1,12 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-PreferredSizeWidget BugAppBar(String title, BuildContext context) {
+PreferredSizeWidget BugAppBar(String title, BuildContext context,
+    {bool show_icon = true}) {
   return AppBar(
     backgroundColor: TITLE_COLOR,
     centerTitle: true,
@@ -18,18 +20,23 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context) {
       textAlign: TextAlign.center,
     ),
     actions: [
-      IconButton(
-        icon:
-            Icon(Icons.account_circle, color: HIGHTLIGHT_COLOR), // Profile icon
-        onPressed: () {
-          // Add your profile action here
-          Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => StartPage()));
-          BlocProvider.of<AuthBloc>(context).add(
-            AutoLoginRequest(),
-          );
-        },
-      ),
+      if (show_icon)
+        IconButton(
+          icon: Icon(Icons.account_circle,
+              color: HIGHTLIGHT_COLOR), // Profile icon
+          onPressed: () {
+            // Add your profile action here
+
+            Navigator.of(context).push(
+                new MaterialPageRoute(builder: (context) => ProfilePage()));
+            return;
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => StartPage()));
+            BlocProvider.of<AuthBloc>(context).add(
+              LogoutRequested(),
+            );
+          },
+        ),
     ],
     iconTheme: IconThemeData(color: HIGHTLIGHT_COLOR),
   );
@@ -195,4 +202,73 @@ Widget BugLoading() {
       ),
     ),
   );
+}
+
+void showTopSnackBar(BuildContext context, String message, int seconds) {
+  final overlay = Overlay.of(context);
+  late OverlayEntry overlayEntry;
+  overlayEntry = OverlayEntry(
+    builder: (context) => Positioned(
+      top: MediaQuery.of(context).padding.top +
+          kToolbarHeight +
+          10, // Adjust for status bar
+      left: ResStyle.spacing,
+      right: ResStyle.spacing,
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+              horizontal: ResStyle.spacing, vertical: ResStyle.spacing),
+          decoration: BoxDecoration(
+              color: HIGHTLIGHT_COLOR,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: TITLE_COLOR, width: 5)),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Icon(
+                Icons.info,
+                color: RM1_COLOR,
+                size: ResStyle.header_font,
+              ),
+              SizedBox(
+                width: ResStyle.spacing,
+              ),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(
+                    fontSize: ResStyle.font,
+                    fontWeight: FontWeight.bold,
+                    color: TEXT_COLOR,
+                  ),
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  try {
+                    overlayEntry.remove();
+                  } catch (e) {}
+                },
+                child: Icon(
+                  Icons.close,
+                  size: ResStyle.header_font,
+                  color: TITLE_COLOR,
+                  
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
+
+  overlay?.insert(overlayEntry);
+
+  Future.delayed(Duration(seconds: seconds)).then((_) {
+    try {
+      overlayEntry.remove();
+    } catch (e) {}
+  });
 }

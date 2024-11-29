@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:build_growth_mobile/api_services/gpt_repo.dart';
+import 'package:build_growth_mobile/assets/style.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
@@ -47,6 +48,7 @@ class _GptPageState extends State<GptPage> {
       appBar: AppBar(
         title: const Text('GPT Chat'),
       ),
+   
       body: Column(
         children: [
           if (_isLoading) const LinearProgressIndicator(),

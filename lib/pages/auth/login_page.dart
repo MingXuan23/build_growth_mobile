@@ -1,13 +1,17 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/auth/register_page.dart';
+import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
-import 'package:build_growth_mobile/widget/bug_text_input.dart';
+import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.email});
+
+  final String? email;
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -46,6 +50,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    _emailController.text = widget.email ??  UserToken.email??'';
   }
 
   @override
@@ -78,7 +83,11 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(height: ResStyle.spacing),
-                                Image.asset('lib/assets/playstore-icon.png',height: ResStyle.spacing * 5 , width: ResStyle.spacing * 5,),
+                                Image.asset(
+                                  'lib/assets/playstore-icon.png',
+                                  height: ResStyle.spacing * 5,
+                                  width: ResStyle.spacing * 5,
+                                ),
                                 SizedBox(height: ResStyle.spacing),
                                 BugTextInput(
                                   controller: _emailController,
@@ -103,10 +112,28 @@ class _LoginPageState extends State<LoginPage> {
                                     onPressed: pushRegisterPage,
                                     color: TITLE_COLOR),
                                 BugTextButton(
-                                  onPressed: ()=>{},
-                                  text: "Forgot Password?",
-                                  underline: true
-                                ),
+                                    onPressed: () {
+                                      final emailRegex = RegExp(
+                                          r'^[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}$');
+                                      var value = _emailController.text;
+                                      if (value == null || value.isEmpty) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(BugSnackBar(
+                                                'Email is required', 5));
+                                        return;
+                                      } else if (!emailRegex.hasMatch(value)) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(BugSnackBar(
+                                                'Enter a valid email', 5));
+                                        return;
+                                      }
+
+                                      BlocProvider.of<AuthBloc>(context).add(
+                                          AuthForgetPassword(
+                                              email: _emailController.text));
+                                    },
+                                    text: "Forgot Password?",
+                                    underline: true),
                               ],
                             ),
                           ),

@@ -4,9 +4,20 @@ sealed class AuthState {
   const AuthState();
 }
 
-final class LoginInitial extends AuthState {}
+final class LoginInitial extends AuthState {
+
+   final String? email;
+   final String? message;
+
+  const LoginInitial({this.email, this.message});
+
+  @override
+  List<Object?> get props => [email];
+}
 
 class AuthLoading extends AuthState {}
+class CodeLoading extends AuthState {}
+
 
 class LoginSuccess extends AuthState {}
 
@@ -41,6 +52,15 @@ class RegisterFailure extends AuthState {
   List<Object> get props => [error];
 }
 
+class RegisterReject extends AuthState {
+  final String error;
+
+  const RegisterReject(this.error);
+
+  @override
+  List<Object> get props => [error];
+}
+
 class RegisterContinued extends AuthState{}
 
 class AuthRefreshCode extends AuthState{
@@ -50,3 +70,25 @@ class AuthRefreshCode extends AuthState{
   AuthRefreshCode({ this.status,  required this.second});
   
 }
+
+class AuthLogOut extends AuthState{}
+
+class AuthForgetPasswordPerforming extends AuthState{}
+
+class AuthForgetPasswordResult extends AuthState{
+  final String message;
+
+  AuthForgetPasswordResult({required this.message});
+
+  
+}
+
+class AuthChangePasswordResult extends AuthState{
+  final String message;
+  final bool success;
+
+  AuthChangePasswordResult({required this.message, required this.success});
+
+  
+}
+

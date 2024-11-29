@@ -27,6 +27,8 @@ final class MessageSendError extends MessageState {
   MessageSendError(this.error);
 }
 
+final class MessageCompleted extends MessageState{}
+
 
 
 // class ExampleState extends TemplateState {

@@ -7,6 +7,8 @@ const Color PRIMARY_COLOR = Color(0xFFA1ABB3);
 const Color SECONDARY_COLOR = Color(0xFF565D6D);
 
 const Color HIGHTLIGHT_COLOR = Color(0xFFFAF9F9);
+
+
 const Color WHITE_TEXT_COLOR = Color(0xFFFAF9F9);
 
 const Color TEXT_COLOR = Color(0xFF1D191A);

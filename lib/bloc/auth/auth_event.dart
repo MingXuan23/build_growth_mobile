@@ -64,4 +64,20 @@ class AutoLoginRequest extends AuthEvent{
   
 }
 
+class AuthForgetPassword extends AuthEvent{
+  final String email;
+
+  AuthForgetPassword({required this.email});
+
+  
+}
+
+class ChangePasswordRequest extends AuthEvent{
+  final String oldPassword;
+  final String newPassword;
+
+  ChangePasswordRequest({required this.oldPassword, required this.newPassword});
+
+  
+}
 

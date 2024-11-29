@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 
 class Transaction {
@@ -31,7 +32,7 @@ class Transaction {
       'desc': desc,
       'asset_id': asset_id,
       'debt_id': debt_id,
-      'user_code': user_code,
+      'user_code':  UserToken.user_code,
       'created_at': created_at.toIso8601String()
     };
   }

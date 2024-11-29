@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 Widget BugEmoji({
   String avatar = 'lib/assets/bug_emoji3.png',
-  String name = 'BUG Helper',
+  // String name = 'BUG Helper',
   String message = 'Hallo\n banaosc\nasda',
 }) {
   return Padding(
@@ -12,28 +12,31 @@ Widget BugEmoji({
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          height: ResStyle.spacing*4,
-          width: ResStyle.spacing*4,
-    
+            height: ResStyle.spacing * 2,
+            width: ResStyle.spacing * 2,
             decoration: BoxDecoration(
-          image: DecorationImage(
-              image: AssetImage(avatar),
-              fit: BoxFit.fill),
-          color: RM20_COLOR,
-          shape: BoxShape.circle,
-        )),
-        SizedBox(width:ResStyle.spacing,),
+              image:
+                  DecorationImage(image: AssetImage(avatar), fit: BoxFit.fill),
+              color: RM20_COLOR,
+              shape: BoxShape.circle,
+            )),
+        SizedBox(
+          width: ResStyle.spacing/2,
+        ),
         Expanded(
           child: Container(
-           width: double.infinity,
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.blue[100], // Different color for left/right
-              borderRadius:
-                  BorderRadius.circular(16), // Round the corners of the chat bubble
+              color: ALTERNATIVE_COLOR.withOpacity(0.2), // Different color for left/right
+              borderRadius: BorderRadius.only(
+                bottomRight: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+              ),
             ),
-            padding: EdgeInsets.all(ResStyle.spacing/2),
+            padding: EdgeInsets.all(ResStyle.spacing / 2),
             child: Text(
-              name + ": " + message,
+              message,
             ),
           ),
         ),

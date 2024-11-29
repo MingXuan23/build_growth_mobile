@@ -1,11 +1,24 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:build_growth_mobile/env.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:http/http.dart' as http;
 
 class AuthRepo {
   // The base URL of your API (adjust if necessary)
 
   static String url_prefix = 'api/auth';
+
+  static Future<bool> validateEnvironment() async {
+    try {
+      final result = await InternetAddress.lookup(HOST_URL);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   // Method to register a user
   static Future<Map<String, dynamic>> register(
       Map<String, dynamic> requestBody) async {
@@ -16,9 +29,7 @@ class AuthRepo {
       final response = await http.post(
         Uri.parse(
             '$HOST_URL/$url_prefix/register'), // Adjust the URL as necessary
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
         body: jsonEncode(requestBody),
       );
 
@@ -66,23 +77,26 @@ class AuthRepo {
     final Map<String, dynamic> requestBody = {
       'email': email,
       'password': password,
+      'device_token': UserToken.device_token
     };
 
     try {
       final response = await http.post(
-        Uri.parse('$HOST_URL/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        Uri.parse('$HOST_URL/$url_prefix/login'),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
         body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
+        UserToken.initialise(
+            email: responseData['email'],
+            user_code: responseData['token'],
+            remember_token: responseData['rememberToken']);
+        await UserToken.save();
         return {
           'success': true,
           'message': 'Login successful',
-          'data': responseData['data'], // Return user data or token
         };
       } else {
         final responseData = jsonDecode(response.body);
@@ -99,13 +113,73 @@ class AuthRepo {
     }
   }
 
+  static Future<(bool, String)> validateSession(
+      String remember_token, String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$HOST_URL/$url_prefix/validate-session'),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
+        body: jsonEncode({'rememberToken': remember_token, 'email': email}),
+      );
+
+      if (response.statusCode == 200) {
+        var res = jsonDecode(response.body);
+        UserToken.remember_token = res['rememberToken'];
+        UserToken.save();
+        return (true, '');
+      } else {
+        var res = jsonDecode(response.body);
+        UserToken.remember_token = null;
+        UserToken.save();
+
+        return (false, res['message'].toString());
+      }
+    } catch (e) {
+      return (false, e.toString());
+    }
+  }
+
+  static Future<(bool, String)> changePassword(
+      String oldPassword, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$HOST_URL/$url_prefix/change-password'),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId , 'Authorization':'Bearer ${UserToken.remember_token}'},
+        body: jsonEncode(
+            {'oldPassword': oldPassword, 'newPassword': newPassword}),
+      );
+
+      var res = jsonDecode(response.body);
+
+      return ((response.statusCode == 200), res['message'].toString());
+    } catch (e) {
+      return (false, e.toString());
+    }
+  }
+
+  static Future<String> forgetPassword(String email) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$HOST_URL/$url_prefix/forget-password'),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
+        body: jsonEncode({'email': email}),
+      );
+
+      var res = jsonDecode(response.body);
+      UserToken.remember_token = null;
+      UserToken.save();
+
+      return res['message'].toString();
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
   static Future<int> sendVerificationCode(String email, String code) async {
     try {
       final response = await http.post(
         Uri.parse('$HOST_URL/$url_prefix/verify/$email'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
         body: jsonEncode({'code': code}),
       );
 
@@ -115,13 +189,11 @@ class AuthRepo {
     }
   }
 
-    static Future<int> resendVerificationCode(String email) async {
+  static Future<int> resendVerificationCode(String email) async {
     try {
       final response = await http.post(
         Uri.parse('$HOST_URL/$url_prefix/resend/$email'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
       );
 
       return response.statusCode;

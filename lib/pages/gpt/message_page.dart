@@ -1,6 +1,7 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_emoji.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -16,13 +17,20 @@ class _MessagePageState extends State<MessagePage> {
   final ScrollController _scrollController = ScrollController();
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _scrollController.position.maxScrollExtent;
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 100),
           curve: Curves.easeOut,
         );
+        await Future.delayed(Duration(milliseconds: 120));
+
+        if (_scrollController.position.pixels !=
+            _scrollController.position.maxScrollExtent) {
+          _scrollToBottom();
+        }
       }
     });
   }
@@ -30,7 +38,9 @@ class _MessagePageState extends State<MessagePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: BugAppBar('Financial Assistant', context),
+      backgroundColor: HIGHTLIGHT_COLOR,
       body: BlocListener<MessageBloc, MessageState>(
         listener: (context, state) {
           if (state is MessageInitial) {
@@ -45,26 +55,39 @@ class _MessagePageState extends State<MessagePage> {
             _scrollToBottom();
           }
         },
-        child: Column(
-          children: [
-            Expanded(
-              child: BlocBuilder<MessageBloc, MessageState>(
-                builder: (context, state) {
-                  final messages = _buildMessages(context, state);
-                  return Padding(
-                    padding: EdgeInsets.all(ResStyle.spacing),
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      itemCount: messages.length,
-                    
-                      itemBuilder: (context, index) => messages[index],
-                    ),
-                  );
-                },
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Chat content area (messages)
+              Expanded(
+                child: BlocBuilder<MessageBloc, MessageState>(
+                  builder: (context, state) {
+                    final messages = _buildMessages(context, state);
+                    return Padding(
+                      padding: EdgeInsets.only(
+                          right: ResStyle.spacing,
+                          left: ResStyle.spacing,
+                          top: ResStyle.spacing),
+                      child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: messages.length,
+                        itemBuilder: (context, index) => messages[index],
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            _buildInputField(context),
-          ],
+              // Input field area that adjusts based on keyboard visibility
+              Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context)
+                      .viewInsets
+                      .bottom, // Adjust padding based on keyboard
+                ),
+                child: _buildInputField(context),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -96,10 +119,10 @@ class _MessagePageState extends State<MessagePage> {
   Widget _systemMessage(String message) {
     return Center(
       child: Padding(
-        padding:  EdgeInsets.symmetric(vertical: ResStyle.spacing),
+        padding: EdgeInsets.symmetric(vertical: ResStyle.spacing),
         child: Text(
           message,
-          style:  TextStyle(
+          style: TextStyle(
             fontSize: ResStyle.medium_font,
             fontStyle: FontStyle.italic,
             color: PRIMARY_COLOR,
@@ -114,11 +137,11 @@ class _MessagePageState extends State<MessagePage> {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
-        margin:  EdgeInsets.symmetric(vertical: ResStyle.small_font),
-        padding:  EdgeInsets.all(ResStyle.spacing),
-        decoration:  const BoxDecoration(
-        color: RM1_COLOR,
-          borderRadius:  BorderRadius.only(
+        margin: EdgeInsets.only(left: ResStyle.spacing*2),
+        padding: EdgeInsets.all(ResStyle.spacing / 2),
+        decoration: BoxDecoration(
+          color: RM1_COLOR,
+          borderRadius: BorderRadius.only(
             topLeft: Radius.circular(16),
             topRight: Radius.circular(16),
             bottomLeft: Radius.circular(16),
@@ -126,32 +149,14 @@ class _MessagePageState extends State<MessagePage> {
         ),
         child: Text(
           message,
-           style: TextStyle(fontSize: ResStyle.font, color: TEXT_COLOR),
+          style: TextStyle(fontSize: ResStyle.medium_font, color: TEXT_COLOR),
         ),
       ),
     );
   }
 
   Widget _gptMessage(String message) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin:  EdgeInsets.symmetric(vertical: ResStyle.small_font),
-        padding:  EdgeInsets.all(ResStyle.spacing),
-        decoration: BoxDecoration(
-          color:RM1_COLOR.withOpacity(0.4),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(16),
-            topRight: Radius.circular(16),
-            bottomRight: Radius.circular(16),
-          ),
-        ),
-        child: Text(
-          message,
-          style: TextStyle(fontSize: ResStyle.font, color: TEXT_COLOR),
-        ),
-      ),
-    );
+    return BugEmoji(message: message);
   }
 
   Widget _buildInputField(BuildContext context) {
@@ -163,6 +168,11 @@ class _MessagePageState extends State<MessagePage> {
           Expanded(
             child: TextField(
               controller: _controller,
+              cursorColor: TITLE_COLOR,
+              onChanged: (value) {
+                setState(() {});
+              },
+              style: TextStyle(fontSize: ResStyle.medium_font),
               decoration: const InputDecoration(
                 hintText: 'Type a message',
                 border: InputBorder.none,
@@ -172,16 +182,24 @@ class _MessagePageState extends State<MessagePage> {
           ),
           BlocBuilder<MessageBloc, MessageState>(
             builder: (context, state) {
-              final isSending = state is MessageSending;
+              var isSending =
+                  (state is MessageSending || state is MessageReply);
+
               return IconButton(
                 icon: isSending
-                    ?  SizedBox(
+                    ? SizedBox(
                         width: ResStyle.spacing,
-                        height:  ResStyle.spacing,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        height: ResStyle.spacing,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: RM50_COLOR,
+                        ),
                       )
-                    : const Icon(Icons.send, color: TITLE_COLOR),
-                onPressed: isSending
+                    : Icon(Icons.send,
+                        color: _controller.text.isEmpty
+                            ? RM50_COLOR
+                            : TITLE_COLOR),
+                onPressed: isSending||_controller.text.isEmpty
                     ? null
                     : () {
                         final message = _controller.text.trim();
@@ -189,6 +207,11 @@ class _MessagePageState extends State<MessagePage> {
                           BlocProvider.of<MessageBloc>(context).add(
                             SendMessageEvent(message),
                           );
+
+                          if (state is MessageSending ||
+                              state is MessageReply) {
+                            return;
+                          }
                           _controller.clear();
                         }
                       },

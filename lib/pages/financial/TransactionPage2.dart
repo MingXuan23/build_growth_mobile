@@ -7,7 +7,7 @@ import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
-import 'package:build_growth_mobile/widget/bug_text_input.dart';
+import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';

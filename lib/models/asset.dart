@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/api_services/gpt_repo.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 
 class Asset {
@@ -30,7 +31,7 @@ class Asset {
       'desc': desc,
       'type': type,
       'status': status ? 1 : 0, // Store bool as int
-      'user_code': user_code,
+      'user_code': UserToken.user_code,
       'unique_code': unique_code
     };
   }

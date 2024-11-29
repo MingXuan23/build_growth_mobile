@@ -2,26 +2,22 @@ import 'dart:convert';
 
 import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:http/http.dart' as http;
+
+const prefix_url = 'api/gpt';
 
 class GptRepo {
   static Stream<String> fastResponse(String prompt) async* {
     var request = http.Request(
       'POST',
-      Uri.parse('$HOST_URL/api/chat'),
+      Uri.parse('$HOST_URL/$prefix_url/fast-response'),
     );
 
     request.headers['Content-Type'] = 'application/json';
-    request.body = json.encode({
-      "model": "benevolentjoker/the_economistmini",
-      "messages": [
-        {"role": "user", "content": prompt}
-      ],
-      "options": {
-        "temperature": 1.0,
-        "num_predict": 32,
-      }
-    });
+    request.headers['Application-Id'] = appId;
+    request.headers['Authorization'] = 'Bearer ${UserToken.remember_token}';
+    request.body = json.encode({"prompt": prompt, "estimate_word": -2});
 
     try {
       final response = await request.send();
@@ -29,38 +25,42 @@ class GptRepo {
       if (response.statusCode == 200) {
         String buffer = '';
         await for (var chunk in response.stream.transform(utf8.decoder)) {
-          buffer += chunk;
-          var parts = buffer.split('\n');
+          if(chunk.isNotEmpty){
+            yield chunk;
+          }
+        //   buffer += chunk;
+        //   var parts = buffer.split('\n');
 
-          for (var i = 0; i < parts.length - 1; i++) {
-            if (parts[i].trim().isNotEmpty) {
-              try {
-                var jsonData = json.decode(parts[i]);
-                var content = jsonData['message']['content'];
-                yield content;
-              } catch (e) {
-                print('Error parsing chunk: $e');
-              }
-            }
-          }
-          buffer = parts.last;
-        }
-        if (buffer.isNotEmpty) {
-          try {
-            var jsonData = json.decode(buffer);
-            var content = jsonData['message']['content'];
-            yield content;
-          } catch (e) {
-            print('Error parsing final buffer: $e');
-          }
+        //   for (var i = 0; i < parts.length - 1; i++) {
+        //     if (parts[i].trim().isNotEmpty) {
+        //       try {
+        //         //var jsonData = json.decode(parts[i]);
+        //         //var content = jsonData['message']['content'];
+        //         yield parts[i];
+        //       } catch (e) {
+        //         print('Error parsing chunk: $e');
+        //       }
+        //     }
+        //   }
+        //   buffer = parts.last;
+        //    print(buffer);
+        // }
+        // if (buffer.isNotEmpty) {
+        //   try {
+        //     yield buffer;
+        //   } catch (e) {
+        //     print('Error parsing final buffer: $e');
+        //   }
         }
       } else {
-        throw Exception(
-            'Failed to fetch streaming response. Status code: ${response.statusCode}');
+          yield "Oops😅! Connection went bye-bye!😿, but I'm buzzing around to fix it!";
+
       }
     } catch (e) {
+       yield "Oops😅! Connection went bye-bye!😿, but I'm buzzing around to fix it!";
+
       print('Error fetching response: $e');
-      throw e;
+     
     }
   }
 
@@ -71,11 +71,7 @@ class GptRepo {
       }
       var request = await http.post(
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          "prompt":
-              prompt,
-          "estimate_word": tokens
-        }),
+        body: json.encode({"prompt": prompt, "estimate_word": tokens}),
         Uri.parse('$HOST_URL/gpt/slow-response'),
       );
 
@@ -168,21 +164,12 @@ class GptRepo {
   }
 
   static Future<bool> loadModel() async {
-    const url = "$HOST_URL/api/generate";
-
-    // Request body
-    final Map<String, dynamic> requestBody = {
-      "model": "benevolentjoker/the_economistmini",
-      "keep_alive": "30m",
-    };
+    const url = "$HOST_URL/api/gpt/load";
 
     try {
       final response = await http.post(
         Uri.parse(url),
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode(requestBody),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
       );
 
       return (response.statusCode == 200);

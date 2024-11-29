@@ -13,7 +13,7 @@ class BugTextInput extends StatefulWidget {
   final int? maxLength;
   final FocusNode? focusNode;
   final bool readOnly;
-  final int maxLine ;
+  final int maxLine;
   final double? fontSize;
   final Widget? suffixIcon;
   final Function(String)? onChanged;
@@ -28,7 +28,7 @@ class BugTextInput extends StatefulWidget {
       this.validator,
       this.maxLength,
       this.readOnly = false,
-      this.maxLine =1,
+      this.maxLine = 1,
       this.fontSize,
       this.suffixIcon,
       this.onChanged,
@@ -48,7 +48,7 @@ class _BugTextInputState extends State<BugTextInput> {
   void initState() {
     super.initState();
     // Initialize font size based on initial controller text
-    if(widget.fontSize !=null){
+    if (widget.fontSize != null) {
       _fontSize = widget.fontSize!;
     }
     _updateFontSize();
@@ -66,7 +66,7 @@ class _BugTextInputState extends State<BugTextInput> {
   void _updateFontSize() {
     // Calculate and update font size
 
-    if(widget.fontSize != null){
+    if (widget.fontSize != null) {
       return;
     }
     setState(() {
@@ -101,17 +101,25 @@ class _BugTextInputState extends State<BugTextInput> {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: widget.controller,
+      cursorColor: SECONDARY_COLOR,
       onChanged: (value) => _update(value),
       style: TextStyle(fontSize: _fontSize),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(
+            color: SECONDARY_COLOR, // Set your desired color here
+            width: 2.0, // Set border width if needed
+          ),
+        ),
         prefixIcon: Icon(
           widget.prefixIcon.icon,
           size: ResStyle.body_font,
         ),
         border: const OutlineInputBorder(),
         hintStyle: TextStyle(fontSize: ResStyle.font),
+        floatingLabelStyle: TextStyle(color: TEXT_COLOR,fontSize: ResStyle.font),
         labelStyle: TextStyle(fontSize: ResStyle.font),
         errorStyle: TextStyle(
             fontSize: ResStyle.small_font, overflow: TextOverflow.clip),
@@ -136,7 +144,7 @@ class _BugTextInputState extends State<BugTextInput> {
       obscureText: widget.obscureText && !view_password,
       maxLength: widget.maxLength,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
-      maxLines: widget.maxLine ,
+      maxLines: widget.maxLine,
       focusNode: widget.focusNode,
       validator: widget.validator ??
           (value) {
@@ -154,7 +162,7 @@ Widget BugComboBox(
     required int selected_value,
     required List<DropdownMenuItem<int>> itemlist,
     required String labelText,
-      String? Function(int?)? validator}) {
+    String? Function(int?)? validator}) {
   return DropdownButtonFormField<int>(
     value: selected_value,
     items: itemlist,
@@ -165,4 +173,41 @@ Widget BugComboBox(
       border: const OutlineInputBorder(),
     ),
   );
+}
+
+class BugSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const BugSwitch({
+    Key? key,
+    required this.value,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Define thumbIcon using `MaterialStateProperty`
+    final WidgetStateProperty<Icon?> thumbIcon =
+        WidgetStateProperty.resolveWith<Icon?>(
+      (Set<WidgetState> states) {
+        if (states.contains(WidgetState.selected)) {
+          return const Icon(
+            Icons.check,
+            color: HIGHTLIGHT_COLOR,
+          );
+        }
+        return const Icon(Icons.close);
+      },
+    );
+
+    return Switch(
+      thumbIcon: thumbIcon,
+      activeColor: SUCCESS_COLOR,
+      inactiveTrackColor: PRIMARY_COLOR,
+      inactiveThumbColor: TITLE_COLOR,
+      value: value,
+      onChanged: onChanged,
+    );
+  }
 }

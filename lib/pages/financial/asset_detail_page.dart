@@ -8,7 +8,7 @@ import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
-import 'package:build_growth_mobile/widget/bug_text_input.dart';
+import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
@@ -567,7 +567,6 @@ class _AssetDetailPageState extends State<AssetDetailPage>
   Widget _buildAssetList() {
     return Column(
       children: [
-        BugEmoji(),
         Expanded(
           child: ListView(
             children: assets.map((asset) {

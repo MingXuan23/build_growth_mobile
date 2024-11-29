@@ -153,7 +153,7 @@ Widget DebtDetailCard(Debt debt, VoidCallback func,
   return GestureDetector(
     onTap: () => func(),
     child: Container(
-      margin: EdgeInsets.symmetric(vertical:  ResStyle.spacing),
+      margin: EdgeInsets.symmetric(vertical: ResStyle.spacing),
       padding: EdgeInsets.all(ResStyle.spacing),
       decoration: BoxDecoration(
         color: paid
@@ -315,5 +315,37 @@ Widget BugHeaderCard(String message) {
         ),
       ],
     ),
+  );
+}
+
+Widget CardInfoDivider(String title, String info, {bool isLast = false}) {
+  return Wrap(
+    children: [
+      ListTile(
+        title: Text(
+          title,
+          style: TextStyle(fontSize: ResStyle.font),
+        ),
+        subtitle: Text(
+          info,
+          style: TextStyle(fontSize: ResStyle.medium_font),
+        ),
+      ),
+      if (!isLast) const Divider(),
+    ],
+  );
+}
+
+Widget CardWidgetivider(String title, Widget trailing, {bool isLast = false}) {
+  return Wrap(
+    children: [
+      ListTile(
+          title: Text(
+            title,
+            style: TextStyle(fontSize: ResStyle.medium_font),
+          ),
+          trailing: trailing),
+      if (!isLast) const Divider(),
+    ],
   );
 }

@@ -1,3 +1,4 @@
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 
 class Debt {
@@ -37,7 +38,7 @@ class Debt {
       'status':
           status ? 1 : 0, // No conversion needed since it's already an int
       'desc': desc,
-      'user_code': user_code,
+      'user_code':  UserToken.user_code,
       'last_payment_date': last_payment_date
           ?.toIso8601String(), // Convert DateTime to ISO string for storage
     };

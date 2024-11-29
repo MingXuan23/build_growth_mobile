@@ -1,9 +1,11 @@
+import 'dart:async';
+
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/services/location_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
-import 'package:build_growth_mobile/widget/bug_text_input.dart';
+import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -27,6 +29,10 @@ class _RegisterPageState extends State<RegisterPage> {
   final _codeController = TextEditingController();
 
   final _focusNode = FocusNode();
+
+  static DateTime? waitUntil;
+  static Timer? timer;
+  static int resendSecond = 0;
 
   String state_value = '';
   int _currentStep = 1;
@@ -101,17 +107,45 @@ class _RegisterPageState extends State<RegisterPage> {
     _nameController.text = "mx";
     _emailController.text = "gg@gmail.com";
     _telController.text = "+601111051705";
+
+    if (resendSecond > 0) {
+      timer = Timer.periodic(
+        const Duration(seconds: 1),
+        (timer) {
+          final now = DateTime.now();
+          if (waitUntil != null && now.isBefore(waitUntil!)) {
+            // Calculate the remaining seconds
+            final remainingDuration = waitUntil!.difference(now);
+            resendSecond = remainingDuration.inSeconds;
+
+            try {
+              setState(() {});
+            } catch (e) {}
+          } else {
+            // Stop the timer once the condition is met
+            timer.cancel();
+            resendSecond = 0;
+            try {
+              setState(() {});
+            } catch (e) {}
+          }
+        },
+      );
+    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _telController.dispose();
-    _addressController.dispose();
-    _stateController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    // _nameController.dispose();
+    // _emailController.dispose();
+    // _telController.dispose();
+    // _addressController.dispose();
+    // _stateController.dispose();
+    // _passwordController.dispose();
+    // _confirmPasswordController.dispose();
+    // _emailController.clear();
+    // _codeController.clear();
+    // _codeController.dispose();
     super.dispose();
   }
 
@@ -150,7 +184,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
 
-      if (_newStep == 1) {
+      if (_newStep == 1 || _currentStep == 1) {
         BlocProvider.of<AuthBloc>(context)
             .add(CheckRegisterEmail(email: _emailController.text));
       } else if (_newStep == 3) {
@@ -171,7 +205,11 @@ class _RegisterPageState extends State<RegisterPage> {
           _newStep = _currentStep;
         });
       } else {
-        // Final step - register the user
+        var code = _codeController.text;
+
+        _codeController.text = '';
+        BlocProvider.of<AuthBloc>(context).add(
+            SendVerificationCode(email: _emailController.text, code: code));
       }
     }
   }
@@ -195,13 +233,58 @@ class _RegisterPageState extends State<RegisterPage> {
           if (_currentStep == 2) {
             _currentStep = _newStep = 1;
             setState(() {});
-          } else if(_currentStep !=4) {
-            Navigator.of(context).pop();
+          }else if(_currentStep == 4){
+            if (_currentStep == 2) {
+            _currentStep = _newStep = 3;
+            setState(() {});
           }
+          }
+        } else if (state is RegisterReject) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(BugSnackBar(state.error, 5));
         } else if (state is RegisterContinued) {
           if (_currentStep == 2) {
             ScaffoldMessenger.of(context).showSnackBar(BugSnackBar(
                 'Try Locate Your Address Instead Enter Address Manually', 5));
+          }
+        } else if (state is RegisterSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              BugSnackBar('Register Successfully. Please Log In now', 5));
+
+          Navigator.of(context).pop();
+        } else if (state is AuthRefreshCode) {
+          var seconds = state.second;
+          if (state.status == null) {
+            waitUntil = DateTime.now().add(Duration(seconds: seconds));
+
+            timer = Timer.periodic(
+              const Duration(seconds: 1),
+              (timer) {
+                final now = DateTime.now();
+                if (waitUntil != null && now.isBefore(waitUntil!)) {
+                  // Calculate the remaining seconds
+                  final remainingDuration = waitUntil!.difference(now);
+                  resendSecond = remainingDuration.inSeconds;
+
+                  try {
+                    setState(() {});
+                  } catch (e) {}
+                } else {
+                  // Stop the timer once the condition is met
+                  timer.cancel();
+                  resendSecond = 0;
+                  try {
+                    setState(() {});
+                  } catch (e) {}
+                }
+              },
+            );
+          } else if (state.status == true) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                BugSnackBar('The code was resend to the email', 5));
+          } else if (state.status == false) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                BugSnackBar('Some errors occurs. Please try again later', 5));
           }
         }
       },
@@ -251,12 +334,15 @@ class _RegisterPageState extends State<RegisterPage> {
                                       if (_currentStep == 3) _buildStep3(),
                                       if (_currentStep == 4) _buildStep4(),
                                       SizedBox(height: ResStyle.spacing),
-                                      BugPrimaryButton(
-                                        text: _currentStep != 3
-                                            ? 'Next'
-                                            : 'Register',
-                                        onPressed: _nextStep,
-                                      ),
+                                      if (state is! CodeLoading)
+                                        BugPrimaryButton(
+                                          text: _currentStep != 3
+                                              ? 'Next'
+                                              : 'Register',
+                                          onPressed: _nextStep,
+                                        )
+                                      else
+                                        BugLoading(),
                                       SizedBox(height: ResStyle.spacing),
                                       BugDoubleTapButton(
                                         onPressed: () {
@@ -302,9 +388,13 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildCircleIndicator(int step) {
     return GestureDetector(
       onTap: () {
+       
         if (_currentStep == 4) {
           return;
         }
+
+         BlocProvider.of<AuthBloc>(context)
+            .add(CheckRegisterEmail(email: _emailController.text));
         if (step < _newStep) {
           _currentStep = step;
         } else if (_newStep >= step && _formKey.currentState!.validate()) {
@@ -625,13 +715,16 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
         SizedBox(height: ResStyle.spacing),
         TextButton(
-          onPressed: () {
-           BlocProvider.of<AuthBloc>(context).add(
-            ResendVerificationCode(email: _emailController.text)
-        );
-          },
+          onPressed: (resendSecond > 0)
+              ? null
+              : () {
+                  BlocProvider.of<AuthBloc>(context).add(
+                      ResendVerificationCode(email: _emailController.text));
+                },
           child: Text(
-            "Didn't receive the code? Resend",
+            (resendSecond <= 0)
+                ? "Didn't receive the code? Resend"
+                : 'Resend the code in $resendSecond seconds',
             style: TextStyle(
               color: Colors.blue,
               fontWeight: FontWeight.w500,
