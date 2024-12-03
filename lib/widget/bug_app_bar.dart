@@ -66,6 +66,7 @@ AlertDialog BugInfoDialog(
     Widget? content,
     required List<Widget> actions}) {
   return AlertDialog(
+    backgroundColor: HIGHTLIGHT_COLOR,
     titlePadding: EdgeInsets.all(0),
     title: Container(
       padding:

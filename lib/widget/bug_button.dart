@@ -107,7 +107,6 @@ Widget BugPageIndicator(PageController page_controller, int page_count) {
   );
 }
 
-
 class BugDoubleTapButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String text;
@@ -132,7 +131,7 @@ class _DoubleTapButtonState extends State<BugDoubleTapButton> {
 
   void _handleTap() {
     final now = DateTime.now();
-    if (_lastTapTime != null && 
+    if (_lastTapTime != null &&
         now.difference(_lastTapTime!) <= Duration(seconds: second)) {
       setState(() {
         _isFirstTap = false;
@@ -168,8 +167,121 @@ class _DoubleTapButtonState extends State<BugDoubleTapButton> {
         onPressed: _handleTap,
         underline: widget.underline,
         text: _isFirstTap ? "Tap again to go back" : widget.text,
-      )
-      ,
+      ),
     );
   }
+}
+
+class CustomQuarterCircleButton extends StatelessWidget {
+  final bool isRight;
+  final Color color;
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String label;
+
+  const CustomQuarterCircleButton({
+    required this.isRight,
+    required this.color,
+    required this.icon,
+    required this.onPressed,
+    required this.label,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: QuarterCircleClipper(isRight: isRight),
+      child: Material(
+        //color: color,
+        child: InkWell(
+          onTap: onPressed,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: isRight?Alignment.bottomRight:  Alignment.topLeft, // Start gradient from top-left
+                end: isRight?Alignment.bottomLeft: Alignment.topRight, // End gradient at bottom-right
+                colors: [
+                  color,
+               PRIMARY_COLOR.withOpacity(0.9)
+                ], // Define your gradient colors
+              ),
+             
+            ),
+            width: ResStyle.width * 0.3,
+            height: ResStyle.width * 0.3,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: ResStyle.spacing),
+              child: Column(
+                mainAxisAlignment:
+                    MainAxisAlignment.end, // Center content vertically
+                crossAxisAlignment: isRight
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start, // Center content horizontally
+                children: [
+                  SizedBox(
+                    width: ResStyle.spacing,
+                  ),
+                  Icon(
+                    icon,
+                    color: HIGHTLIGHT_COLOR,
+                    size: ResStyle.header_font,
+                  ),
+
+                  ///SizedBox(height: ResStyle.spacing), // Space between icon and label
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: ResStyle.body_font,
+                      color: HIGHTLIGHT_COLOR,
+                    ),
+                    textAlign:
+                        TextAlign.center, // Ensure label text is centered
+                  ),
+                  SizedBox(
+                    height: ResStyle.spacing,
+                  )
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class QuarterCircleClipper extends CustomClipper<Path> {
+  final bool isRight;
+
+  QuarterCircleClipper({required this.isRight});
+
+  @override
+  Path getClip(Size size) {
+    Path path = Path();
+    if (isRight) {
+      // Left quarter circle (90° to 180°)
+      path.moveTo(size.width, 0);
+      path.arcToPoint(
+        Offset(0, size.height),
+        radius: Radius.circular(size.width),
+        clockwise: false, // Counter-clockwise for left quarter circle
+      );
+      path.lineTo(size.width, size.height); // Close the path
+    } else {
+      // Right quarter circle (0° to 90°)
+      path.moveTo(0, 0);
+      path.arcToPoint(
+        Offset(size.width, size.height),
+        radius: Radius.circular(size.width),
+        clockwise: true, // Clockwise for right quarter circle
+      );
+      path.lineTo(0, size.height); // Close the path
+    }
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
