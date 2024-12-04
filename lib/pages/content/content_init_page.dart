@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/bloc/content_init/content_init_bloc.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
@@ -11,6 +12,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ContentInitPage extends StatefulWidget {
+
   const ContentInitPage({Key? key}) : super(key: key);
 
   @override
@@ -62,7 +64,7 @@ class _ContentInitPageState extends State<ContentInitPage>
       }
     });
 
-    BlocProvider.of<ContentInitBloc>(context).add(ResetContentEvent());
+   // BlocProvider.of<ContentInitBloc>(context).add(ResetContentEvent( widget.contentList));
   }
 
   @override
@@ -191,14 +193,6 @@ class _ContentInitPageState extends State<ContentInitPage>
               ),
             );
           } else if (state is NextContentState) {
-            // return Row(
-            //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            //   children: [
-            //     Container(color: Colors.blue, height: 100, width: 100,child: Text("data"),),
-            //     Container(color: Colors.blue, height: 100, width: 100,child: Text("data")),
-
-            //   ],
-            // );
             return Column(
               children: [
                 Center(
@@ -264,8 +258,10 @@ class _ContentInitPageState extends State<ContentInitPage>
                                             },
                                             errorBuilder:
                                                 (context, error, stackTrace) {
-                                              return Icon(Icons.error,
-                                                  size: ResStyle.height * 0.2);
+
+                                              return Image.asset('lib/assets/playstore-icon.png',height: ResStyle.height * 0.2 , width:  ResStyle.height *0.2,);
+                                              // return Icon(Icons.error,
+                                              //     size: ResStyle.height * 0.2);
                                             },
                                           ),
                                         ),
@@ -323,7 +319,11 @@ class _ContentInitPageState extends State<ContentInitPage>
                 ),
               ],
             );
-          } else {
+          }else if(state is ContentSubmittedState){
+            BlocProvider.of<ContentBloc>(context).add(SubmitContentTestEvent(like_list: state.like_list, dislike_list: state.dislike_list));
+            return BugLoading();
+          } 
+          else {
             // return const Center(
             //   child: Text(
             //     'No more content',

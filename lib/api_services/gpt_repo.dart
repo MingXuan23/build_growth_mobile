@@ -53,7 +53,7 @@ class GptRepo {
         //   }
         }
       } else {
-          yield "Oops😅! Connection went bye-bye!😿, but I'm buzzing around to fix it!";
+          yield "Oops!😅 Connection went bye-bye!😿, but I'm buzzing around to fix it!";
 
       }
     } catch (e) {

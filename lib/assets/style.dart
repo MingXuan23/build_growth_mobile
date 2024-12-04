@@ -27,6 +27,8 @@ const Color RM100_COLOR = Color(0xFF9C879E);
 
 const Color ALTERNATIVE_COLOR = Color(0xFF197DCA);
 
+
+
 const Color SUCCESS_COLOR = Color(0xFF91BFA9);
 const Color DANGER_COLOR = Color(0xFFC12126);
 

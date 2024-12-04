@@ -1,15 +1,29 @@
 part of 'content_bloc.dart';
 
-sealed class ContentState{
+sealed class ContentState {
   const ContentState();
-  
- 
 }
-final class ContentTestState extends ContentState {}
 
-final class ContentReadyState extends ContentState {}
+final class ContentTestState extends ContentState {
+  final List<Content> list;
+
+  ContentTestState({required this.list});
+}
+
+final class ContentReadyState extends ContentState {
+  final List<Content> list;
+
+  ContentReadyState({required this.list});
+}
 
 final class ContentLoadingState extends ContentState {}
+
+final class ContentTestResultState extends ContentState {
+  final String message;
+
+  ContentTestResultState({required this.message});
+}
+
 
 
 // final class NextContentState extends ContentState {

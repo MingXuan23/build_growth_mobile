@@ -46,7 +46,9 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> logOut() async {
+    while (Navigator.of(context).canPop()) {
     Navigator.of(context).pop();
+  }
     BlocProvider.of<AuthBloc>(context).add(LogoutRequested());
   }
 

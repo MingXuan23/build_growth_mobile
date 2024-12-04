@@ -61,7 +61,7 @@ class _HomePageState extends State<HomePage> {
               size: ResStyle.header_font,
             ),
             label: 'Content',
-            backgroundColor: RM10_COLOR
+            backgroundColor: PRIMARY_COLOR
           ),
         ],
         selectedItemColor: TITLE_COLOR, // Selected item color

@@ -7,6 +7,17 @@ sealed class ContentEvent {
 
 class ContentRequest extends ContentEvent {}
 
+class SubmitContentTestEvent extends ContentEvent {
+
+  final List<Content> like_list;
+  final List<Content> dislike_list;
+
+  SubmitContentTestEvent({required this.like_list, required this.dislike_list});
+
+  
+}
+
+
 
 
 // class SwipeContentEvent extends ContentEvent{
@@ -28,7 +39,3 @@ class ContentRequest extends ContentEvent {}
 //   @override
 //   List<Object> get props => [likedContents, dislikedContents];
 // }
-
-
-
-class ResetContentEvent extends ContentEvent  {}

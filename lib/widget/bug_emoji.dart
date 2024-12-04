@@ -58,7 +58,7 @@ class AnimatedBugEmoji extends StatefulWidget {
     Key? key,
     this.avatar = 'lib/assets/bug_emoji3.png',
     required this.message,
-    this.duration = const Duration(seconds: 5),
+    this.duration = const Duration(seconds: 2),
   }) : super(key: key);
 
   @override
@@ -69,7 +69,7 @@ class _AnimatedBugEmojiState extends State<AnimatedBugEmoji> {
   late List<String> words;
   String visibleMessage = "";
   int currentWordIndex = 0;
-  late Timer timer;
+  Timer timer = Timer(Duration.zero, (){});
 
   @override
   void initState() {

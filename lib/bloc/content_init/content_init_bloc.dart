@@ -19,29 +19,7 @@ class ContentInitBloc extends Bloc<ContentInitEvent, ContentInitState> {
 
         dislikedList = [];
 
-        contentList = [
-          Content(
-            id: 1,
-            name: 'Sell a roti canai',
-            desc: 'Beautiful food',
-            image:
-                'https://th.bing.com/th/id/OSK.HERO8XdjPgvg2B2GR7frcl-vej_iLDSTYeEoctNxHEj1i-g?rs=1&pid=ImgDetMain',
-          ),
-          Content(
-            id: 2,
-            name: 'Flutter Helper Class',
-            desc: 'Breathtaking sunset over calm ocean waters',
-            image:
-                'https://uploads-ssl.webflow.com/5f841209f4e71b2d70034471/6078b650748b8558d46ffb7f_Flutter%20app%20development.png',
-          ),
-          Content(
-            id: 3,
-            name: 'Car boot Sale',
-            desc: 'Peaceful forest path with tall green trees',
-            image:
-                'https://th.bing.com/th/id/OIP.LvWRZhK3bT-OQ-JTrATPpwHaGb?rs=1&pid=ImgDetMain',
-          ),
-        ];
+       
 
         emit(NextContentState(content: contentList[0]));
       },
@@ -56,7 +34,7 @@ class ContentInitBloc extends Bloc<ContentInitEvent, ContentInitState> {
         }
 
         if ((likedList.length + dislikedList.length) >= contentList.length) {
-          emit(ContentSubmittedState());
+          emit(ContentSubmittedState(dislike_list: dislikedList,like_list: likedList));
           return;
         }
         emit(NextContentState(
@@ -66,7 +44,7 @@ class ContentInitBloc extends Bloc<ContentInitEvent, ContentInitState> {
 
     on<ResetContentEvent>(
       (event, emit) {
-        contentList = [];
+        contentList = event.contentList;
         likedList = [];
 
         dislikedList = [];

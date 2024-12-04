@@ -5,7 +5,8 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 Widget BugPrimaryButton(
     {required String text,
     required VoidCallback onPressed,
-    Color color = ALTERNATIVE_COLOR}) {
+    Color color = ALTERNATIVE_COLOR,
+    double borderRadius = 30.0}) {
   return Row(
     children: [
       Expanded(
@@ -14,7 +15,8 @@ Widget BugPrimaryButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: color,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30.0), // Rounded corners
+              borderRadius:
+                  BorderRadius.circular(borderRadius), // Rounded corners
             ),
             padding: EdgeInsets.symmetric(
                 horizontal: 2 * ResStyle.spacing, vertical: ResStyle.spacing),
@@ -54,11 +56,12 @@ Widget BugTextButton(
   );
 }
 
-Widget BugIconButton({
-  required String text,
-  required IconData icon,
-  required VoidCallback onPressed,
-}) {
+Widget BugIconButton(
+    {required String text,
+    required IconData icon,
+    required VoidCallback onPressed,
+    color = HIGHTLIGHT_COLOR,
+    text_color = TITLE_COLOR}) {
   return Container(
     decoration: BoxDecoration(
       borderRadius: BorderRadius.circular(
@@ -74,10 +77,10 @@ Widget BugIconButton({
     ),
     child: TextButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, color: TITLE_COLOR, size: ResStyle.spacing),
+      icon: Icon(icon, color: text_color, size: ResStyle.spacing),
       label: Text(
         text,
-        style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.medium_font),
+        style: TextStyle(color: text_color, fontSize: ResStyle.medium_font),
         textAlign: TextAlign.center,
       ),
       style: TextButton.styleFrom(
@@ -88,7 +91,7 @@ Widget BugIconButton({
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0), // Matching corner radius
         ),
-        backgroundColor: HIGHTLIGHT_COLOR, // Optional: Background color
+        backgroundColor: color, // Optional: Background color
       ),
     ),
   );
@@ -172,6 +175,29 @@ class _DoubleTapButtonState extends State<BugDoubleTapButton> {
   }
 }
 
+Widget BugRoundButton({
+  required IconData icon,
+  required VoidCallback onPressed,
+  Color color = HIGHTLIGHT_COLOR,
+  Color text_color = TITLE_COLOR,
+}) {
+  return ElevatedButton(
+    onPressed: onPressed,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ResStyle.header_font * 2),
+      ),
+      padding: EdgeInsets.all(ResStyle.spacing/2),
+    ),
+    child: Icon(
+      icon,
+      color: text_color,
+      size: ResStyle.body_font *2,
+    ),
+  );
+}
+
 class CustomQuarterCircleButton extends StatelessWidget {
   final bool isRight;
   final Color color;
@@ -199,14 +225,17 @@ class CustomQuarterCircleButton extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                begin: isRight?Alignment.bottomRight:  Alignment.topLeft, // Start gradient from top-left
-                end: isRight?Alignment.bottomLeft: Alignment.topRight, // End gradient at bottom-right
+                begin: isRight
+                    ? Alignment.bottomRight
+                    : Alignment.topLeft, // Start gradient from top-left
+                end: isRight
+                    ? Alignment.bottomLeft
+                    : Alignment.topRight, // End gradient at bottom-right
                 colors: [
                   color,
-               PRIMARY_COLOR.withOpacity(0.9)
+                  PRIMARY_COLOR.withOpacity(0.9)
                 ], // Define your gradient colors
               ),
-             
             ),
             width: ResStyle.width * 0.3,
             height: ResStyle.width * 0.3,

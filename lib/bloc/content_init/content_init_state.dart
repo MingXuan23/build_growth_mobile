@@ -16,7 +16,15 @@ final class NextContentState extends ContentInitState {
 
 }
 
-final class ContentSubmittedState extends ContentInitState{}
+final class ContentSubmittedState extends ContentInitState{
+  final List<Content> dislike_list;
+  final List<Content> like_list;
+
+  ContentSubmittedState({required this.dislike_list, required this.like_list});
+
+  
+
+}
 
 
 

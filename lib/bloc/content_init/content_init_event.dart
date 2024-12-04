@@ -5,7 +5,9 @@ sealed class ContentInitEvent {
 }
 
 
-class LoadContentEvent extends ContentInitEvent {}
+class LoadContentEvent extends ContentInitEvent {
+
+}
 
 class SwipeContentEvent extends ContentInitEvent{
 
@@ -29,4 +31,9 @@ class SubmitContentEvent extends ContentInitEvent {
 
 
 
-class ResetContentEvent extends ContentInitEvent {}
+class ResetContentEvent extends ContentInitEvent {
+  final List<Content> contentList;
+
+  ResetContentEvent({required this.contentList});
+  
+}
