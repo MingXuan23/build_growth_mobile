@@ -92,3 +92,12 @@ class AuthChangePasswordResult extends AuthState{
   
 }
 
+class AuthUpdateProfileResult extends AuthState{
+  final String message;
+  final bool success;
+
+  AuthUpdateProfileResult({required this.message, required this.success});
+
+  
+}
+

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/services/location_helper.dart';
@@ -39,64 +40,64 @@ class _RegisterPageState extends State<RegisterPage> {
   int _newStep = 1;
 
   // Define your list of states along with divisions
-  final List<String> states_list = [
-    // Peninsular Malaysia States
-    "Johor",
-    "Kedah",
-    "Kelantan",
-    "Kuala Lumpur",
-    "Labuan",
-    "Melaka",
-    "Negeri Sembilan",
-    "Pahang",
-    "Perak",
-    "Perlis",
-    "Penang",
-    "Putrajaya",
-    "Selangor",
-    "Terengganu",
+  List<String> states_list = [
+    // // Peninsular Malaysia States
+    // "Johor",
+    // "Kedah",
+    // "Kelantan",
+    // "Kuala Lumpur",
+    // "Labuan",
+    // "Melaka",
+    // "Negeri Sembilan",
+    // "Pahang",
+    // "Perak",
+    // "Perlis",
+    // "Penang",
+    // "Putrajaya",
+    // "Selangor",
+    // "Terengganu",
 
-    // Sarawak Divisions
-    "Sarawak - Kuching",
-    "Sarawak - Sri Aman",
-    "Sarawak - Sibu",
-    "Sarawak - Miri",
-    "Sarawak - Limbang",
-    "Sarawak - Sarikei",
-    "Sarawak - Kapit",
-    "Sarawak - Samarahan",
-    "Sarawak - Bintulu",
-    "Sarawak - Betong",
-    "Sarawak - Mukah",
-    "Sarawak - Serian",
+    // // Sarawak Divisions
+    // "Sarawak - Kuching",
+    // "Sarawak - Sri Aman",
+    // "Sarawak - Sibu",
+    // "Sarawak - Miri",
+    // "Sarawak - Limbang",
+    // "Sarawak - Sarikei",
+    // "Sarawak - Kapit",
+    // "Sarawak - Samarahan",
+    // "Sarawak - Bintulu",
+    // "Sarawak - Betong",
+    // "Sarawak - Mukah",
+    // "Sarawak - Serian",
 
-    "Sabah - Beaufort",
-    "Sabah - Keningau",
-    "Sabah - Kuala Penyu",
-    "Sabah - Membakut",
-    "Sabah - Nabawan",
-    "Sabah - Sipitang",
-    "Sabah - Tambunan",
-    "Sabah - Tenom",
-    "Sabah - Kota Marudu",
-    "Sabah - Pitas",
-    "Sabah - Beluran",
-    "Sabah - Kinabatangan",
-    "Sabah - Sandakan",
-    "Sabah - Telupid",
-    "Sabah - Tongod",
-    "Sabah - Kalabakan",
-    "Sabah - Kunak",
-    "Sabah - Lahad Datu",
-    "Sabah - Semporna",
-    "Sabah - Tawau",
-    "Sabah - Kota Belud",
-    "Sabah - Kota Kinabalu",
-    "Sabah - Papar",
-    "Sabah - Penampang",
-    "Sabah - Putatan",
-    "Sabah - Ranau",
-    "Sabah - Tuaran",
+    // "Sabah - Beaufort",
+    // "Sabah - Keningau",
+    // "Sabah - Kuala Penyu",
+    // "Sabah - Membakut",
+    // "Sabah - Nabawan",
+    // "Sabah - Sipitang",
+    // "Sabah - Tambunan",
+    // "Sabah - Tenom",
+    // "Sabah - Kota Marudu",
+    // "Sabah - Pitas",
+    // "Sabah - Beluran",
+    // "Sabah - Kinabatangan",
+    // "Sabah - Sandakan",
+    // "Sabah - Telupid",
+    // "Sabah - Tongod",
+    // "Sabah - Kalabakan",
+    // "Sabah - Kunak",
+    // "Sabah - Lahad Datu",
+    // "Sabah - Semporna",
+    // "Sabah - Tawau",
+    // "Sabah - Kota Belud",
+    // "Sabah - Kota Kinabalu",
+    // "Sabah - Papar",
+    // "Sabah - Penampang",
+    // "Sabah - Putatan",
+    // "Sabah - Ranau",
+    // "Sabah - Tuaran",
   ];
 
   @override
@@ -131,6 +132,26 @@ class _RegisterPageState extends State<RegisterPage> {
           }
         },
       );
+    }
+
+    loadState();
+  }
+
+  void loadState() async {
+    var online = await AuthRepo.validateEnvironment();
+    if (!online) {
+      BlocProvider.of<AuthBloc>(context).add(AuthServiceNotAvailable(
+          cause:
+              'Register Service is not available for now. Please try again later'));
+
+      return;
+    }
+    states_list = await AuthRepo.getStateList();
+
+    if (states_list.isEmpty) {
+      BlocProvider.of<AuthBloc>(context).add(AuthServiceNotAvailable(
+          cause:
+              'Register Service is not available for now. Please try again later'));
     }
   }
 
@@ -230,18 +251,26 @@ class _RegisterPageState extends State<RegisterPage> {
         } else if (state is RegisterFailure) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar(state.error, 5));
+          if (_currentStep == 4) {
+            if (_currentStep == 2) {
+              _currentStep = _newStep = 3;
+              setState(() {});
+            }
+          }
+        } else if (state is RegisterReject) {
+          if (state.error != '') {
+            ScaffoldMessenger.of(context)
+                .showSnackBar(BugSnackBar(state.error, 3));
+          }
+
           if (_currentStep == 2) {
             _currentStep = _newStep = 1;
             setState(() {});
-          }else if(_currentStep == 4){
-            if (_currentStep == 2) {
-            _currentStep = _newStep = 3;
+          } else if (_currentStep == 1 && _newStep == 1) {
+            Navigator.of(context).pop();
+
             setState(() {});
           }
-          }
-        } else if (state is RegisterReject) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(BugSnackBar(state.error, 5));
         } else if (state is RegisterContinued) {
           if (_currentStep == 2) {
             ScaffoldMessenger.of(context).showSnackBar(BugSnackBar(
@@ -388,12 +417,11 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget _buildCircleIndicator(int step) {
     return GestureDetector(
       onTap: () {
-       
         if (_currentStep == 4) {
           return;
         }
 
-         BlocProvider.of<AuthBloc>(context)
+        BlocProvider.of<AuthBloc>(context)
             .add(CheckRegisterEmail(email: _emailController.text));
         if (step < _newStep) {
           _currentStep = step;

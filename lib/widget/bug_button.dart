@@ -180,22 +180,40 @@ Widget BugRoundButton({
   required VoidCallback onPressed,
   Color color = HIGHTLIGHT_COLOR,
   Color text_color = TITLE_COLOR,
+  double size = 50,
+  String? label
 }) {
-  return ElevatedButton(
-    onPressed: onPressed,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: color,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ResStyle.header_font * 2),
+ return Column(
+   children: [
+     ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.transparent, // Set transparent for the ElevatedButton background
+        shadowColor: Colors.transparent, // Remove shadow for a cleaner look
+        padding: EdgeInsets.zero, // Ensure the container determines the size
+        
       ),
-      padding: EdgeInsets.all(ResStyle.spacing/2),
-    ),
-    child: Icon(
-      icon,
-      color: text_color,
-      size: ResStyle.body_font *2,
-    ),
-  );
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: color, // Background color of the circular container
+          shape: BoxShape.circle, // Ensures the container is always circular
+          border: Border.all(color: text_color, width: 2)
+        ),
+        alignment: Alignment.center, // Center the icon within the container
+        child: Icon(
+          icon,
+          color: text_color,
+          size: size * 0.6, // Adjust icon size to fit well within the container
+        ),
+      ),
+     ),
+      if(label != null)
+        Text(label, style: TextStyle(fontSize: ResStyle.small_font, fontWeight: FontWeight.bold),)
+   ],
+ );
+
 }
 
 class CustomQuarterCircleButton extends StatelessWidget {

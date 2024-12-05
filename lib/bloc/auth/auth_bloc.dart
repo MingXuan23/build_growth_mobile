@@ -21,11 +21,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       var result = await AuthRepo.login(event.email, event.password);
 
       if (result['success']) {
-        await UserPrivacy.loadFromPreferences(UserToken.user_code??'');
+        await UserPrivacy.loadFromPreferences(UserToken.user_code ?? '');
         emit(LoginSuccess());
 
-          await GptRepo.loadModel();
-
+        await GptRepo.loadModel();
       } else {
         emit(LoginFailure(result['message']));
       }
@@ -152,18 +151,55 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     on<ChangePasswordRequest>(
       (event, emit) async {
-
-        if(UserToken.online){
-          var result =
-            await AuthRepo.changePassword(event.oldPassword, event.newPassword);
-        emit(AuthChangePasswordResult(message: result.$2, success: result.$1));
-        }else{
-        emit(AuthChangePasswordResult(message:'Look like you are not connected with us. Please restart the app.', success: false));
-
+        if (UserToken.online) {
+          var result = await AuthRepo.changePassword(
+              event.oldPassword, event.newPassword);
+          emit(
+              AuthChangePasswordResult(message: result.$2, success: result.$1));
+        } else {
+          emit(AuthChangePasswordResult(
+              message:
+                  'Look like you are not connected with us. Please restart the app.',
+              success: false));
         }
-        
       },
     );
+
+    on<AuthServiceNotAvailable>(
+      (event, emit) async {
+        if (state is! RegisterReject) {
+          emit(RegisterReject(event.cause ??
+              'Register Service is not available for now. Please try again later'));
+        } else {
+          emit(RegisterReject(''));
+        }
+
+        await Future.delayed(const Duration(seconds: 5));
+        emit(LoginInitial());
+      },
+    );
+
+    on<UpdateProfileRequest>(
+      (event, emit) async{
+        final body = {
+          'name': event.name,
+          'address': event.address,
+          'state': event.state,
+          'telno': event.telno,
+        };
+
+        var res = await AuthRepo.updateProfile(body);
+
+        if(res ==200){
+          emit(AuthUpdateProfileResult(success: true, message: 'Profile Updated Successfully'));
+        }else{
+          emit(AuthUpdateProfileResult(success: false, message: 'Some error occurs'));
+
+        }
+
+      },
+    );
+
     // on<AutoLoginRequest>(
     //   (event, emit) async {
     //     await UserPrivacy.loadFromPreferences('mx');

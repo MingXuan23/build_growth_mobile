@@ -67,7 +67,7 @@ class _StartPageState extends State<StartPage> {
                 return LoginPage(
                   email: state.email,
                 );
-              } else if (state is LoginSuccess) {
+              } else if (state is LoginSuccess || state is AuthChangePasswordResult || state is AuthUpdateProfileResult) {
                 return HomePage();
               } else if (state is RegisterSuccess) {
                 return LoginPage();

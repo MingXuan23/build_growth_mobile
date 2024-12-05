@@ -109,6 +109,7 @@ Widget BugBottomModal({
   required BuildContext context,
   required String header,
   required List<Widget> widgets,
+  double additionHeight = 0
 }) {
   return SingleChildScrollView(
     child: Container(
@@ -119,7 +120,7 @@ Widget BugBottomModal({
         top: ResStyle.spacing,
       ),
       child: SizedBox(
-        height: ResStyle.height * 0.7,
+        height: ResStyle.height * 0.7 + additionHeight,
         width: double.infinity,
         child: Column(
           mainAxisSize: MainAxisSize.min,

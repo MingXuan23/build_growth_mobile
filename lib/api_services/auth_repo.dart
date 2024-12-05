@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:build_growth_mobile/env.dart';
+import 'package:build_growth_mobile/models/user_info.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:http/http.dart' as http;
@@ -12,7 +13,15 @@ class AuthRepo {
 
   static Future<bool> validateEnvironment() async {
     try {
-      final result = await InternetAddress.lookup(HOST_URL);
+      Uri uri = Uri.parse(HOST_URL);
+
+      final result = await InternetAddress.lookup(uri.host);
+
+      if (uri.hasPort) {
+        final socket = await Socket.connect(uri.host, uri.port,
+            timeout: Duration(milliseconds: 500));
+        socket.destroy(); // Close the socket after testing
+      }
       return true;
     } catch (e) {
       return false;
@@ -68,6 +77,26 @@ class AuthRepo {
         'status': 500,
         'message': 'An error occurred. Please try again.',
       };
+    }
+  }
+
+  static Future<List<String>> getStateList() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$HOST_URL/$url_prefix/get-states'),
+        headers: {'Content-Type': 'application/json', 'Application-Id': appId},
+      ).timeout(
+        const Duration(seconds: 5), // Set timeout duration
+      );
+      ;
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        return (data as List).map((e) => e['name'].toString()).toList();
+      }
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -144,7 +173,11 @@ class AuthRepo {
     try {
       final response = await http.post(
         Uri.parse('$HOST_URL/$url_prefix/change-password'),
-        headers: {'Content-Type': 'application/json', 'Application-Id': appId , 'Authorization':'Bearer ${UserToken.remember_token}'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
         body: jsonEncode(
             {'oldPassword': oldPassword, 'newPassword': newPassword}),
       );
@@ -199,6 +232,71 @@ class AuthRepo {
       return response.statusCode;
     } catch (e) {
       return 404;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getProfile() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$HOST_URL/$url_prefix/get-profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        UserPrivacy.fromMap(data['user_privacy']['detail']);
+        return {
+          'user_info': UserInfo(
+            address: data['address'] ?? 'xxx',
+            name: data['name'] ?? 'xxx',
+            state: data['state'] ?? 'xxx',
+            email: data['email'] ?? 'xxx@xxx.xx',
+            telno: data['telno'] ?? 'xxx',
+          ),
+          'success': true
+        };
+      }
+      return {"success": false};
+    } catch (e) {
+      return {"success": false};
+    }
+  }
+
+  static Future<int> updateProfile(Map<String, dynamic> body) async {
+    try {
+      final response =
+          await http.post(Uri.parse('$HOST_URL/$url_prefix/update-profile'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Application-Id': appId,
+                'Authorization': 'Bearer ${UserToken.remember_token}'
+              },
+              body: jsonEncode(body));
+
+      return response.statusCode;
+    } catch (e) {
+      return 500;
+    }
+  }
+
+   static Future<bool> updateUserPrivacy(String detail) async {
+    try {
+      final response =
+          await http.post(Uri.parse('$HOST_URL/$url_prefix/update-privacy'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Application-Id': appId,
+                'Authorization': 'Bearer ${UserToken.remember_token}'
+              },
+              body: jsonEncode({'user_privacy':detail})) ;
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
     }
   }
 }

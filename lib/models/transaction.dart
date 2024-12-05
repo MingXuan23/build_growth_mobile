@@ -57,6 +57,7 @@ class Transaction {
     // Query the database for all transactions with status true (1)
     final List<Map<String, dynamic>> maps = await db.query(
       'Transactions',
+      where: 'user_code = ${UserToken.user_code}'
     );
 
     // Use Future.wait to handle multiple async operations
@@ -129,7 +130,7 @@ class Transaction {
     } else if (cash_flow_percent <= 50) {
       prompt += amount > 0
           ? 'Please provide inspirational suggestions using the Rich Dad mindset.'
-          : 'Please give a warning like a concerned mom and call me "Dear."';
+          : 'Please give a warning like a concerned mom and call me "Dear."';     
     } else {
       prompt += amount > 0
           ? 'Please provide highly motivational suggestions using the Rich Dad mindset.'

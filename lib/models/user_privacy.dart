@@ -14,14 +14,17 @@ class UserPrivacy {
   static Map<String, dynamic> toMap() {
     return {
       'useGPT': useGPT,
-      'pushContent': pushContent,
+      'useContent': pushContent,
+      'useBackup': backUpFrequency == 'No Backup',
+      'backUpFreq': backUpFrequency
     };
   }
 
-  // Update settings from a Map
   static void fromMap(Map<String, dynamic> map) {
     useGPT = map['useGPT'] ?? false;
-    pushContent = map['pushContent'] ?? false;
+    pushContent = map['useContent'] ?? false;
+    backUpFrequency =
+        map['backUpFreq'] ?? 'No Backup'; // Default backup frequency
   }
 
   // Save settings as JSON to SharedPreferences

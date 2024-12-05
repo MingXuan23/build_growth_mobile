@@ -82,7 +82,7 @@ class Debt {
     String currentMonth =
         DateTime.now().toString().substring(0, 7); // Format as 'YYYY-MM'
     final List<Map<String, dynamic>> result = await db.rawQuery(
-      'SELECT SUM(monthly_payment) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL)',
+      'SELECT SUM(monthly_payment) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = ${UserToken.user_code}',
       [currentMonth],
     );
 
@@ -99,7 +99,7 @@ class Debt {
     final List<Map<String, dynamic>> maps = await db.query(
       table,
       where:
-          'status = 1' // Replace with the specific month-year you want to filter
+          'status = 1 and user_code = ${UserToken.user_code}' // Replace with the specific month-year you want to filter
     );
 
     // Convert the List<Map<String, dynamic>> into List<Debt>

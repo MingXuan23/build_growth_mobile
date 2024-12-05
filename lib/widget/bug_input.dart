@@ -103,10 +103,11 @@ class _BugTextInputState extends State<BugTextInput> {
       controller: widget.controller,
       cursorColor: SECONDARY_COLOR,
       onChanged: (value) => _update(value),
-      style: TextStyle(fontSize: _fontSize),
+      style: TextStyle(fontSize: _fontSize, color: widget.readOnly?SECONDARY_COLOR:TEXT_COLOR),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
+
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
             color: SECONDARY_COLOR, // Set your desired color here

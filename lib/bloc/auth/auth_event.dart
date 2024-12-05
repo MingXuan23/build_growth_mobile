@@ -81,3 +81,20 @@ class ChangePasswordRequest extends AuthEvent{
   
 }
 
+class AuthServiceNotAvailable extends AuthEvent{
+  final String? cause;
+
+  AuthServiceNotAvailable({required this.cause});
+  
+}
+
+class  UpdateProfileRequest extends AuthEvent{
+  final String name;
+  final String state;
+  final String address;
+  final String telno;
+
+  UpdateProfileRequest({required this.name, required this.state, required this.address, required this.telno});
+
+}
+

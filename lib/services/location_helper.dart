@@ -30,6 +30,8 @@ class LocationHelper {
       address_list.add(place.street ?? "");
       address_list.add(place.thoroughfare ?? "");
       address_list.add(place.subLocality ?? "");
+      address_list.add(place.postalCode ?? "");
+
       address_list.add(place.locality ?? "");
 
       if (place.administrativeArea == "Malacca") {
