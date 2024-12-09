@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
@@ -49,14 +50,16 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
   @override
   void dispose() {
     // TODO: implement dispose
-page_controller.dispose();
+    page_controller.dispose();
+
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: HIGHTLIGHT_COLOR,
-        appBar: BugAppBar('Your Debts',context),
+        appBar: BugAppBar('Your Debts', context),
         body: Padding(
             padding: EdgeInsets.all(ResStyle.spacing),
             child: isLoading
@@ -83,6 +86,7 @@ page_controller.dispose();
     debts = await Debt.getDebtList();
     isLoading = false;
 
+    await Future.delayed(const Duration(milliseconds: 500));
     setState(() {});
   }
 
@@ -91,10 +95,17 @@ page_controller.dispose();
       children: [
         Expanded(
             child: ListView.builder(
-          itemCount: debts.length,
-          itemBuilder: (context, index) =>
-              DebtDetailCard(debts[index], () => showActionSheet(debts[index])),
-        )),
+                itemCount: debts.length,
+                itemBuilder: (context, index)  {
+                  if (debts[index].type == 'Expenses') {
+                  
+                    return ExpenseDetailCard(debts[index],
+                        () => showActionSheet(debts[index]));
+                  } else {
+                    return DebtDetailCard(
+                        debts[index], () => showActionSheet(debts[index]));
+                  }
+                })),
         Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
           child: BugPrimaryButton(
@@ -332,7 +343,9 @@ page_controller.dispose();
               },
               text: 'Delete',
             ),
-            SizedBox(height: ResStyle.spacing,),
+            SizedBox(
+              height: ResStyle.spacing,
+            ),
             BugPrimaryButton(
               onPressed: () {
                 Navigator.of(context).pop();
@@ -371,14 +384,13 @@ page_controller.dispose();
             ),
             SizedBox(height: ResStyle.spacing),
             BugTextInput(
-              controller: descController,
-              label: 'Description',
-              hint: 'Enter Description',
-              prefixIcon: Icon(Icons.note_alt_sharp),
-              validator:(value){
+                controller: descController,
+                label: 'Description',
+                hint: 'Enter Description',
+                prefixIcon: Icon(Icons.note_alt_sharp),
+                validator: (value) {
                   return null;
-                }
-            ),
+                }),
             SizedBox(height: ResStyle.spacing * 2),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -471,14 +483,13 @@ page_controller.dispose();
               ],
               SizedBox(height: ResStyle.spacing),
               BugTextInput(
-                controller: descController,
-                label: 'Description',
-                hint: 'Enter Description',
-                prefixIcon: Icon(Icons.note_alt_sharp),
-                validator:(value){
-                  return null;
-                }
-              ),
+                  controller: descController,
+                  label: 'Description',
+                  hint: 'Enter Description',
+                  prefixIcon: Icon(Icons.note_alt_sharp),
+                  validator: (value) {
+                    return null;
+                  }),
               SizedBox(height: ResStyle.spacing),
               if (selectedType == 'Loans')
                 BugTextInput(
@@ -520,7 +531,7 @@ page_controller.dispose();
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             Debt newDebt = Debt(
-                              'user_code',
+                              UserToken.user_code,
                               name: nameController.text,
                               desc: descController.text,
                               type: selectedType,

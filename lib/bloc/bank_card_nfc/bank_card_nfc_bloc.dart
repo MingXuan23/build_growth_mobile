@@ -1,27 +1,32 @@
 import 'package:build_growth_mobile/models/asset.dart';
+import 'package:build_growth_mobile/models/card.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-part 'financial_event.dart';
-part 'financial_state.dart';
+part 'bank_card_nfc_event.dart';
+part 'bank_card_nfc_state.dart';
 
-class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
-  AuthRepo? repo;
+class BankCardNfcBloc extends Bloc<BankCardNfcEvent, BankCardNfcState> {
 
-  FinancialBloc(FinancialState initial, this.repo) : super(initial) {
-    on<FinancialLoadData>(
+
+  EmvCard? current_card;
+  BankCardNfcBloc(BankCardNfcState initial) : super(initial) {
+    on<BankCardDetectedEvent>(
       (event, emit) async {
-        var totalAssets = await Asset.getTotalAsset();
-        var totalDebts = await Debt.getTotalDebt();
-        var data = await Transaction.getTransactionList();
-        var transcationList = data.$1.where((x)=>x.transaction_type !=2).toList();
-        var cashFlowList = data.$2;
-        var totalCashFlow = await Asset.getTotalCashFlow();
-        emit(FinancialDataLoaded(totalAssets: totalAssets, totalDebts: totalDebts,transactionList:transcationList, totalCashflow: totalCashFlow, cashflowTransactionList: cashFlowList));
+        if(current_card == event.card){
+          return;
+        }
+        current_card =event.card;
+        emit(BankCardDetectedState(card: event.card));
       },
     );
+
+    on<BankCardDisappearEvent>((event, emit) {
+      current_card= null;
+       emit(BankCardInitialState());
+    },);
   }
 }
 

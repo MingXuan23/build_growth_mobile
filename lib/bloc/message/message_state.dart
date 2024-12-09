@@ -8,6 +8,12 @@ sealed class MessageState{
 
 final class MessageInitial extends MessageState {}
 
+final class MessageChecked extends MessageState {}
+
+
+final class MessageClosed extends MessageState {}
+
+
 final class MessageSending extends MessageState {}
 
 final class MessageSent extends MessageState {

@@ -16,6 +16,9 @@ class RestartMessageEvent extends MessageEvent {}
 
 class LoadMessageModel extends MessageEvent {}
 
+class CheckMessageEvent extends MessageEvent {}
+
+
 // class LoginRequested extends TemplateEvent {
 //   final String email;
 //   final String password;

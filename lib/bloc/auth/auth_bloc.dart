@@ -49,6 +49,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             UserToken.remember_token ?? '', UserToken.email ?? '');
 
         if (res.$1) {
+          await UserPrivacy.loadFromPreferences(UserToken.user_code ?? '');
+
           emit(LoginSuccess());
 
           await GptRepo.loadModel();
@@ -180,7 +182,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     on<UpdateProfileRequest>(
-      (event, emit) async{
+      (event, emit) async {
         final body = {
           'name': event.name,
           'address': event.address,
@@ -190,13 +192,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
         var res = await AuthRepo.updateProfile(body);
 
-        if(res ==200){
-          emit(AuthUpdateProfileResult(success: true, message: 'Profile Updated Successfully'));
-        }else{
-          emit(AuthUpdateProfileResult(success: false, message: 'Some error occurs'));
-
+        if (res == 200) {
+          emit(AuthUpdateProfileResult(
+              success: true, message: 'Profile Updated Successfully'));
+        } else {
+          emit(AuthUpdateProfileResult(
+              success: false, message: 'Some error occurs'));
         }
-
       },
     );
 

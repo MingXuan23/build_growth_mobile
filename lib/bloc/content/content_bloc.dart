@@ -36,9 +36,20 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
     );
 
     on<SubmitContentTestEvent>((event, emit) async {
+
+      if(state is ContentLoadingState || state is ContentTestResultState){
+        return;
+      }
+       emit(ContentLoadingState());
+
         var message = await ContentRepo.saveContentTest(event.like_list, event.dislike_list);
 
         emit(ContentTestResultState(message:  message));
+    },);
+
+    on<ContentRebuildEvent>((event, emit) {
+      emit(ContentLoadingState());
+      emit(state);
     },);
   }
 }

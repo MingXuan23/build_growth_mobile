@@ -1,6 +1,9 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/pages/map/place_selection_page.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,39 +56,72 @@ class _MessagePageState extends State<MessagePage> {
             );
           } else if (state is MessageReply) {
             _scrollToBottom();
+          } else if (state is MessageChecked) {
+            setState(() {});
           }
         },
         child: SafeArea(
           child: Column(
             children: [
               // Chat content area (messages)
-              Expanded(
-                child: BlocBuilder<MessageBloc, MessageState>(
-                  builder: (context, state) {
-                    final messages = _buildMessages(context, state);
-                    return Padding(
-                      padding: EdgeInsets.only(
-                          right: ResStyle.spacing,
-                          left: ResStyle.spacing,
-                          top: ResStyle.spacing),
-                      child: ListView.builder(
-                        controller: _scrollController,
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) => messages[index],
-                      ),
-                    );
-                  },
+              if (UserPrivacy.useGPT) ...[
+                Expanded(
+                  child: BlocBuilder<MessageBloc, MessageState>(
+                    builder: (context, state) {
+                      final messages = _buildMessages(context, state);
+                      return Padding(
+                        padding: EdgeInsets.only(
+                            right: ResStyle.spacing,
+                            left: ResStyle.spacing,
+                            top: ResStyle.spacing),
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: messages.length,
+                          itemBuilder: (context, index) => messages[index],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              // Input field area that adjusts based on keyboard visibility
-              Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context)
-                      .viewInsets
-                      .bottom, // Adjust padding based on keyboard
+                // Input field area that adjusts based on keyboard visibility
+
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context)
+                        .viewInsets
+                        .bottom, // Adjust padding based on keyboard
+                  ),
+                  child: _buildInputField(context),
                 ),
-                child: _buildInputField(context),
-              ),
+              ] else ...[
+                _systemMessage('Financial Service Unavailable'),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                        right: ResStyle.spacing,
+                        left: ResStyle.spacing,
+                        top: ResStyle.spacing),
+                    child: Column(
+                      children: [
+                        _gptMessage(
+                            "Oh no! 😢 You've cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨"),
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(ResStyle.spacing),
+                  child: BugPrimaryButton(
+                      text: 'Enable Financial Assistant',
+                      color: TITLE_COLOR,
+                      onPressed: () {
+                        redirectToProfile(context, true);
+                      }),
+                ),
+                SizedBox(
+                  height: ResStyle.spacing * 3,
+                ),
+              ]
             ],
           ),
         ),
@@ -137,7 +173,7 @@ class _MessagePageState extends State<MessagePage> {
     return Align(
       alignment: Alignment.centerRight,
       child: Container(
-        margin: EdgeInsets.only(left: ResStyle.spacing*2),
+        margin: EdgeInsets.only(left: ResStyle.spacing * 2),
         padding: EdgeInsets.all(ResStyle.spacing / 2),
         decoration: BoxDecoration(
           color: RM1_COLOR,
@@ -160,66 +196,127 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   Widget _buildInputField(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.symmetric(horizontal: ResStyle.spacing, vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              cursorColor: TITLE_COLOR,
-              onChanged: (value) {
-                setState(() {});
-              },
-              style: TextStyle(fontSize: ResStyle.medium_font),
-              decoration: const InputDecoration(
-                hintText: 'Type a message',
-                border: InputBorder.none,
+    List<String> quickReplies = [
+      'My Budget Plan',
+      'Where to go',
+      'Investment Tips',
+      'Savings Advice'
+    ];
+    ScrollController controller = ScrollController();
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                controller: controller,
+                child: Row(
+                  children: quickReplies.map((label) {
+                    return Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: ResStyle.spacing / 2),
+                      child: BugSmallButton(
+                          text: label,
+                          onPressed: () {
+                            if(label == 'Where to go'){
+                              Navigator.of(context).push(new MaterialPageRoute(builder: (context)=> PlaceSelectionPage()));
+                            }else{
+                                BlocProvider.of<MessageBloc>(context)
+                                .add(SendMessageEvent(label));
+                            }
+                            
+                          },
+                          color: RM50_COLOR),
+                    );
+                  }).toList(),
+                ),
               ),
-              onTap: _scrollToBottom,
             ),
-          ),
-          BlocBuilder<MessageBloc, MessageState>(
-            builder: (context, state) {
-              var isSending =
-                  (state is MessageSending || state is MessageReply);
+            // More indicator
 
-              return IconButton(
-                icon: isSending
-                    ? SizedBox(
-                        width: ResStyle.spacing,
-                        height: ResStyle.spacing,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: RM50_COLOR,
-                        ),
-                      )
-                    : Icon(Icons.send,
-                        color: _controller.text.isEmpty
-                            ? RM50_COLOR
-                            : TITLE_COLOR),
-                onPressed: isSending||_controller.text.isEmpty
-                    ? null
-                    : () {
-                        final message = _controller.text.trim();
-                        if (message.isNotEmpty) {
-                          BlocProvider.of<MessageBloc>(context).add(
-                            SendMessageEvent(message),
-                          );
+            BugRoundButton(icon: Icons.more_horiz_sharp , size: ResStyle.body_font,text_color: RM50_COLOR , color: HIGHTLIGHT_COLOR, onPressed: (){
+              if(controller.position.pixels ==controller.position.maxScrollExtent ){
+              controller.animateTo(0, duration: Duration(milliseconds: 300), curve: Curves.easeIn,);
 
-                          if (state is MessageSending ||
-                              state is MessageReply) {
-                            return;
-                          }
-                          _controller.clear();
-                        }
-                      },
-              );
-            },
+              }else{
+              controller.animateTo(controller.position.maxScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeIn,);
+
+              }
+            }),
+            // Icon(
+            //   Icons.more_horiz,
+            //   size: ResStyle.font,
+            //   color: Colors.grey.shade500,
+            // ),
+            SizedBox(width: ResStyle.spacing/2,)
+          ],
+        ),
+        Container(
+          color: Colors.white,
+          padding:
+              EdgeInsets.symmetric(horizontal: ResStyle.spacing, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  cursorColor: TITLE_COLOR,
+                  onChanged: (value) {
+                    setState(() {});
+                  },
+                  style: TextStyle(fontSize: ResStyle.medium_font),
+                  decoration: const InputDecoration(
+                    hintText: 'Type a message',
+                    border: InputBorder.none,
+                  ),
+                  onTap: _scrollToBottom,
+                ),
+              ),
+              BlocBuilder<MessageBloc, MessageState>(
+                builder: (context, state) {
+                  var isSending =
+                      (state is MessageSending || state is MessageReply);
+
+                  return IconButton(
+                    icon: isSending
+                        ? SizedBox(
+                            width: ResStyle.spacing,
+                            height: ResStyle.spacing,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: RM50_COLOR,
+                            ),
+                          )
+                        : Icon(Icons.send,
+                            color: _controller.text.isEmpty
+                                ? RM50_COLOR
+                                : TITLE_COLOR),
+                    onPressed: isSending || _controller.text.isEmpty
+                        ? null
+                        : () {
+                            final message = _controller.text.trim();
+                            if (message.isNotEmpty) {
+                              BlocProvider.of<MessageBloc>(context).add(
+                                SendMessageEvent(message),
+                              );
+
+                              if (state is MessageSending ||
+                                  state is MessageReply) {
+                                return;
+                              }
+                              _controller.clear();
+                              FocusScope.of(context).unfocus();
+                            }
+                          },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

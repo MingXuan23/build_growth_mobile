@@ -1,4 +1,5 @@
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/bloc/content_init/content_init_bloc.dart';
 import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
@@ -50,8 +51,12 @@ class MyApp extends StatelessWidget {
             create: (context) => TransactionBloc(TransactionInitial())),
         BlocProvider<MessageBloc>(
             create: (context) => MessageBloc(MessageInitial())),
-        BlocProvider<ContentInitBloc>(create: (context)=> ContentInitBloc(ContentInitialState())),
-           BlocProvider<ContentBloc>(create: (context)=> ContentBloc(ContentLoadingState()))
+        BlocProvider<ContentInitBloc>(
+            create: (context) => ContentInitBloc(ContentInitialState())),
+        BlocProvider<ContentBloc>(
+            create: (context) => ContentBloc(ContentLoadingState())),
+        BlocProvider<BankCardNfcBloc>(
+            create: (context) => BankCardNfcBloc(BankCardInitialState()))
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],

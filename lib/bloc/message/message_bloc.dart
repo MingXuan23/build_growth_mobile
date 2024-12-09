@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/api_services/gpt_repo.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:equatable/equatable.dart';
@@ -16,8 +17,13 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
   MessageBloc(MessageState messageInitial) : super(messageInitial) {
     on<SendMessageEvent>((event, emit) async {
-
-      if(state is MessageSending || state is MessageReply){
+      if (!UserPrivacy.useGPT) {
+        gptReplies.add(
+            'Oh no! 😢 You’ve cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨');
+        emit(MessageReply([...userMessages], [...gptReplies]));
+        return;
+      }
+      if (state is MessageSending || state is MessageReply) {
         return;
       }
       emit(MessageSending());
@@ -30,11 +36,22 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         // Use a Completer to ensure the event handler doesn't complete prematurely
         final completer = Completer<void>();
 
-        _streamSubscription =
-            GptRepo.fastResponse(event.message).listen(
+        List<Map<String,dynamic>> chat_histoy = [];
+
+        if(userMessages.length >=2){
+          chat_histoy.add({"role":"user", "content":userMessages[userMessages.length -1 ]});
+        }
+
+        if(gptReplies.length >=2){
+          chat_histoy.add({"role":"assistant", "content":gptReplies[gptReplies.length -1 ]});
+
+        }
+        _streamSubscription = GptRepo.fastResponse(event.message, chat_histoy: chat_histoy).listen(
           (chunk) {
             // Append each chunk to the latest reply
-            if (gptReplies.isEmpty || gptReplies.last == '' || gptReplies.length < userMessages.length) {
+            if (gptReplies.isEmpty ||
+                gptReplies.last == '' ||
+                gptReplies.length < userMessages.length) {
               gptReplies.add(chunk);
             } else {
               gptReplies[gptReplies.length - 1] += chunk;
@@ -67,6 +84,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       }
     });
 
+on<CheckMessageEvent>((event, emit) {
+  emit(MessageChecked());
+},);
     on<RestartMessageEvent>((event, emit) {
       userMessages.clear();
       gptReplies.clear();
@@ -75,13 +95,14 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       _streamSubscription?.cancel();
       _streamSubscription = null;
 
-
       emit(MessageInitial());
     });
 
-    on<LoadMessageModel>((event, emit)  async{
-      ready = await GptRepo.loadModel();
-    },);
+    on<LoadMessageModel>(
+      (event, emit) async {
+        ready = await GptRepo.loadModel();
+      },
+    );
   }
 
   @override

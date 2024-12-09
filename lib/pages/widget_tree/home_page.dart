@@ -30,8 +30,11 @@ class _HomePageState extends State<HomePage> {
         bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         onTap: (index) {
+           currentIndex =index;
+            FocusScope.of(context).unfocus();
+
           setState(() {
-             currentIndex =index;
+            
           });
         
         },

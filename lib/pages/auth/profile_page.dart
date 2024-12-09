@@ -14,12 +14,13 @@ import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:build_growth_mobile/widget/card.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
-
+  const ProfilePage({Key? key, required this.gotoPrivacy}) : super(key: key);
+  final bool gotoPrivacy;
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -28,8 +29,10 @@ class _ProfilePageState extends State<ProfilePage> {
   bool useGPT = UserPrivacy.useGPT;
   bool pushContent = UserPrivacy.pushContent;
   String backupFrequency = UserPrivacy.backUpFrequency;
+  ScrollController _scrollController = ScrollController();
 
   bool privacy_updated = false;
+  String privacy_message = '';
   UserInfo user = UserInfo(
       name: "xxx",
       email: "xxx@xxx.xx",
@@ -45,26 +48,50 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+
+    if (widget.gotoPrivacy) {
+      _scrollToBottom();
+    }
     loadData();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      _scrollController.position.maxScrollExtent;
+      if (_scrollController.hasClients) {
+        await _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent + 100,
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   Future<void> updateUserPrivacy() async {
     if (!UserToken.online) {
       privacy_updated = true;
+      privacy_message =
+          'No Connection.Unable to save changes';
       setState(() {});
       return;
     }
-    setState(() {
-      UserPrivacy.useGPT = useGPT;
-      UserPrivacy.pushContent = pushContent;
-      UserPrivacy.backUpFrequency = backupFrequency;
-      privacy_updated = true;
-    });
+
+    // UserPrivacy.useGPT = useGPT;
+    // UserPrivacy.pushContent = pushContent;
+    // UserPrivacy.backUpFrequency = backupFrequency;
+    privacy_updated = true;
+
+    privacy_message = 'You have unsaved changes.';
+    setState(() {});
     // await UserPrivacy.saveToPreferences(UserToken.user_code!);
   }
 
   Future<void> saveUserPrivacy() async {
     privacy_updated = false;
+     UserPrivacy.useGPT = useGPT;
+    UserPrivacy.pushContent = pushContent;
+    UserPrivacy.backUpFrequency = backupFrequency;
     setState(() {});
     var res = await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
 
@@ -105,7 +132,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void showChangePasswordDialog() {
     if (!UserToken.online) {
       showTopSnackBar(
-          context, 'You need a proper connection to change your password', 5);
+          context, 'Connection time out. Please try to restart the app', 5);
 
       return;
     }
@@ -498,6 +525,7 @@ class _ProfilePageState extends State<ProfilePage> {
         body: Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
           child: SingleChildScrollView(
+            controller: _scrollController,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -557,14 +585,31 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                       
                         children: [
                           Padding(
                             padding: EdgeInsets.all(ResStyle.spacing),
-                            child: Text(
-                              'Privacy Settings',
-                              style: TextStyle(
-                                  fontSize: ResStyle.body_font,
-                                  fontWeight: FontWeight.bold),
+                            child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Privacy Settings',
+                                  style: TextStyle(
+                                      fontSize: ResStyle.body_font,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                if (privacy_updated)
+                                  Text(
+                                    privacy_message,
+                                    style: TextStyle(
+                                        fontSize: ResStyle.small_font,
+                                        color: DANGER_COLOR),
+                                    softWrap:
+                                        true, // Allows text to wrap to the next line
+                                    overflow: TextOverflow
+                                        .visible, // Ensures text doesn't get clipped
+                                  ),
+                              ],
                             ),
                           ),
                           (privacy_updated && UserToken.online)
@@ -578,20 +623,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               : Container(),
                         ],
                       ),
-                      if (!UserToken.online && privacy_updated)
-                        Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: ResStyle.spacing),
-                          child: Text(
-                            'Privacy Setting cannot be updated without proper connection',
-                            style: TextStyle(
-                                fontSize: ResStyle.small_font,
-                                color: DANGER_COLOR),
-                          ),
-                        ),
                       const Divider(),
                       CardWidgetivider(
-                        'Allow AI Financial Assitant using your data',
+                        'Allow AI Financial Assitant Using Your Data',
                         BugSwitch(
                           value: useGPT,
                           onChanged: (value) {
@@ -603,7 +637,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       CardWidgetivider(
-                          'Allow receiving recommendations',
+                          'Enable Content Browsing and Receiving Recommendations',
                           BugSwitch(
                             value: pushContent,
                             onChanged: (value) {

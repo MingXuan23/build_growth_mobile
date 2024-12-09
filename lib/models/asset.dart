@@ -27,7 +27,7 @@ class Asset {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'value': value,
+      'value': value.toStringAsFixed(2),
       'desc': desc,
       'type': type,
       'status': status ? 1 : 0, // Store bool as int
@@ -49,17 +49,16 @@ class Asset {
 
   // Insert Asset
   static Future<int> insertAsset(Asset asset) async {
-    var prompt =
-        'I have ${asset.name} (${asset.type}) with ${asset.value}. Give positive feedback using rich dad mindset.';
-    var desc = await GptRepo.slowResponse(prompt, 15);
-    asset.desc = desc ?? asset.desc;
+    // var prompt =
+    //     'I have ${asset.name} (${asset.type}) with ${asset.value}. Give positive feedback using rich dad mindset.';
+    // var desc = await GptRepo.slowResponse(prompt, 15);
+    // asset.desc = desc ?? asset.desc;
     return await DatabaseHelper().insertData(table, asset.toMap());
   }
 
   // Update Asset
   static Future<int> updateAsset(Asset asset, {Transaction? t}) async {
     if (t != null) {
-      
       var prompt = await t.promptFromTransaction();
 
       var desc = await GptRepo.slowResponse(prompt, 15);
@@ -89,8 +88,21 @@ class Asset {
     var db = await DatabaseHelper().database;
 
     // Query to calculate the sum of 'value' column in the 'Asset' table
-    final List<Map<String, dynamic>> result = await db
-        .rawQuery('SELECT SUM(value) as total FROM $table where status = 1 and user_code = ${UserToken.user_code}');
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+        'SELECT SUM(value) as total FROM $table where status = 1 and user_code = "${UserToken.user_code}"');
+
+    // Retrieve the sum from the query result
+    double totalAssets = result.first['total'] ?? 0.0;
+
+    return totalAssets;
+  }
+
+  static Future<double> getTotalCashFlow() async {
+    var db = await DatabaseHelper().database;
+
+    // Query to calculate the sum of 'value' column in the 'Asset' table
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+        'SELECT SUM(value) as total FROM $table where status = 1 and user_code = "${UserToken.user_code}" and type in ("Cash", "Bank Card","Other Asset")');
 
     // Retrieve the sum from the query result
     double totalAssets = result.first['total'] ?? 0.0;
@@ -101,11 +113,10 @@ class Asset {
   static Future<List<Asset>> getAssetList() async {
     var db = await DatabaseHelper().database;
 
-    // Query the database for all assets with status true (1)
     final List<Map<String, dynamic>> maps = await db.query(
       table,
-      where: 'status = 1 and  user_code = ${UserToken.user_code}',
-      //whereArgs: [1, UserToken.user_code], // Filter for assets with status true (1)
+      where: 'status = ? AND user_code = ?',
+      whereArgs: [1, UserToken.user_code],
     );
 
     // Convert the List<Map<String, dynamic>> into List<Asset>

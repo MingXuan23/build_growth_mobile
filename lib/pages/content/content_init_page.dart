@@ -182,13 +182,16 @@ class _ContentInitPageState extends State<ContentInitPage>
                 children: [
                   AnimatedBugEmoji(message: message),
                   SizedBox(height: ResStyle.spacing,),
-                  BugPrimaryButton(
-                    color: TITLE_COLOR,
-                      text: "Let's go >>",
-                      onPressed: () {
-                        BlocProvider.of<ContentInitBloc>(context)
-                            .add(LoadContentEvent());
-                      })
+                  Padding(
+                     padding:  EdgeInsets.symmetric( horizontal:  ResStyle.spacing),
+                    child: BugPrimaryButton(
+                      color: TITLE_COLOR,
+                        text: "Let's go >>",
+                        onPressed: () {
+                          BlocProvider.of<ContentInitBloc>(context)
+                              .add(LoadContentEvent());
+                        }),
+                  )
                 ],
               ),
             );

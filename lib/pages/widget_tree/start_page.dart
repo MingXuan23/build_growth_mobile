@@ -2,6 +2,8 @@ import 'package:build_growth_mobile/assets/color_sample.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/auth/login_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
 import 'package:build_growth_mobile/pages/financial/nfc_card_example.dart';
@@ -26,6 +28,7 @@ class _StartPageState extends State<StartPage> {
   @override
   void initState() {
     super.initState();
+  
     BlocProvider.of<AuthBloc>(context).add(
       AutoLoginRequest(),
     );
@@ -68,6 +71,7 @@ class _StartPageState extends State<StartPage> {
                   email: state.email,
                 );
               } else if (state is LoginSuccess || state is AuthChangePasswordResult || state is AuthUpdateProfileResult) {
+                 
                 return HomePage();
               } else if (state is RegisterSuccess) {
                 return LoginPage();

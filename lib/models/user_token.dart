@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserToken {
   static String? email;
+//  static String? name;
   static String? user_code;
   static String? remember_token;
   static String? device_token;

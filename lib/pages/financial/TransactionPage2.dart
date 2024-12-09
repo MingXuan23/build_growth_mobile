@@ -216,7 +216,9 @@ class _TransactionPage2State extends State<TransactionPage2> {
       from_asset.value = from_asset.value - transactionAmount;
       to_asset.value = to_asset.value + transactionAmount;
 
-      await Asset.updateAsset(from_asset,);
+      await Asset.updateAsset(
+        from_asset,
+      );
       await Asset.updateAsset(to_asset);
 
       BlocProvider.of<TransactionBloc>(context)
@@ -242,7 +244,10 @@ class _TransactionPage2State extends State<TransactionPage2> {
                 FormatterHelper.toDoubleString(-widget.debt!.monthly_payment);
             body = debtPaymentPage(asset_list);
           } else if (state is AssetTransferPageShow) {
-            body = AssetTransferPage(asset_list: asset_list, asset: widget.asset,);
+            body = AssetTransferPage(
+              asset_list: asset_list,
+              asset: widget.asset,
+            );
           } else if (state is AssetTransactionrPageShow) {
             body = AssetTransactionPage(asset: widget.asset!);
           } else if (state is TransactionCompleted) {
@@ -487,8 +492,6 @@ class _TransactionPage2State extends State<TransactionPage2> {
     negative = isNegative;
     setState(() {});
   }
-
-
 }
 
 class AssetTransactionPage extends StatefulWidget {
@@ -577,6 +580,14 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
         FormatterHelper.toDoubleString(widget.asset.value);
   }
 
+  String getReduceTerm(String assetType) {
+    if (assetType == 'Stock') {
+      return 'Lose';
+    } else {
+      return 'Spend';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -625,6 +636,7 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                             ),
                           ),
                         ),
+                        if(widget.asset.type != "Deposit Account")
                         Expanded(
                           child: GestureDetector(
                             onTap: () => updateTransactionType(true),
@@ -637,7 +649,7 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
-                                'Spend',
+                               getReduceTerm(widget.asset.type),
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: ResStyle.font,
@@ -720,12 +732,12 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
   }
 }
 
-
 class AssetTransferPage extends StatefulWidget {
   final List<Asset> asset_list;
   final Asset? asset;
 
-  AssetTransferPage({Key? key, required this.asset_list, this.asset}) : super(key: key);
+  AssetTransferPage({Key? key, required this.asset_list, this.asset})
+      : super(key: key);
 
   @override
   _AssetTransferPageState createState() => _AssetTransferPageState();
@@ -736,7 +748,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
 
   int? selected_asset_id;
   int? alternative_asset_id;
-  TextEditingController transaction_controller = TextEditingController();
+  TextEditingController transaction_controller = TextEditingController(text:'RM 0.00');
   TextEditingController desc_controller = TextEditingController();
 
   @override
@@ -764,9 +776,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
     });
   }
 
-
-
- void updateAssetTransferTransaction() async {
+  void updateAssetTransferTransaction() async {
     try {
       final transactionAmount =
           FormatterHelper.getAmountFromRM(transaction_controller.text);
@@ -796,8 +806,10 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
         return;
       }
 
-      var from_asset = widget.asset_list.firstWhere((e) => e.id == selected_asset_id);
-      var to_asset = widget.asset_list.firstWhere((e) => e.id == alternative_asset_id);
+      var from_asset =
+          widget.asset_list.firstWhere((e) => e.id == selected_asset_id);
+      var to_asset =
+          widget.asset_list.firstWhere((e) => e.id == alternative_asset_id);
 
       final from_transaction = Transaction(
         from_asset.user_code,
@@ -806,6 +818,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
         asset_id: from_asset.id,
         debt_id: null,
         created_at: DateTime.now(),
+        transaction_type: 2
       );
 
       final to_transaction = Transaction(
@@ -815,6 +828,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
         asset_id: to_asset.id,
         debt_id: null,
         created_at: DateTime.now(),
+        transaction_type: 2
       );
 
       await Transaction.insertTransaction(from_transaction);
@@ -852,13 +866,14 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
                   (widget.asset != null)
                       ? BugHeaderCard('From ${widget.asset!.name}')
                       : BugComboBox(
-                          selected_value: selected_asset_id??-1,
+                          selected_value: selected_asset_id ?? -1,
                           onChanged: (value) {
                             if (value == null) return;
                             updateSelectedAsset(value);
                           },
                           itemlist: widget.asset_list
-                              .where((e) => e.id != alternative_asset_id || e.id == -1)
+                              .where((e) =>
+                                  e.id != alternative_asset_id || e.id == -1)
                               .map((asset) {
                             return DropdownMenuItem<int>(
                               value: asset.id,
@@ -869,7 +884,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
                         ),
                   SizedBox(height: ResStyle.spacing),
                   BugComboBox(
-                    selected_value: alternative_asset_id??-1,
+                    selected_value: alternative_asset_id ?? -1,
                     onChanged: (value) {
                       if (value == null) return;
                       updateAlternativeAsset(value);
@@ -891,7 +906,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),
                     onChanged: (value) {
-                     implement_RM_format(transaction_controller, value);
+                      implement_RM_format(transaction_controller, value);
                     },
                     validator: (value) {
                       if (value == null) {

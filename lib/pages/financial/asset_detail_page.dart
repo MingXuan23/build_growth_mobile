@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/models/card.dart';
 import 'package:build_growth_mobile/models/emv_card_reader.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
@@ -14,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class AssetDetailPage extends StatefulWidget {
@@ -35,10 +38,11 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     'Bank Card',
     'Property',
     'Stock',
-    'Digital Asset',
+    'Deposit Account',
     'Other Asset'
   ];
 
+  final GlobalKey<State> dialog_key = GlobalKey<State>();
   bool isLoading = true;
 
   StreamSubscription<EmvCard?>? _subscription;
@@ -55,37 +59,57 @@ class _AssetDetailPageState extends State<AssetDetailPage>
 
   @override
   void dispose() {
+
     super.dispose();
     page_controller.dispose();
+ 
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: HIGHTLIGHT_COLOR,
-      appBar: BugAppBar('Your Assets',context),
-      body: (isLoading)
-          ? BugLoading()
-          : assets.isNotEmpty
-              ? Padding(
-                  padding: EdgeInsets.all(ResStyle.spacing),
-                  child: Column(
-                    children: [
-                      BugPageIndicator(page_controller, 2),
-                      Expanded(
-                        child: PageView(
-                          controller: page_controller,
-                          children: [
-                            _buildAssetList(),
-                            _buildTutorialPage(),
-                          ],
-                        ),
+        backgroundColor: HIGHTLIGHT_COLOR,
+        appBar: BugAppBar('Your Assets', context),
+        body: BlocListener<BankCardNfcBloc, BankCardNfcState>(
+          listener: (context, state) async {
+            if (state is BankCardDetectedState) {
+              var card = state.card;
+              var code =
+                  "${card.number?.substring(12)}-${(card.expire ?? '')}}";
+              var asset = await Asset.getBankCardByUniqueCode(code);
+
+              if (asset != null) {
+                showActionSheet(asset);
+              } else {
+                showAddAssetModal(assetTypes[1], card: card);
+                stopReading();
+              }
+            } else if (state is BankCardInitialState) {
+              startReading();
+            }
+          },
+          child: (isLoading)
+              ? BugLoading()
+              : assets.isNotEmpty
+                  ? Padding(
+                      padding: EdgeInsets.all(ResStyle.spacing),
+                      child: Column(
+                        children: [
+                          BugPageIndicator(page_controller, 2),
+                          Expanded(
+                            child: PageView(
+                              controller: page_controller,
+                              children: [
+                                _buildAssetList(),
+                                _buildTutorialPage(),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                )
-              : _buildTutorialPage(),
-    );
+                    )
+                  : _buildTutorialPage(),
+        ));
   }
 
   // ====== CORE FUNCTIONS ======
@@ -118,6 +142,9 @@ class _AssetDetailPageState extends State<AssetDetailPage>
 
   // ====== NFC RELATED FUNCTIONS ======
   Future<void> startReading() async {
+    if (NFC_reading) {
+      return;
+    }
     setState(() {
       NFC_reading = true;
     });
@@ -126,15 +153,8 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     if (started) {
       _subscription = card_reader.stream().listen((EmvCard? card) async {
         if (card != null && card.number != null) {
-          var code = "${card.number?.substring(12)}-${(card.expire ?? '')}}";
-          var asset = await Asset.getBankCardByUniqueCode(code);
-
-          if (asset != null) {
-            showActionSheet(asset);
-          } else {
-            showAddAssetModal(assetTypes[1], card: card);
-            stopReading();
-          }
+          BlocProvider.of<BankCardNfcBloc>(context)
+              .add(BankCardDetectedEvent(card: card));
         }
       }, onError: (error) {
         setState(() {
@@ -384,7 +404,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     );
   }
 
-  void showAddAssetModal(String selectedType, {EmvCard? card}) {
+  void showAddAssetModal(String selectedType, {EmvCard? card}) async {
     final TextEditingController nameController =
         TextEditingController(text: 'New ${selectedType}');
     final TextEditingController valueController =
@@ -392,6 +412,11 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     final TextEditingController descController = TextEditingController();
     String? unique_code;
 
+    if (dialog_key.currentContext!= null) {
+       Navigator.pop(context); // Close the dialog
+       await Future.delayed(const Duration(milliseconds: 300));
+    }
+    
     if (card != null) {
       nameController.text = 'Card ' + (card.number?.substring(12) ?? '');
       descController.text =
@@ -399,7 +424,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
       unique_code = "${card.number?.substring(12)}-${(card.expire ?? '')}}";
     }
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -408,6 +433,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
       builder: (context) {
         return BugBottomModal(
             context: context,
+            key: dialog_key,
             header: 'Add New ${selectedType}',
             widgets: [
               BugTextInput(
@@ -446,7 +472,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
                       color: RM50_COLOR,
                       onPressed: () async {
                         Asset newAsset = Asset(
-                          'user_code',
+                          UserToken.user_code,
                           name: nameController.text,
                           value: FormatterHelper.getAmountFromRM(
                               valueController.text),
@@ -458,7 +484,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
 
                         await Asset.insertAsset(newAsset);
                         await loadAssets();
-                        startReading();
+                       
                         Navigator.of(context).pop();
 
                         if (page_controller.hasClients) {
@@ -490,6 +516,8 @@ class _AssetDetailPageState extends State<AssetDetailPage>
             ]);
       },
     );
+
+    BlocProvider.of<BankCardNfcBloc>(context).add(BankCardDisappearEvent());
   }
 
   // ====== UI WIDGETS ======
@@ -514,8 +542,8 @@ class _AssetDetailPageState extends State<AssetDetailPage>
       case 'Stock':
         icon = Icons.show_chart;
         break;
-      case 'Digital Asset':
-        icon = Icons.cloud;
+      case 'Deposit Account':
+        icon = Icons.savings;
         break;
       default:
         icon = Icons.category;

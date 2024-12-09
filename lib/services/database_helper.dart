@@ -6,9 +6,6 @@ class DatabaseHelper {
   factory DatabaseHelper() => _instance;
   static Database? _database;
 
-
-  
-
   DatabaseHelper._internal();
 
   Future<Database> get database async {
@@ -22,13 +19,16 @@ class DatabaseHelper {
     String databasesPath = await getDatabasesPath();
 
     // Concatenate the file path with the database name manually
-    String path = join(databasesPath, 'demo.db');
-  // await databaseFactory.deleteDatabase(path); 
+    String path = join(databasesPath, 'bug.db');
+    
+    //await databaseFactory.deleteDatabase(path);
+
     // Open the database
     return await openDatabase(
       path,
-      version: 1,
+      version: 2, // Increment version to trigger onUpgrade
       onCreate: _onCreate,
+    //  onUpgrade: _onUpgrade, // Handle upgrades
     );
   }
 
@@ -84,7 +84,12 @@ class DatabaseHelper {
         user_code TEXT
       )
     ''');
+
+     await db.execute('''
+        ALTER TABLE Transactions ADD COLUMN transaction_type INTEGER NOT NULL DEFAULT 1
+      ''');
   }
+
 
   // Insert data into a specific table
   Future<int> insertData(String tableName, Map<String, dynamic> data) async {
@@ -93,7 +98,8 @@ class DatabaseHelper {
   }
 
   // Update data in a specific table
-  Future<int> updateData(String tableName, Map<String, dynamic> data, int id) async {
+  Future<int> updateData(
+      String tableName, Map<String, dynamic> data, int id) async {
     final db = await database;
     return await db.update(
       tableName,

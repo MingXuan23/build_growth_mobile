@@ -8,18 +8,26 @@ import 'package:http/http.dart' as http;
 const prefix_url = 'api/gpt';
 
 class GptRepo {
-  static Stream<String> fastResponse(String prompt) async* {
+  static Stream<String> fastResponse(String prompt, {List<Map<String,dynamic>> ?chat_histoy }) async* {
+
+    if(chat_histoy?.isEmpty??true){
+      chat_histoy = null;
+    }
+
     var request = http.Request(
       'POST',
       Uri.parse('$HOST_URL/$prefix_url/fast-response'),
     );
 
+    var information = await UserPrivacy.getUserSummary(UserToken.user_code??'');
+      var tone = information['tone'];
+      information.remove('tone');
     request.headers['Content-Type'] = 'application/json';
     request.headers['Application-Id'] = appId;
     request.headers['Authorization'] = 'Bearer ${UserToken.remember_token}';
-    request.body = json.encode({"prompt": prompt, "estimate_word": -2});
+    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_histoy, "use_content": UserPrivacy.pushContent});
 
-    try {
+    try {    
       final response = await request.send();
 
       if (response.statusCode == 200) {
@@ -69,9 +77,14 @@ class GptRepo {
       if (!UserPrivacy.useGPT) {
         return null;
       }
+
+
+      var information = await UserPrivacy.getUserSummary(UserToken.user_code??'');
+      var tone = information['tone'];
+      information.remove('tone');
       var request = await http.post(
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({"prompt": prompt, "estimate_word": tokens}),
+        body: json.encode({"prompt": prompt, "estimate_word": tokens,"information": information, "tone":tone}),
         Uri.parse('$HOST_URL/gpt/slow-response'),
       );
 

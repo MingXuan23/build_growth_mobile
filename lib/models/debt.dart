@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 
@@ -15,6 +17,9 @@ class Debt {
   final String? user_code;
   DateTime? last_payment_date; // Added last_payment as a nullable DateTime
 
+  double total_expense = 0;
+  double month_total_expense = 0;
+
   Debt(
     this.user_code, {
     this.id,
@@ -26,7 +31,12 @@ class Debt {
     required this.status, // Assuming status is represented as an integer (0 or 1)
     this.desc,
     this.last_payment_date, // Added last_payment to constructor
-  });
+  }) {
+    if (type == 'Expenses') {
+      getTotalTransaction();
+      getMonthlyTotal();
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,10 +48,57 @@ class Debt {
       'status':
           status ? 1 : 0, // No conversion needed since it's already an int
       'desc': desc,
-      'user_code':  UserToken.user_code,
+      'user_code': UserToken.user_code,
       'last_payment_date': last_payment_date
           ?.toIso8601String(), // Convert DateTime to ISO string for storage
     };
+  }
+
+  void getTotalTransaction() async {
+    // Get the database instance
+    var db = await DatabaseHelper().database;
+
+    // Use raw SQL query to calculate the sum of the amount column
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      '''
+    SELECT SUM(amount) AS total
+    FROM Transactions
+    WHERE user_code = ? AND debt_id = ?
+    ''',
+      [UserToken.user_code, id], // Use parameterized query for safety
+    );
+
+    // Extract the sum from the query result
+    double totalAmount = -(result.first['total'] ?? 0.0);
+
+    total_expense = totalAmount;
+  }
+
+  void getMonthlyTotal() async {
+    // Get the database instance
+    var db = await DatabaseHelper().database;
+
+    // Get the current date to filter transactions for the current month
+    final DateTime now = DateTime.now();
+    final String currentMonth =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}'; // Format as YYYY-MM
+
+    // Use raw SQL query to calculate the sum for the current month
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      '''
+    SELECT SUM(amount) AS total
+    FROM Transactions
+    WHERE strftime('%Y-%m', created_at) = ?
+      AND user_code = ?
+      AND debt_id = ?
+    ''',
+      [currentMonth, UserToken.user_code,id], // Use parameterized query for safety
+    );
+
+    // Extract the sum from the query result
+    double totalAmount = -(result.first['total'] ?? 0.0);
+
+    month_total_expense = totalAmount;
   }
 
   static Future<int> insertDebt(Debt debt) async {
@@ -49,8 +106,7 @@ class Debt {
   }
 
   static Future<int> updateDebt(Debt debt) async {
-
-    if(debt.remaining_month == 0){
+    if (debt.remaining_month == 0) {
       debt.desc = "Debt Pay Off";
       debt.status = false;
     }
@@ -82,7 +138,7 @@ class Debt {
     String currentMonth =
         DateTime.now().toString().substring(0, 7); // Format as 'YYYY-MM'
     final List<Map<String, dynamic>> result = await db.rawQuery(
-      'SELECT SUM(monthly_payment) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = ${UserToken.user_code}',
+      'SELECT SUM(monthly_payment) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = "${UserToken.user_code}"',
       [currentMonth],
     );
 
@@ -94,13 +150,12 @@ class Debt {
 
   static Future<List<Debt>> getDebtList() async {
     var db = await DatabaseHelper().database;
-    
+
     // Query the database for all debts
-    final List<Map<String, dynamic>> maps = await db.query(
-      table,
-      where:
-          'status = 1 and user_code = ${UserToken.user_code}' // Replace with the specific month-year you want to filter
-    );
+    final List<Map<String, dynamic>> maps = await db.query(table,
+        where:
+            'status = 1 and user_code = "${UserToken.user_code}"' // Replace with the specific month-year you want to filter
+        );
 
     // Convert the List<Map<String, dynamic>> into List<Debt>
     return List.generate(maps.length, (i) {
@@ -123,36 +178,36 @@ class Debt {
   }
 
   static Future<Debt?> getDebtById(int debtId) async {
-  var db = await DatabaseHelper().database;
+    var db = await DatabaseHelper().database;
 
-  // Query the database for a debt with the given id
-  final List<Map<String, dynamic>> maps = await db.query(
-    table, // The table name for debts
-    where: 'id = ?', // Filter by debt id
-    whereArgs: [debtId], // Provide the debt id as a parameter
-  );
-
-  // If the result is empty, return null (debt not found)
-  if (maps.isNotEmpty) {
-    // Return the debt by mapping the first result
-    return Debt(
-      maps[0]['user_code'],
-      id: maps[0]['id'],
-      name: maps[0]['name'],
-      type: maps[0]['type'],
-      monthly_payment: maps[0]['monthly_payment'],
-      remaining_month: maps[0]['remaining_month'],
-      total_month: maps[0]['total_month'],
-      status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
-      desc: maps[0]['desc'],
-      last_payment_date: maps[0]['last_payment_date'] != null
-          ? DateTime.parse(maps[0]['last_payment_date']) // Convert ISO string back to DateTime
-          : null,
+    // Query the database for a debt with the given id
+    final List<Map<String, dynamic>> maps = await db.query(
+      table, // The table name for debts
+      where: 'id = ?', // Filter by debt id
+      whereArgs: [debtId], // Provide the debt id as a parameter
     );
+
+    // If the result is empty, return null (debt not found)
+    if (maps.isNotEmpty) {
+      // Return the debt by mapping the first result
+      return Debt(
+        maps[0]['user_code'],
+        id: maps[0]['id'],
+        name: maps[0]['name'],
+        type: maps[0]['type'],
+        monthly_payment: maps[0]['monthly_payment'],
+        remaining_month: maps[0]['remaining_month'],
+        total_month: maps[0]['total_month'],
+        status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
+        desc: maps[0]['desc'],
+        last_payment_date: maps[0]['last_payment_date'] != null
+            ? DateTime.parse(maps[0]
+                ['last_payment_date']) // Convert ISO string back to DateTime
+            : null,
+      );
+    }
+
+    // Return null if no debt is found
+    return null;
   }
-
-  // Return null if no debt is found
-  return null;
-}
-
 }

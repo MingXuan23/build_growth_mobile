@@ -21,7 +21,8 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   }
 
   void loadData() async {
-    transactionList = await Transaction.getTransactionList();
+    var data = await Transaction.getTransactionList();
+    transactionList = data.$1;
     setState(() {
       
     });

@@ -1,5 +1,7 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
 import 'package:flutter/material.dart';
@@ -24,22 +26,27 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
         IconButton(
           icon: Icon(Icons.account_circle,
               color: HIGHTLIGHT_COLOR), // Profile icon
-          onPressed: () {
-            // Add your profile action here
-
-            Navigator.of(context).push(
-                new MaterialPageRoute(builder: (context) => ProfilePage()));
-            return;
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => StartPage()));
-            BlocProvider.of<AuthBloc>(context).add(
-              LogoutRequested(),
-            );
+          onPressed: ()  {
+            redirectToProfile(context, false);
+            
           },
         ),
     ],
     iconTheme: IconThemeData(color: HIGHTLIGHT_COLOR),
   );
+}
+
+void redirectToProfile(BuildContext context, bool gotoPrivacy) async {
+  await Navigator.of(context)
+      .push(new MaterialPageRoute(builder: (context) => ProfilePage(gotoPrivacy: gotoPrivacy,)));
+
+  BlocProvider.of<ContentBloc>(context).add(ContentRebuildEvent());
+
+  BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());
+
+    FocusScope.of(context).unfocus();
+
+  return;
 }
 
 SnackBar BugSnackBar(String message, int seconds) {
@@ -105,13 +112,14 @@ AlertDialog BugInfoDialog(
   );
 }
 
-Widget BugBottomModal({
-  required BuildContext context,
-  required String header,
-  required List<Widget> widgets,
-  double additionHeight = 0
-}) {
+Widget BugBottomModal(
+    {required BuildContext context,
+    required String header,
+    required List<Widget> widgets,
+    double additionHeight = 0,
+    Key? key}) {
   return SingleChildScrollView(
+    key: key,
     child: Container(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -256,7 +264,6 @@ void showTopSnackBar(BuildContext context, String message, int seconds) {
                   Icons.close,
                   size: ResStyle.header_font,
                   color: TITLE_COLOR,
-                  
                 ),
               ),
             ],

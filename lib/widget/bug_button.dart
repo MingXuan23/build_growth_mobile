@@ -31,6 +31,31 @@ Widget BugPrimaryButton(
   );
 }
 
+Widget BugSmallButton(
+    {required String text,
+    required VoidCallback onPressed,
+    Color color = RM1_COLOR,
+    double? font_size,
+    double borderRadius = 16.0}) {
+
+      font_size = font_size??ResStyle.small_font;
+  return ElevatedButton(
+    onPressed: onPressed,
+    style: ElevatedButton.styleFrom(
+      backgroundColor: color,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(borderRadius), // Rounded corners
+      ),
+      padding: EdgeInsets.symmetric(
+          horizontal: ResStyle.spacing/2, vertical: ResStyle.spacing/4),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(color: Colors.white, fontSize:font_size),
+    ),
+  );
+}
+
 Widget BugTextButton(
     {required String text,
     required VoidCallback onPressed,
@@ -175,45 +200,48 @@ class _DoubleTapButtonState extends State<BugDoubleTapButton> {
   }
 }
 
-Widget BugRoundButton({
-  required IconData icon,
-  required VoidCallback onPressed,
-  Color color = HIGHTLIGHT_COLOR,
-  Color text_color = TITLE_COLOR,
-  double size = 50,
-  String? label
-}) {
- return Column(
-   children: [
-     ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.transparent, // Set transparent for the ElevatedButton background
-        shadowColor: Colors.transparent, // Remove shadow for a cleaner look
-        padding: EdgeInsets.zero, // Ensure the container determines the size
-        
-      ),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: color, // Background color of the circular container
-          shape: BoxShape.circle, // Ensures the container is always circular
-          border: Border.all(color: text_color, width: 2)
+Widget BugRoundButton(
+    {required IconData icon,
+    required VoidCallback onPressed,
+    Color color = HIGHTLIGHT_COLOR,
+    Color text_color = TITLE_COLOR,
+    double size = 50,
+    String? label}) {
+  return Column(
+    children: [
+      ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors
+              .transparent, // Set transparent for the ElevatedButton background
+          shadowColor: Colors.transparent, // Remove shadow for a cleaner look
+          padding: EdgeInsets.zero, // Ensure the container determines the size
         ),
-        alignment: Alignment.center, // Center the icon within the container
-        child: Icon(
-          icon,
-          color: text_color,
-          size: size * 0.6, // Adjust icon size to fit well within the container
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+              color: color, // Background color of the circular container
+              shape:
+                  BoxShape.circle, // Ensures the container is always circular
+              border: Border.all(color: text_color, width: 2)),
+          alignment: Alignment.center, // Center the icon within the container
+          child: Icon(
+            icon,
+            color: text_color,
+            size:
+                size * 0.6, // Adjust icon size to fit well within the container
+          ),
         ),
       ),
-     ),
-      if(label != null)
-        Text(label, style: TextStyle(fontSize: ResStyle.small_font, fontWeight: FontWeight.bold),)
-   ],
- );
-
+      if (label != null)
+        Text(
+          label,
+          style: TextStyle(
+              fontSize: ResStyle.small_font, fontWeight: FontWeight.bold),
+        )
+    ],
+  );
 }
 
 class CustomQuarterCircleButton extends StatelessWidget {

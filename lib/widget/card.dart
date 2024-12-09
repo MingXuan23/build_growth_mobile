@@ -233,6 +233,116 @@ Widget DebtDetailCard(Debt debt, VoidCallback func,
   );
 }
 
+String getMonthName(int month) {
+  const List<String> monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  return monthNames[month - 1]; // Subtract 1 since the list is 0-based
+}
+
+Widget ExpenseDetailCard(Debt debt, VoidCallback func,
+    {Color color = TITLE_COLOR}) {
+  // var paid = FormatterHelper.isSameMonthYear(debt.last_payment_date);
+
+  return GestureDetector(
+    onTap: () => func(),
+    child: Container(
+      margin: EdgeInsets.symmetric(vertical: ResStyle.spacing),
+      padding: EdgeInsets.all(ResStyle.spacing),
+      decoration: BoxDecoration(
+        color: TITLE_COLOR, // Using the same color scheme as AssetDetailPage
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  debt.name,
+                  style: TextStyle(
+                    fontSize: ResStyle.body_font,
+                    fontWeight: FontWeight.bold,
+                    color:
+                        HIGHTLIGHT_COLOR, // Using primary color for consistency
+                  ),
+                ),
+                if (debt.desc!.isNotEmpty) ...[
+                  SizedBox(height: 0.5 * ResStyle.spacing),
+                  Text(
+                    debt.desc!,
+                    style: TextStyle(
+                      fontSize: ResStyle.medium_font,
+                      color: HIGHTLIGHT_COLOR, // Using secondary color
+                    ),
+                  ),
+                ],
+                SizedBox(height: 0.5 * ResStyle.spacing),
+                Row(
+                  children: [
+                    Text(
+                      "${FormatterHelper.toDoubleString(debt.month_total_expense)}",
+                      style: TextStyle(
+                        fontSize: ResStyle.body_font,
+                        color: HIGHTLIGHT_COLOR, // Using primary color
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                     SizedBox(width: ResStyle.spacing,),
+                    Container(
+                      decoration: BoxDecoration(
+                          color: HIGHTLIGHT_COLOR,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Padding(
+                        padding:  EdgeInsets.symmetric(horizontal: ResStyle.spacing/2),
+                        child: Text(
+                            '${getMonthName(DateTime.now().month)} ${DateTime.now().year}',
+                            style: TextStyle(
+                              fontSize: ResStyle.font,
+                              color: TITLE_COLOR, // Using primary color
+                              fontWeight: FontWeight.bold,
+                            )),
+                      ),
+                    )
+                  ],
+                ),
+                Text(
+                  'Total Spending: ${FormatterHelper.toDoubleString(debt.total_expense)}',
+                  style: TextStyle(
+                    fontSize: ResStyle.small_font,
+                    color: HIGHTLIGHT_COLOR, // Using primary color
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 Widget BugInfoCard(String message) {
   return Align(
     alignment: Alignment.bottomCenter,

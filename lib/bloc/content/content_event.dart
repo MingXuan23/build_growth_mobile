@@ -17,6 +17,7 @@ class SubmitContentTestEvent extends ContentEvent {
   
 }
 
+class ContentRebuildEvent extends ContentEvent{}
 
 
 
