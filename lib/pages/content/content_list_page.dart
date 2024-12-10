@@ -37,6 +37,7 @@ class _ContentPageState extends State<ContentListPage> {
 
     return Scaffold(
       appBar: BugAppBar('Content For You', context),
+      backgroundColor: HIGHTLIGHT_COLOR,
       body: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
           if (state is ContentReadyState) {

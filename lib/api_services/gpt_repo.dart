@@ -177,7 +177,7 @@ class GptRepo {
   }
 
   static Future<bool> loadModel() async {
-    const url = "$HOST_URL/api/gpt/load";
+    String url = "$HOST_URL/api/gpt/load";
 
     try {
       final response = await http.post(

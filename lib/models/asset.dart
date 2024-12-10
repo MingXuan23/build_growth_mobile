@@ -58,12 +58,12 @@ class Asset {
 
   // Update Asset
   static Future<int> updateAsset(Asset asset, {Transaction? t}) async {
-    if (t != null) {
-      var prompt = await t.promptFromTransaction();
+    // if (t != null) {
+    //   var prompt = await t.promptFromTransaction();
 
-      var desc = await GptRepo.slowResponse(prompt, 15);
-      asset.desc = desc ?? asset.desc;
-    }
+    //   var desc = await GptRepo.slowResponse(prompt, 15);
+    //   asset.desc = desc ?? asset.desc;
+    // }
 
     return await DatabaseHelper().updateData(table, asset.toMap(), asset.id!);
   }

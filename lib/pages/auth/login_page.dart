@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/auth/register_page.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
@@ -83,10 +84,16 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(height: ResStyle.spacing),
-                                Image.asset(
-                                  'lib/assets/playstore-icon.png',
-                                  height: ResStyle.spacing * 5,
-                                  width: ResStyle.spacing * 5,
+                                GestureDetector(
+                                  onTap: () {
+                                   
+                                    HOST_URL = 'http://${_emailController.text}:30000' ;
+                                  },
+                                  child: Image.asset(
+                                    'lib/assets/playstore-icon.png',
+                                    height: ResStyle.spacing * 5,
+                                    width: ResStyle.spacing * 5,
+                                  ),
                                 ),
                                 SizedBox(height: ResStyle.spacing),
                                 BugTextInput(

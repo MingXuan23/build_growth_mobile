@@ -12,7 +12,7 @@ class ContentRepo {
   static const vector_prefix = 'api/vector';
 
   static Future<Map<String, dynamic>> loadContent() async {
-    const url = "$HOST_URL/$content_prefix";
+    String url = "$HOST_URL/$content_prefix";
 
     try {
       final response = await http.post(
@@ -45,7 +45,7 @@ class ContentRepo {
 
   static Future<String> saveContentTest(
       List<Content> like_list, List<Content> dislike_list) async {
-    const url = "$HOST_URL/$vector_prefix/submit-vector-test";
+    String url = "$HOST_URL/$vector_prefix/submit-vector-test";
 
     try {
       final response = await http.post(Uri.parse(url),
