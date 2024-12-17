@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/bloc/transaction/transaction_bloc.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
+import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
@@ -79,6 +80,50 @@ class _TransactionPage2State extends State<TransactionPage2> {
     selected_asset_id = widget.asset?.id ?? -1;
     setState(() {});
   }
+
+void continueAddProof() async{
+  // Example condition: Check if the user has already rejected adding proof
+  bool userRejected = false; // Replace with actual condition or state management
+
+  if (userRejected) {
+    return; // Exit if the user previously rejected adding proof
+  }
+
+  // Show a dialog to prompt the user to add proof
+  await showDialog(
+    context: context,
+    builder: (BuildContext context) {
+
+      return BugInfoDialog(  
+        main_color:RM50_COLOR ,
+
+        title: 'Transaction Proof',
+  message: 'Would you like to add proof for this transaction?\n\n'
+           '*Tip: You can disable this prompt in the settings if you prefer not to see it again.*',
+      actions: [
+
+        BugPrimaryButton(text: 'Yes',
+        color: RM50_COLOR, onPressed: () async{
+            Navigator.of(context).pop(); // Close the dialog
+              Navigator.of(context).pop();
+              // Navigate to the transaction history page
+              await  Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => TransactionHistoryPage()),
+              );
+
+              //
+        }),
+        SizedBox(height: ResStyle.spacing,),
+         BugPrimaryButton(text: 'No' ,color: DANGER_COLOR , onPressed: () async{
+            Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop(); // Exit the page
+        })
+        
+      ]);
+
+    },
+  );
+}
 
   void loadPage() async {
     await loadData();
@@ -261,14 +306,15 @@ class _TransactionPage2State extends State<TransactionPage2> {
                       actions: [
                         BugPrimaryButton(
                             text: 'Ok',
-                            color: TITLE_COLOR,
+                            color: RM50_COLOR,
                             onPressed: () {
                               Navigator.of(context).pop();
                             })
                       ]);
                 });
 
-            Navigator.of(context).pop();
+             continueAddProof();
+            
           }
 
           setState(() {});

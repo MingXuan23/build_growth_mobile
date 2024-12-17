@@ -52,6 +52,14 @@ dependencies:
   geolocator: ^13.0.1
   geocoding: ^3.0.0
   visibility_detector: ^0.4.0+2
+  webview_flutter_android: ^3.16.8
+  permission_handler: ^11.3.1
+  image_picker: ^1.1.2
+  path_provider: ^2.1.5
+  google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  uni_links: ^0.5.1
 
 dev_dependencies:
   flutter_test:

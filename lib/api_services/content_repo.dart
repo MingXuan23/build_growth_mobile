@@ -33,8 +33,8 @@ class ContentRepo {
       } else if(response.statusCode  == 200){
          var data = jsonDecode(response.body);
 
-        var list = data.map((map) => Content.fromMap(map)).toList();
-        return {'result': response.statusCode, 'list': list};
+        var list = data['contentList'].map((map) => Content.fromMap(map)).toList();
+        return {'result': response.statusCode, 'list': list, "microlearning_id":data['microlearning_id']};
       }else{
         return {'result': response.statusCode, 'list': []};
       }

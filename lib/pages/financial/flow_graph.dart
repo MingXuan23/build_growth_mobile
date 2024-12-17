@@ -151,8 +151,12 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage> {
                                   reservedSize: ResStyle.width * 0.2,
                                   getTitlesWidget: (value, meta) {
                                     // Format the value to avoid overlapping
+                                    if ((value - minY).abs() < 0.01) {
+                                      return SizedBox
+                                          .shrink(); // Return an empty widget to hide the label
+                                    }
                                     return Padding(
-                                      padding: EdgeInsets.only(right: 8),
+                                      padding: EdgeInsets.only(right: 0),
                                       child: Text(
                                         FormatterHelper.toDoubleString(value),
                                         style: TextStyle(

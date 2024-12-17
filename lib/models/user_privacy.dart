@@ -1,13 +1,17 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:build_growth_mobile/models/asset.dart';
+import 'package:build_growth_mobile/models/user_backup.dart';
+import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPrivacy {
   static bool useGPT = true;
   static bool pushContent = true;
-  static String backUpFrequency = "First Transaction In A Day";
+  //static String backUpFrequency = "First Transaction In A Day";
+
+  static bool googleDriveBackup = false;
 
   // static String backUpFrequency = "No Backup";
 
@@ -19,20 +23,29 @@ class UserPrivacy {
     return {
       'useGPT': useGPT,
       'useContent': pushContent,
-      'useBackup': backUpFrequency == 'No Backup',
-      'backUpFreq': backUpFrequency
+      'useGoogleDriveBackup': googleDriveBackup,
     };
   }
 
   static void fromMap(Map<String, dynamic> map) {
     useGPT = map['useGPT'] ?? false;
     pushContent = map['useContent'] ?? false;
-    backUpFrequency =
-        map['backUpFreq'] ?? 'No Backup'; // Default backup frequency
+    googleDriveBackup = map['useGoogleDriveBackup'] ?? false;
   }
 
   // Save settings as JSON to SharedPreferences
   static Future<void> saveToPreferences(String usercode) async {
+    if (googleDriveBackup) {
+      var result = await GoogleDriveBackupHelper.initialize();
+      if(!result){
+        UserPrivacy.googleDriveBackup = false;
+         throw new Exception('Error in login to Google Drive') ;
+      }
+    } else {
+      await GoogleDriveBackupHelper.signOut();
+    }
+
+
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(toMap());
     await prefs.setString('user_privacy_$usercode', jsonString);
@@ -48,61 +61,12 @@ class UserPrivacy {
     }
   }
 
-  static Future<String> getUserBackUp(String userCode) async {
-    if (backUpFrequency == 'No Backup') {
-      return '';
-    }
-
-    var db = await DatabaseHelper().database;
-    const int maxRows = 10000; // Maximum rows limit
-    int remainingRows = maxRows; // Remaining rows available for queries
-
-    // Helper function to fetch rows with remaining row limit
-    Future<List<Map<String, dynamic>>> fetchRows(
-        String tableName, String userCode, int limit) async {
-      return await db.query(
-        tableName,
-        where: 'user_code = ?',
-        whereArgs: [userCode],
-        limit: limit,
-      );
-    }
-
-    // Fetch data from each table with remaining rows
-    final List<Map<String, dynamic>> assetRows = await fetchRows(
-      'Asset',
-      userCode,
-      remainingRows,
-    );
-    remainingRows -= assetRows.length;
-
-    final List<Map<String, dynamic>> debtRows = remainingRows > 0
-        ? await fetchRows('Debt', userCode, remainingRows)
-        : [];
-    remainingRows -= debtRows.length;
-
-    final List<Map<String, dynamic>> transactionRows = remainingRows > 0
-        ? await fetchRows('Transactions', userCode, remainingRows)
-        : [];
-    remainingRows -= transactionRows.length;
-
-    // Prepare the result as a JSON string
-    final Map<String, dynamic> result = {
-      'assets': assetRows,
-      'debts': debtRows,
-      'transactions': transactionRows,
-    };
-
-    var res = jsonEncode(result);
-    return res;
-  }
-
   static Future<Map<String, dynamic>> getUserSummary(String userCode) async {
     // if (backUpFrequency == 'No Backup') {
     //   return {};
     // }
 
-    if(!useGPT){
+    if (!useGPT) {
       return {};
     }
 
@@ -127,9 +91,9 @@ class UserPrivacy {
         'name',
         'monthly_payment',
         'remaining_month',
-        'status'
-      ], // Select key fields
-      where: 'user_code = ? and remaining_month > 0',
+        "CASE WHEN strftime('%Y-%m', last_payment_date) = strftime('%Y-%m', 'now') THEN 'Paid' ELSE 'Unpaid' END AS status"
+      ],
+      where: 'user_code = ? AND remaining_month > 0',
       whereArgs: [userCode],
       limit: remainingRows,
     );
@@ -151,6 +115,7 @@ class UserPrivacy {
   LEFT JOIN Debt ON Transactions.debt_id = Debt.id
   WHERE Transactions.user_code = ? AND Transactions.transaction_type != 2
     AND DATE(Transactions.created_at) >= DATE('now', '-2 months')
+  ORDER BY (Transactions.created_at) DESC
   LIMIT $remainingRows
 ''';
 
@@ -220,7 +185,6 @@ class UserPrivacy {
       'tone': tone
     };
 
-   
     return result;
   }
 }

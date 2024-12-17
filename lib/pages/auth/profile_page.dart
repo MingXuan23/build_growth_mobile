@@ -3,11 +3,15 @@ import 'dart:convert';
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+
 import 'package:build_growth_mobile/main.dart';
+import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_info.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
+import 'package:build_growth_mobile/pages/auth/backup_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
+import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/location_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
@@ -28,7 +32,8 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   bool useGPT = UserPrivacy.useGPT;
   bool pushContent = UserPrivacy.pushContent;
-  String backupFrequency = UserPrivacy.backUpFrequency;
+  bool useGoogleDriveBackup = UserPrivacy.googleDriveBackup;
+  //String backupFrequency =
   ScrollController _scrollController = ScrollController();
 
   bool privacy_updated = false;
@@ -71,8 +76,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> updateUserPrivacy() async {
     if (!UserToken.online) {
       privacy_updated = true;
-      privacy_message =
-          'No Connection.Unable to save changes';
+      privacy_message = 'No Connection.Unable to save changes';
       setState(() {});
       return;
     }
@@ -89,15 +93,26 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> saveUserPrivacy() async {
     privacy_updated = false;
-     UserPrivacy.useGPT = useGPT;
-    UserPrivacy.pushContent = pushContent;
-    UserPrivacy.backUpFrequency = backupFrequency;
-    setState(() {});
+
     var res = await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
 
     if (res) {
-      await UserPrivacy.saveToPreferences(UserToken.user_code!);
-      showTopSnackBar(context, 'Your Privacy Setting update successfully', 5);
+      try {
+        UserPrivacy.useGPT = useGPT;
+        UserPrivacy.pushContent = pushContent;
+        UserPrivacy.googleDriveBackup = useGoogleDriveBackup;
+        setState(() {});
+
+        await UserPrivacy.saveToPreferences(UserToken.user_code!);
+        await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
+        showTopSnackBar(context, 'Your Privacy Setting update successfully', 5);
+      } catch (e) {
+        try {
+          showTopSnackBar(context, e.toString(), 5);
+            await loadData();
+        } catch (e) {}
+      
+      }
     } else {
       privacy_updated = true;
       setState(() {});
@@ -124,10 +139,12 @@ class _ProfilePageState extends State<ProfilePage> {
       user = data['user_info'] as UserInfo;
       useGPT = UserPrivacy.useGPT;
       pushContent = UserPrivacy.pushContent;
-      backupFrequency = UserPrivacy.backUpFrequency;
+      useGoogleDriveBackup = UserPrivacy.googleDriveBackup;
       setState(() {});
     }
   }
+
+
 
   void showChangePasswordDialog() {
     if (!UserToken.online) {
@@ -503,6 +520,48 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> showRestoreDialog(BuildContext context) async {
+    if (!UserPrivacy.googleDriveBackup) {
+      showTopSnackBar(
+          context,
+          'To restore data, you need to grant permission for Google Drive backup.',
+          5);
+
+      return;
+    }
+    List<Map<String, dynamic>> backups =
+        await GoogleDriveBackupHelper.readJsonFile();
+
+    if (backups.isEmpty) {
+      print("No backups found.");
+      return;
+    }
+
+    // Show a dialog with available backups
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Select Backup to Restore"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: backups.map((backup) {
+                return ListTile(
+                  title: Text("Backup at: ${backup['backup_at']}"),
+                  onTap: () async {
+                    BlocProvider.of<AuthBloc>(context)
+                        .add(UserStartRestore(backupData: backup));
+                    Navigator.of(context).pop();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthState>(
@@ -585,12 +644,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                       
                         children: [
                           Padding(
                             padding: EdgeInsets.all(ResStyle.spacing),
                             child: Column(
-                               crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   'Privacy Settings',
@@ -647,49 +705,95 @@ class _ProfilePageState extends State<ProfilePage> {
                               updateUserPrivacy();
                             },
                           )),
+                      // CardWidgetivider(
+                      //   'Backup',
+                      //   DropdownButton<String>(
+                      //     dropdownColor: HIGHTLIGHT_COLOR,
+                      //     value: backupFrequency,
+                      //     items: [
+                      //       "No Backup",
+                      //       "First Transaction In A Day",
+                      //       "First Transaction In A Month",
+                      //       "Every Transaction",
+                      //     ].map((String value) {
+                      //       return DropdownMenuItem<String>(
+                      //         value: value,
+                      //         child: Text(value),
+                      //       );
+                      //     }).toList(),
+                      //     onChanged: (newValue) {
+                      //       if (newValue != null) {
+                      //         setState(() {
+                      //           backupFrequency = newValue;
+                      //         });
+                      //         updateUserPrivacy();
+                      //       }
+                      //     },
+                      //   ),
+                      // ),
                       CardWidgetivider(
-                        'Backup',
-                        DropdownButton<String>(
-                          dropdownColor: HIGHTLIGHT_COLOR,
-                          value: backupFrequency,
-                          items: [
-                            "No Backup",
-                            "First Transaction In A Day",
-                            "First Transaction In A Month",
-                            "Every Transaction",
-                          ].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              setState(() {
-                                backupFrequency = newValue;
-                              });
-                              updateUserPrivacy();
-                            }
+                        'Allow to use your Google Drive to backup your data',
+                        BugSwitch(
+                          value: useGoogleDriveBackup,
+                          onChanged: (value) {
+                            setState(() {
+                              useGoogleDriveBackup = value;
+                            });
+                            updateUserPrivacy();
                           },
                         ),
                       ),
-                      CardWidgetivider(
-                          'Last updated at: ${DateTime.now().toString().substring(0, 16)}',
-                          BugIconButton(
-                              text: 'Backup now',
-                              onPressed: () {
-                                //backupMyDataNow(); // Define this function to handle the backup process
-                              },
-                              icon: Icons.backup)),
-                      CardWidgetivider(
-                          'Last Backup at:  ${DateTime.now().subtract(Duration(days: 1)).toString().substring(0, 16)}',
-                          BugIconButton(
-                              text: 'Restore now',
-                              onPressed: () {
-                                //backupMyDataNow(); // Define this function to handle the backup process
-                              },
-                              icon: Icons.restore),
-                          isLast: true),
+
+                      BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                        if (state is UserBackUpRunning) {
+                          return CardWidgetivider(
+                            'Back up in progress...',
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    SUCCESS_COLOR),
+                              ),
+                            ),
+                          );
+                        } else {
+                          return CardWidgetivider(
+                              'Your data will backup automatically everyday',
+                              BugIconButton(
+                                  text: 'Backup now',
+                                  onPressed: () async {
+                                    BlocProvider.of<AuthBloc>(context)
+                                        .add(UserStartBackup());
+                                  },
+                                  icon: Icons.backup));
+                        }
+                      }),
+
+                      BlocBuilder<AuthBloc, AuthState>(
+                          builder: (context, state) {
+                        if (state is UserRestoreRunning) {
+                          return CardWidgetivider(
+                            'Restore in progress...',
+                            Expanded(
+                              child: LinearProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    SUCCESS_COLOR),
+                              ),
+                            ),
+                          );
+                        } else {
+                          return CardWidgetivider(
+                              'Last Backup: ${UserBackup.lastBackUpTime?.toString().substring(0, 16) ?? ''}',
+                              BugIconButton(
+                                  text: 'Restore now',
+                                  onPressed: () {
+                                    showRestoreDialog(context);
+                                  },
+                                  icon: Icons.restore),
+                              isLast: true);
+                        }
+                      }),
+
                       SizedBox(
                         height: ResStyle.spacing / 2,
                       )

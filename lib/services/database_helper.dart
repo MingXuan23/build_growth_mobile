@@ -21,7 +21,7 @@ class DatabaseHelper {
     // Concatenate the file path with the database name manually
     String path = join(databasesPath, 'bug.db');
     
-    //await databaseFactory.deleteDatabase(path);
+   // await databaseFactory.deleteDatabase(path);
 
     // Open the database
     return await openDatabase(
@@ -87,6 +87,10 @@ class DatabaseHelper {
 
      await db.execute('''
         ALTER TABLE Transactions ADD COLUMN transaction_type INTEGER NOT NULL DEFAULT 1
+      ''');
+
+    await db.execute('''
+        ALTER TABLE Transactions ADD COLUMN image TEXT 
       ''');
   }
 

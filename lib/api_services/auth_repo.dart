@@ -88,7 +88,7 @@ class AuthRepo {
       ).timeout(
         const Duration(seconds: 5), // Set timeout duration
       );
-      ;
+      
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
@@ -247,8 +247,8 @@ class AuthRepo {
       );
 
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body);
-        UserPrivacy.fromMap(data['user_privacy']['detail']);
+        var data = jsonDecode(response.body); 
+        UserPrivacy.fromMap(jsonDecode(data['user_privacy']['detail']));
         return {
           'user_info': UserInfo(
             address: data['address'] ?? 'xxx',

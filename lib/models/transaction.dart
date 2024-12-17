@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
@@ -6,12 +8,13 @@ import 'package:build_growth_mobile/services/database_helper.dart';
 class Transaction {
   final int? id;
   final double amount;
-  final String desc;
+  String desc;
   final int? asset_id;
   final int? debt_id;
   final String? user_code;
   final DateTime created_at;
   int transaction_type;
+  String? image;
   //1 is normal
   //2 is asset transfer
 
@@ -28,7 +31,8 @@ class Transaction {
       required this.created_at,
       this.asset,
       this.debt,
-      this.transaction_type =1});
+      this.transaction_type =1,
+      this.image});
 
   Map<String, dynamic> toMap() {
     return {
@@ -38,7 +42,8 @@ class Transaction {
       'debt_id': debt_id,
       'user_code': UserToken.user_code,
       'created_at': created_at.toIso8601String(),
-      'transaction_type': transaction_type
+      'transaction_type': transaction_type,
+      'image':image
     };
   }
 
@@ -61,7 +66,7 @@ class Transaction {
 
     // Query the database for all transactions with status true (1)
     final List<Map<String, dynamic>> maps = await db.query('Transactions',
-        where: 'user_code = ${UserToken.user_code}');
+        where: 'user_code = "${UserToken.user_code}"');
 
     // Use Future.wait to handle multiple async operations
     List<Transaction> transactions = [];
@@ -86,7 +91,8 @@ class Transaction {
         created_at: DateTime.parse(map['created_at']),
         asset: asset,
         debt: debt,
-        transaction_type: map['transaction_type']??1
+        transaction_type: map['transaction_type']??1,
+        image: map['image']
       ));
 
       if (asset?.type == "Cash" ||
@@ -102,7 +108,8 @@ class Transaction {
           created_at: DateTime.parse(map['created_at']),
           asset: map['asset'], // Assuming `asset` comes from `map`
           debt: map['debt'], // Assuming `debt` comes from `map`
-          transaction_type: map['transaction_type']??1
+          transaction_type: map['transaction_type']??1,
+           image: map['image']
         ));
       }
     }

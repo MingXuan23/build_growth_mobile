@@ -8,49 +8,51 @@ part 'content_event.dart';
 part 'content_state.dart';
 
 class ContentBloc extends Bloc<ContentEvent, ContentState> {
+  static String microlearning_id = '1';
+  static List<Content> content_list = [];
+
   ContentBloc(ContentState intial) : super(intial) {
     on<ContentRequest>(
       (event, emit) async {
         emit(ContentLoadingState());
-       var result =  await ContentRepo.loadContent();
+        var result = await ContentRepo.loadContent();
 
-       if(result['result'] == 201){
-        List<Content> contentList = (result['list'] as List)
-      .map((item) => item as Content)
-      .toList();
-        emit(ContentTestState(list: contentList));
+        if (result['result'] == 201) {
+          List<Content> contentList =
+              (result['list'] as List).map((item) => item as Content).toList();
+          emit(ContentTestState(list: contentList));
+        } else if (result['result'] == 200) {
+          List<Content> contentList =
+              (result['list'] as List).map((item) => item as Content).toList();
 
-       }else if(result['result'] == 200){
-          List<Content> contentList = (result['list'] as List)
-      .map((item) => item as Content)
-      .toList();
-        emit(ContentReadyState(list: contentList));
-       }
-
-
-  
-       
-
-
+          microlearning_id = result['microlearning_id'].toString();
+          content_list.clear();
+          content_list.addAll(contentList);
+          emit(ContentReadyState(list: contentList));
+        }
       },
     );
 
-    on<SubmitContentTestEvent>((event, emit) async {
+    on<SubmitContentTestEvent>(
+      (event, emit) async {
+        if (state is ContentLoadingState || state is ContentTestResultState) {
+          return;
+        }
+        emit(ContentLoadingState());
 
-      if(state is ContentLoadingState || state is ContentTestResultState){
-        return;
-      }
-       emit(ContentLoadingState());
+        var message = await ContentRepo.saveContentTest(
+            event.like_list, event.dislike_list);
 
-        var message = await ContentRepo.saveContentTest(event.like_list, event.dislike_list);
+        emit(ContentTestResultState(message: message));
+      },
+    );
 
-        emit(ContentTestResultState(message:  message));
-    },);
-
-    on<ContentRebuildEvent>((event, emit) {
-      emit(ContentLoadingState());
-      emit(state);
-    },);
+    on<ContentRebuildEvent>(
+      (event, emit) {
+        emit(ContentLoadingState());
+        emit(state);
+      },
+    );
   }
 }
 

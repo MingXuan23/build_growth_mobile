@@ -14,6 +14,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:upgrader/upgrader.dart';
 
 void main() async {
@@ -31,6 +32,7 @@ void main() async {
     runApp(const MyApp(
       home: StartPage(),
     ));
+
   });
 }
 
@@ -60,8 +62,9 @@ class MyApp extends StatelessWidget {
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],
+
       child: MaterialApp(
-          title: 'Flutter Demo',
+          title: 'BUild Growth',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
@@ -76,3 +79,4 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
@@ -25,7 +26,9 @@ class GptRepo {
     request.headers['Content-Type'] = 'application/json';
     request.headers['Application-Id'] = appId;
     request.headers['Authorization'] = 'Bearer ${UserToken.remember_token}';
-    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_histoy, "use_content": UserPrivacy.pushContent});
+
+    var contentList = jsonEncode(ContentBloc.content_list.map((e)=>e.toGPTMap()).toList());
+    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_histoy, "use_content": UserPrivacy.pushContent,"contentList":contentList});
 
     try {    
       final response = await request.send();

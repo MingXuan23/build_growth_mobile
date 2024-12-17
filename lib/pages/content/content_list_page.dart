@@ -1,5 +1,6 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/web_view.dart';
@@ -14,12 +15,12 @@ class ContentListPage extends StatefulWidget {
 }
 
 class _ContentPageState extends State<ContentListPage> {
-  String option = '1';
+  String option = ContentBloc.microlearning_id;
   bool isMicroLearning = true;
 
   void updateCategory(String option) {
     setState(() {
-      isMicroLearning = option == '1';
+      isMicroLearning = option == ContentBloc.microlearning_id;
       this.option = option;
     });
   }
@@ -27,7 +28,11 @@ class _ContentPageState extends State<ContentListPage> {
   void openWebView(String url, String name) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => WebViewWPage(url: url, header: name,)),
+      MaterialPageRoute(
+          builder: (context) => WebViewWPage(
+                url: url,
+                header: name,
+              )),
     );
   }
 
@@ -45,7 +50,6 @@ class _ContentPageState extends State<ContentListPage> {
               padding: EdgeInsets.all(ResStyle.spacing),
               child: Column(
                 children: [
-                  // Top Option Bar
                   Container(
                     decoration: BoxDecoration(
                       color: HIGHTLIGHT_COLOR,
@@ -56,11 +60,13 @@ class _ContentPageState extends State<ContentListPage> {
                       children: [
                         Expanded(
                             child: GestureDetector(
-                          onTap: () => updateCategory('1'),
+                          onTap: () =>
+                              updateCategory(ContentBloc.microlearning_id),
                           child: Container(
-                            padding: EdgeInsets.symmetric(vertical: ResStyle.spacing),
+                            padding: EdgeInsets.symmetric(
+                                vertical: ResStyle.spacing),
                             decoration: BoxDecoration(
-                              color: option == '1'
+                              color: option == ContentBloc.microlearning_id
                                   ? TITLE_COLOR
                                   : HIGHTLIGHT_COLOR,
                               borderRadius: BorderRadius.circular(8),
@@ -82,23 +88,24 @@ class _ContentPageState extends State<ContentListPage> {
                           child: GestureDetector(
                             onTap: () => updateCategory('2'),
                             child: Container(
-                              padding: EdgeInsets.symmetric(vertical: ResStyle.spacing),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: ResStyle.spacing),
                               decoration: BoxDecoration(
-                                color: option != '1'
+                                color: option != ContentBloc.microlearning_id
                                     ? TITLE_COLOR
-                                  : HIGHTLIGHT_COLOR,
+                                    : HIGHTLIGHT_COLOR,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 'Event',
-                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: ResStyle.font,
-                                color: !isMicroLearning
-                                    ? HIGHTLIGHT_COLOR
-                                    : TITLE_COLOR,
-                                fontWeight: FontWeight.w500,
-                              ),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: ResStyle.font,
+                                  color: !isMicroLearning
+                                      ? HIGHTLIGHT_COLOR
+                                      : TITLE_COLOR,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                           ),
@@ -106,38 +113,62 @@ class _ContentPageState extends State<ContentListPage> {
                       ],
                     ),
                   ),
-          SizedBox(height: ResStyle.spacing,),
+                  SizedBox(
+                    height: ResStyle.spacing,
+                  ),
                   // List View of Content Cards
                   Expanded(
                     child: ListView.builder(
                       itemCount: state.list
-                          .where((x) =>
-                              isMicroLearning == (x.content_category == '1'))
-                          .length,
+                              .where((x) =>
+                                  isMicroLearning ==
+                                  (x.content_category ==
+                                      ContentBloc.microlearning_id))
+                              .length +
+                          1,
                       itemBuilder: (context, index) {
+                        if (index ==
+                            state.list
+                                .where((x) =>
+                                    isMicroLearning ==
+                                    (x.content_category ==
+                                        ContentBloc.microlearning_id))
+                                .length) {
+                          return BugPrimaryButton(
+                              text: 'Browse More',
+                              borderRadius: 8,
+                              onPressed: () {
+                                openWebView(CONTENT_URL, 'Content');
+                              });
+                        }
                         final content = state.list
                             .where((x) =>
-                                isMicroLearning == (x.content_category == '1'))
+                                isMicroLearning ==
+                                (x.content_category ==
+                                    ContentBloc.microlearning_id))
                             .toList()[index];
                         return Padding(
-                          padding:  EdgeInsets.symmetric(vertical: ResStyle.spacing/2),
+                          padding: EdgeInsets.symmetric(
+                              vertical: ResStyle.spacing / 2),
                           child: Card(
-                            
-                          color: RM20_COLOR.withOpacity(0.8),
+                            color: RM20_COLOR.withOpacity(0.8),
                             child: ConstrainedBox(
-                              constraints: BoxConstraints(minHeight: ResStyle.height * 0.15),
+                              constraints: BoxConstraints(
+                                  minHeight: ResStyle.height * 0.15),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Padding(
-                                          padding:  EdgeInsets.all(ResStyle.spacing),
+                                          padding:
+                                              EdgeInsets.all(ResStyle.spacing),
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 content.name,
@@ -146,19 +177,32 @@ class _ContentPageState extends State<ContentListPage> {
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
-                                              SizedBox(height: ResStyle.spacing),
-                                              Text(content.desc, style: TextStyle(fontSize: ResStyle.small_font),),
-                                              SizedBox(height: ResStyle.spacing/2,),
+                                              SizedBox(
+                                                  height: ResStyle.spacing),
+                                              Text(
+                                                content.desc,
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        ResStyle.small_font),
+                                              ),
+                                              SizedBox(
+                                                height: ResStyle.spacing / 2,
+                                              ),
                                               //BugRoundButton(icon: Icons.chevron_right_rounded, onPressed: (){}),
-                                              
                                             ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                   BugRoundButton(icon: Icons.chevron_right_rounded, onPressed: ()=>   openWebView(content.link, 'Content Detail'),),
-                                   SizedBox(width: ResStyle.spacing,)
+                                  BugRoundButton(
+                                    icon: Icons.chevron_right_rounded,
+                                    onPressed: () => openWebView(
+                                        content.link, 'Content Detail'),
+                                  ),
+                                  SizedBox(
+                                    width: ResStyle.spacing,
+                                  )
                                 ],
                               ),
                             ),

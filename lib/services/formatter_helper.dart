@@ -82,6 +82,14 @@ class FormatterHelper {
         date.year == DateTime.now().year);
   }
 
+
+static bool isToday(DateTime? date) {
+    if (date == null) {
+      return false;
+    }
+    return (date.month == DateTime.now().month &&
+        date.year == DateTime.now().year && date.day == DateTime.now().day);
+  }
   static double getAmountFromRM(String value) {
     return double.tryParse(value.replaceAll('RM', '').replaceAll(' ', '')) ??
         0.0;

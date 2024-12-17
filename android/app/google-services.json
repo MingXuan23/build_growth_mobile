@@ -12,7 +12,24 @@
           "package_name": "com.bug.build_growth_mobile"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "236043855734-60nfsi64m2djudu2q6fccug61t438nb4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bug.build_growth_mobile",
+            "certificate_hash": "449e536ba9e64c924f1488e7edcbd725cecb9dc5"
+          }
+        },
+        {
+          "client_id": "236043855734-e8q38jn2ohnb2b48ek09jr1u5po58flv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bug.build_growth_mobile",
+            "certificate_hash": "69315cc01759106c4940652c9670a9767946ab76"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDmh2LTLi5mtPIn5Di8B_w5aW6nodar5l4"

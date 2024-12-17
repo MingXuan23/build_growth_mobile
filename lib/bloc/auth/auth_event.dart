@@ -98,3 +98,12 @@ class  UpdateProfileRequest extends AuthEvent{
 
 }
 
+class UserStartBackup extends AuthEvent {}
+
+class UserStartRestore extends AuthEvent {
+
+  final Map<String, dynamic> backupData;
+
+  UserStartRestore({required this.backupData});
+}
+

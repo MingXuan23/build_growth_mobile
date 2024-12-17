@@ -1,8 +1,23 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
+import 'package:build_growth_mobile/models/transaction.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
+import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
+import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
+import 'package:build_growth_mobile/widget/bug_input.dart';
 import 'package:flutter/material.dart';
+
+import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:http/http.dart';
+
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 Widget AssetCard(String header, String text, Function() func,
     {Color color = RM1_COLOR, Color font_color = TEXT_COLOR // Default color
@@ -308,13 +323,16 @@ Widget ExpenseDetailCard(Debt debt, VoidCallback func,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                     SizedBox(width: ResStyle.spacing,),
+                    SizedBox(
+                      width: ResStyle.spacing,
+                    ),
                     Container(
                       decoration: BoxDecoration(
                           color: HIGHTLIGHT_COLOR,
                           borderRadius: BorderRadius.circular(12)),
                       child: Padding(
-                        padding:  EdgeInsets.symmetric(horizontal: ResStyle.spacing/2),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: ResStyle.spacing / 2),
                         child: Text(
                             '${getMonthName(DateTime.now().month)} ${DateTime.now().year}',
                             style: TextStyle(
@@ -447,15 +465,352 @@ Widget CardInfoDivider(String title, String info, {bool isLast = false}) {
 }
 
 Widget CardWidgetivider(String title, Widget trailing, {bool isLast = false}) {
-  return Wrap(
+  return Column(
     children: [
-      ListTile(
-          title: Text(
-            title,
-            style: TextStyle(fontSize: ResStyle.medium_font),
-          ),
-          trailing: trailing),
+      Padding(
+        padding: EdgeInsets.symmetric(
+            horizontal: ResStyle.spacing, vertical: ResStyle.spacing / 2),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: ResStyle.medium_font,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    maxLines: 2,
+                  ),
+                ),
+                SizedBox(width: ResStyle.spacing),
+                trailing,
+                // Expanded(
+                //   //flex: 2,
+                //   child: SizedBox(
+                //     //height: 10, // Fixed height for progress indicator
+                //     child: trailing,
+                //   ),
+                // )
+              ],
+            );
+          },
+        ),
+      ),
       if (!isLast) const Divider(),
     ],
   );
+}
+
+class TransactionCard extends StatefulWidget {
+  final Transaction transaction;
+  final Function loadData;
+  const TransactionCard(
+      {Key? key, required this.transaction, required this.loadData})
+      : super(key: key);
+
+  @override
+  _TransactionCardState createState() => _TransactionCardState();
+}
+
+class _TransactionCardState extends State<TransactionCard> {
+  String proofPath = '';
+  bool proofExists = false;
+
+  @override
+  void initState() {
+    super.initState();
+    checkProof(widget.transaction);
+  }
+
+  // Function to check if proof image exists
+  Future<void> checkProof(Transaction t) async {
+    final dir = await getApplicationDocumentsDirectory();
+
+    if (t.image != null) {
+      if (await File(t.image ?? "").exists()) {
+        setState(() {
+          proofPath = t.image ?? "";
+          proofExists = true;
+        });
+
+        return;
+      }
+    }
+
+    String now = DateTime.now().toString().replaceAll(RegExp(r'[^0-9]'), '');
+
+    //for checking missing photo
+    final jpgPath = path.join(dir.path, '${now}_${widget.transaction.id}.jpg');
+    final pngPath = path.join(dir.path, '${now}_${widget.transaction.id}.png');
+
+    if (await File(jpgPath).exists()) {
+      setState(() {
+        proofPath = jpgPath;
+        proofExists = true;
+      });
+    } else if (await File(pngPath).exists()) {
+      setState(() {
+        proofPath = pngPath;
+        proofExists = true;
+      });
+    } else {
+      setState(() {
+        proofExists = false;
+      });
+    }
+  }
+
+  // Function to pick an image from a given source
+  Future<void> _pickImage(ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: source);
+
+    if (image != null) {
+      final dir = await getApplicationDocumentsDirectory();
+      final extension = path.extension(image.path);
+      final newPath = path.join(dir.path,
+          'transaction_${widget.transaction.id}_${UserToken.user_code}$extension');
+
+      await File(image.path).copy(newPath);
+
+      Transaction t = widget.transaction;
+      t.image = newPath;
+      Transaction.updateTransaction(t);
+      setState(() {
+        proofPath = newPath;
+        proofExists = true;
+      });
+
+      if (UserToken.online && UserPrivacy.googleDriveBackup) {
+        try {
+          await GoogleDriveBackupHelper.uploadTransactionImage(t);
+        } catch (e) {}
+      }
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(BugSnackBar('Add Transaction Proof Successfully!', 3));
+    }
+  }
+
+  // Function to add proof using a Cupertino Action Sheet
+  Future<void> addProof() async {
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoActionSheet(
+        actions: <CupertinoActionSheetAction>[
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _pickImage(ImageSource.camera);
+            },
+            child: Text('Take Photo',
+                style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _pickImage(ImageSource.gallery);
+            },
+            child: Text('Choose from Gallery',
+                style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel',
+              style: TextStyle(color: DANGER_COLOR, fontSize: ResStyle.font)),
+        ),
+      ),
+    );
+  }
+
+  // Function to delete the proof image
+  Future<void> deleteProof() async {
+    final file = File(proofPath);
+    if (await file.exists()) {
+      await file.delete();
+      setState(() {
+        proofPath = '';
+        proofExists = false;
+      });
+
+      Transaction t = widget.transaction;
+      t.image = null;
+      Transaction.updateTransaction(t);
+      Navigator.pop(context);
+    }
+  }
+
+  // Placeholder for saving to gallery
+  void saveToGallery() {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('Image saved to gallery')));
+  }
+
+  // Function to view the proof image
+  void viewProof() {
+    showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        builder: (context) {
+          return BugBottomModal(
+              additionHeight: ResStyle.height * 0.15,
+              context: context,
+              header: 'Transaction Proof',
+              widgets: [
+                Image.file(
+                  File(proofPath),
+                  height: ResStyle.height * 0.5,
+                ),
+                SizedBox(height: ResStyle.spacing),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      BugIconButton(
+                          text: 'Save To Gallery',
+                          icon: Icons.save,
+                          onPressed: saveToGallery,
+                          color: SUCCESS_COLOR,
+                          text_color: HIGHTLIGHT_COLOR),
+                      BugIconButton(
+                          text: 'Delete',
+                          icon: Icons.delete,
+                          onPressed: deleteProof,
+                          color: DANGER_COLOR,
+                          text_color: HIGHTLIGHT_COLOR),
+                    ])
+              ]);
+        });
+  }
+
+// Function to show the modal sheet for editing the note
+  void _showEditNoteModal() {
+    TextEditingController _noteController =
+        TextEditingController(text: widget.transaction.desc);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // To allow the modal sheet to expand fully
+      builder: (context) {
+        return BugBottomModal(
+            context: context,
+            additionHeight: -ResStyle.height * 0.2,
+            header: 'Transaction',
+            widgets: [
+              BugTextInput(
+                controller: _noteController,
+                label: 'Transaction Note',
+                hint: 'Enter your note',
+                prefixIcon: Icon(Icons.note_alt),
+              ),
+              SizedBox(
+                height: ResStyle.spacing * 5,
+              ),
+              BugPrimaryButton(
+                  text: 'Save Note',
+                  color: TITLE_COLOR,
+                  onPressed: () {
+                    _saveNote(_noteController.text);
+                    Navigator.of(context).pop();
+                  }),
+              SizedBox(
+                height: ResStyle.spacing,
+              ),
+              BugPrimaryButton(
+                  text: 'Delete This Transaction',
+                  color: DANGER_COLOR,
+                  onPressed: () {
+                    _deleteNote();
+                  }),
+            ]);
+      },
+    );
+  }
+
+// Function to save the updated note
+  void _saveNote(String newNote) {
+    setState(() {
+      widget.transaction.desc = newNote;
+    });
+    Transaction.updateTransaction(widget.transaction);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(BugSnackBar('Update Transaction Successfully', 5)
+            //SnackBar(content: Text('Note updated successfully!')),
+            );
+    Navigator.of(context).pop();
+    widget.loadData();
+  }
+
+// Function to delete the note
+  void _deleteNote() {
+    Transaction.deleteTransaction(widget.transaction.id ?? -1);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(BugSnackBar('Delete Transaction Successfully', 5)
+            //SnackBar(content: Text('Note deleted successfully!')),
+            );
+    widget.loadData();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: _showEditNoteModal, // ,
+      child: Card(
+        elevation: 4,
+        margin: EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        color: Colors.white,
+        shadowColor: Colors.black,
+        child: ListTile(
+          contentPadding: EdgeInsets.all(16),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (widget.transaction.asset != null)
+                    Text('From: ${widget.transaction.asset!.name}',
+                        style: TextStyle(color: Colors.green)),
+                  if (widget.transaction.debt != null)
+                    Text('For: ${widget.transaction.debt!.name}',
+                        style: TextStyle(color: Colors.green)),
+                  Text('Note: ${widget.transaction.desc}',
+                      style: TextStyle(color: Colors.black87)),
+                  Text(
+                      'Date: ${widget.transaction.created_at.toLocal().toString().split(' ')[0]}',
+                      style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    FormatterHelper.toDoubleString(widget.transaction.amount),
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, color: TITLE_COLOR),
+                  ),
+                  BugSmallButton(
+                    text: proofExists ? 'View Proof' : 'Add Proof',
+                    onPressed: proofExists ? viewProof : addProof,
+                    color: proofExists ? SUCCESS_COLOR : TITLE_COLOR,
+                    borderRadius: 8,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

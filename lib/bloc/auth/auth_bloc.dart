@@ -1,7 +1,9 @@
 import 'package:build_growth_mobile/api_services/gpt_repo.dart';
+import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
+import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -215,6 +217,82 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await UserToken.reset();
 
         emit(LoginInitial(email: UserToken.email));
+      },
+    );
+
+    on<UserStartBackup>(
+      (event, emit) async {
+        if (state is UserRestoreRunning || state is UserBackUpRunning) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'Please wait until the current backup or restore process finishes before starting a new one.',
+            success: false,
+          ));
+          return;
+        }
+
+        // Emit the running state
+
+        // Check if Google Drive backup permission is granted
+        if (!UserPrivacy.googleDriveBackup) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'To backup data, you need to grant permission for Google Drive backup.',
+            success: false,
+          ));
+          return;
+        }
+        emit(UserBackUpRunning());
+        // Start the backup process
+        try {
+          await GoogleDriveBackupHelper.startBackup();
+          emit(UserBackUpEnded());
+        } catch (e) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'An error occurred while trying to restore your data. Please try again later.',
+            success: false,
+          ));
+        }
+      },
+    );
+
+    on<UserStartRestore>(
+      (event, emit) async {
+        // Check if a backup or restore is already in progress
+        if (state is UserRestoreRunning || state is UserBackUpRunning) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'Please wait until the current backup or restore process finishes before starting a new one.',
+            success: false,
+          ));
+          return;
+        }
+
+        // Emit the running state
+
+        // Check if Google Drive backup permission is granted
+        if (!UserPrivacy.googleDriveBackup) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'To restore data, you need to grant permission for Google Drive backup.',
+            success: false,
+          ));
+          return;
+        }
+        emit(UserRestoreRunning());
+        // Start the backup process
+        try {
+          await UserBackup.restoreData(event.backupData);
+          await GoogleDriveBackupHelper.startRestore();
+          emit(UserRestoreEnded());
+        } catch (e) {
+          emit(AuthUpdateProfileResult(
+            message:
+                'An error occurred while trying to restore your data. Please try again later.',
+            success: false,
+          ));
+        }
       },
     );
   }

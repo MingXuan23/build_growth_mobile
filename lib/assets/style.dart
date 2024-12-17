@@ -36,10 +36,10 @@ class ResStyle {
   static bool _initialised = false;
   static double height = 0.0;
   static double width = 0.0;
-  static const double _font_size = 0.00006;
+  static const double _font_size = 0.000055;
   static const double _header_size = 0.0001;
-  static const double _body_size = 0.00008;
-  static const double _medium_size = 0.00005;
+  static const double _body_size = 0.00007;
+  static const double _medium_size = 0.000045;
   static const double _small_size = 0.00004;
 
   static double font = 0.0;

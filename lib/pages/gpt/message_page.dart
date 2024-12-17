@@ -21,7 +21,7 @@ class _MessagePageState extends State<MessagePage> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _scrollController.position.maxScrollExtent;
+
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -198,7 +198,7 @@ class _MessagePageState extends State<MessagePage> {
   Widget _buildInputField(BuildContext context) {
     List<String> quickReplies = [
       'My Budget Plan',
-      'Where to go',
+      'Budget Places',
       'Investment Tips',
       'Savings Advice'
     ];
@@ -220,13 +220,23 @@ class _MessagePageState extends State<MessagePage> {
                       child: BugSmallButton(
                           text: label,
                           onPressed: () {
-                            if(label == 'Where to go'){
-                              Navigator.of(context).push(new MaterialPageRoute(builder: (context)=> PlaceSelectionPage()));
-                            }else{
-                                BlocProvider.of<MessageBloc>(context)
-                                .add(SendMessageEvent(label));
+                            if (label == 'Budget Places') {
+                              Navigator.of(context).push(new MaterialPageRoute(
+                                  builder: (context) => PlaceSelectionPage()));
+                            } else if (label == 'My Budget Plan') {
+                              BlocProvider.of<MessageBloc>(context)
+                                  .add(SendMessageEvent('Based on my cashflow, suggest the budget plan for today, this month, and this year'));
+                            } else if(label =='Investment Tips'){
+                               BlocProvider.of<MessageBloc>(context)
+                                  .add(SendMessageEvent('Based on my cashflow, suggest the short-term and long-term investment plan that suitable for me'));
+                            }else if(label == 'Savings Advice'){
+                               BlocProvider.of<MessageBloc>(context)
+                                  .add(SendMessageEvent('Based on my cashflow and expense behaviour, what is the critical saving advice for me?'));
                             }
-                            
+                            else {
+                              BlocProvider.of<MessageBloc>(context)
+                                  .add(SendMessageEvent(label));
+                            }
                           },
                           color: RM50_COLOR),
                     );
@@ -236,21 +246,35 @@ class _MessagePageState extends State<MessagePage> {
             ),
             // More indicator
 
-            BugRoundButton(icon: Icons.more_horiz_sharp , size: ResStyle.body_font,text_color: RM50_COLOR , color: HIGHTLIGHT_COLOR, onPressed: (){
-              if(controller.position.pixels ==controller.position.maxScrollExtent ){
-              controller.animateTo(0, duration: Duration(milliseconds: 300), curve: Curves.easeIn,);
-
-              }else{
-              controller.animateTo(controller.position.maxScrollExtent, duration: Duration(milliseconds: 300), curve: Curves.easeIn,);
-
-              }
-            }),
+            BugRoundButton(
+                icon: Icons.more_horiz_sharp,
+                size: ResStyle.body_font,
+                text_color: RM50_COLOR,
+                color: HIGHTLIGHT_COLOR,
+                onPressed: () {
+                  if (controller.position.pixels ==
+                      controller.position.maxScrollExtent) {
+                    controller.animateTo(
+                      0,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeIn,
+                    );
+                  } else {
+                    controller.animateTo(
+                      controller.position.maxScrollExtent,
+                      duration: Duration(milliseconds: 300),
+                      curve: Curves.easeIn,
+                    );
+                  }
+                }),
             // Icon(
             //   Icons.more_horiz,
             //   size: ResStyle.font,
             //   color: Colors.grey.shade500,
             // ),
-            SizedBox(width: ResStyle.spacing/2,)
+            SizedBox(
+              width: ResStyle.spacing / 2,
+            )
           ],
         ),
         Container(

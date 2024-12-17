@@ -5,11 +5,15 @@ class Content{
   final String image;
   final String link;
 
+   double? enrollment_price;
+   String? firstDate;
+   String? place;
+
   final String content_category ;
 
   final bool? isLike;
 
-  Content({required this.name, required this.id, required this.desc, required this.image,  this.isLike, required this.link, required this.content_category});
+  Content({required this.name, required this.id, required this.desc, required this.image,  this.isLike, required this.link, required this.content_category, this.enrollment_price, this.firstDate, this.place});
 
  // Convert a Content object to a Map
   Map<String, dynamic> toMap() {
@@ -24,6 +28,21 @@ class Content{
     };
   }
 
+   Map<String, dynamic> toGPTMap() {
+    return {
+      'name': name,
+      'id': id,
+      'desc': desc,
+      
+     
+      'enrollment_price':enrollment_price,
+      'place': place,
+      'first_date':firstDate
+    };
+  }
+
+
+
   // Create a Content object from a Map
   factory Content.fromMap(Map<String, dynamic> map) {
     return Content(
@@ -33,7 +52,11 @@ class Content{
       image:( map['image']??'') as String,
       link: (map['link']??'') as String,
       isLike: map['isLike'] != null ? map['isLike'] as bool : null,
-      content_category: (map['content_type_id']??'').toString()
+      content_category: (map['content_type_id']??'').toString(),
+      enrollment_price: double.tryParse(map['enrollment_price']),
+      firstDate: map['first_date'],
+      place: map['place']
+
     );
   }
   

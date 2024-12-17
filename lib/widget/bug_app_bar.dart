@@ -26,9 +26,8 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
         IconButton(
           icon: Icon(Icons.account_circle,
               color: HIGHTLIGHT_COLOR), // Profile icon
-          onPressed: ()  {
+          onPressed: () {
             redirectToProfile(context, false);
-            
           },
         ),
     ],
@@ -37,14 +36,16 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
 }
 
 void redirectToProfile(BuildContext context, bool gotoPrivacy) async {
-  await Navigator.of(context)
-      .push(new MaterialPageRoute(builder: (context) => ProfilePage(gotoPrivacy: gotoPrivacy,)));
+  await Navigator.of(context).push(new MaterialPageRoute(
+      builder: (context) => ProfilePage(
+            gotoPrivacy: gotoPrivacy,
+          )));
 
-  BlocProvider.of<ContentBloc>(context).add(ContentRebuildEvent());
+  BlocProvider.of<ContentBloc>(context).add(ContentRequest());
 
   BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());
 
-    FocusScope.of(context).unfocus();
+  FocusScope.of(context).unfocus();
 
   return;
 }
@@ -121,15 +122,21 @@ Widget BugBottomModal(
   return SingleChildScrollView(
     key: key,
     child: Container(
+      //color: HIGHTLIGHT_COLOR,
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: ResStyle.spacing,
         right: ResStyle.spacing,
         top: ResStyle.spacing,
       ),
-      child: SizedBox(
+
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28), color: HIGHTLIGHT_COLOR),
+
+      child: Container(
         height: ResStyle.height * 0.7 + additionHeight,
         width: double.infinity,
+        color: HIGHTLIGHT_COLOR,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -215,69 +222,80 @@ Widget BugLoading() {
 }
 
 void showTopSnackBar(BuildContext context, String message, int seconds) {
-  final overlay = Overlay.of(context);
-  late OverlayEntry overlayEntry;
-  overlayEntry = OverlayEntry(
-    builder: (context) => Positioned(
-      top: MediaQuery.of(context).padding.top +
-          kToolbarHeight +
-          10, // Adjust for status bar
-      left: ResStyle.spacing,
-      right: ResStyle.spacing,
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          padding: EdgeInsets.symmetric(
-              horizontal: ResStyle.spacing, vertical: ResStyle.spacing),
-          decoration: BoxDecoration(
-              color: HIGHTLIGHT_COLOR,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: TITLE_COLOR, width: 5)),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(
-                Icons.info,
-                color: RM1_COLOR,
-                size: ResStyle.header_font,
-              ),
-              SizedBox(
-                width: ResStyle.spacing,
-              ),
-              Expanded(
-                child: Text(
-                  message,
-                  style: TextStyle(
-                    fontSize: ResStyle.font,
-                    fontWeight: FontWeight.bold,
-                    color: TEXT_COLOR,
+  if (!context.mounted) {
+    return;
+  }
+
+  try {
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
+    late OverlayEntry overlayEntry;
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: MediaQuery.of(context).padding.top +
+            kToolbarHeight +
+            10, // Adjust for status bar
+        left: ResStyle.spacing,
+        right: ResStyle.spacing,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+                horizontal: ResStyle.spacing, vertical: ResStyle.spacing),
+            decoration: BoxDecoration(
+                color: HIGHTLIGHT_COLOR,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: TITLE_COLOR, width: 5)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Icon(
+                  Icons.info,
+                  color: RM1_COLOR,
+                  size: ResStyle.header_font,
+                ),
+                SizedBox(
+                  width: ResStyle.spacing,
+                ),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: TextStyle(
+                      fontSize: ResStyle.font,
+                      fontWeight: FontWeight.bold,
+                      color: TEXT_COLOR,
+                    ),
                   ),
                 ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  try {
-                    overlayEntry.remove();
-                  } catch (e) {}
-                },
-                child: Icon(
-                  Icons.close,
-                  size: ResStyle.header_font,
-                  color: TITLE_COLOR,
+                GestureDetector(
+                  onTap: () {
+                    try {
+                      overlayEntry.remove();
+                    } catch (e) {}
+                  },
+                  child: Icon(
+                    Icons.close,
+                    size: ResStyle.header_font,
+                    color: TITLE_COLOR,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
 
-  overlay?.insert(overlayEntry);
+    overlay?.insert(overlayEntry);
 
-  Future.delayed(Duration(seconds: seconds)).then((_) {
-    try {
-      overlayEntry.remove();
-    } catch (e) {}
-  });
+    Future.delayed(Duration(seconds: seconds)).then((_) {
+      if (overlay.mounted) {
+        try {
+          overlayEntry.remove();
+        } catch (e) {
+          debugPrint('Error removing overlay after delay: $e');
+        }
+      }
+    });
+  } catch (e) {}
 }

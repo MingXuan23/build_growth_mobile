@@ -13,7 +13,7 @@ final class ContentTestState extends ContentState {
 final class ContentReadyState extends ContentState {
   final List<Content> list;
 
-  ContentReadyState({required this.list});
+  ContentReadyState( {required this.list });
 }
 
 final class ContentLoadingState extends ContentState {}

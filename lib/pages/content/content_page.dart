@@ -86,14 +86,16 @@ class _ContentPageState extends State<ContentPage> {
                 .add(ResetContentEvent(contentList: state.list));
 
             return ContentInitPage();
-          } else if (state is ContentTestResultState) {
+          } else if (state is ContentTestResultState || state is ContentLoadingState) {
             return BugLoading();
           } else if (state is ContentReadyState) {
             return ContentListPage();
           }
-          return ContentInitPage();
+          return BugLoading();
+         // return ContentInitPage();
         },
       ),
     );
   }
 }
+

@@ -101,3 +101,14 @@ class AuthUpdateProfileResult extends AuthState{
   
 }
 
+
+class UserBackUpRunning extends AuthState{}
+
+class UserRestoreRunning extends AuthState{}
+
+class UserBackUpEnded extends AuthState{}
+
+class UserRestoreEnded extends AuthState{}
+
+
+

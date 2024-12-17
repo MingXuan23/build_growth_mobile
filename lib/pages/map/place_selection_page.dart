@@ -109,7 +109,7 @@ class _ShufflePageState extends State<PlaceSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BugAppBar('Where to go ?', context, show_icon: false),
+      appBar: BugAppBar('Budget Places To Go', context, show_icon: false),
       body: (selected_place != null)
           ? WebViewWPage(
               url:
