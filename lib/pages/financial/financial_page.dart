@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:math';
 
 import 'package:build_growth_mobile/assets/style.dart';
@@ -13,7 +14,7 @@ import 'package:build_growth_mobile/pages/financial/transaction_history_page.dar
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
-import 'package:build_growth_mobile/widget/card.dart';
+import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -32,6 +33,9 @@ class _FinancialPageState extends State<FinancialPage> {
   double totalAssets = 0; // Example variable
   double totalDebts = 0; // Example variable
   double totalCashFlow = 0;
+  double totalExpense = 0;
+  double alarming_limit = 0;
+  int debtCount =0;
   List<Transaction> transaction_history = [];
   List<Transaction> cashFlow_history = [];
 
@@ -82,35 +86,46 @@ class _FinancialPageState extends State<FinancialPage> {
 
   Future<void> pushPage(Widget page) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-         FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
     BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<FinancialBloc, FinancialState>(
-      listener: (context, state) async {
-        if (state is FinancialDataLoaded) {
-          totalAssets = state.totalAssets;
-          totalDebts = state.totalDebts;
-          transaction_history = state.transactionList;
-          cashFlow_history = state.cashflowTransactionList;
-          totalCashFlow = state.totalCashflow;
-        }
- FocusScope.of(context).unfocus();
-        setState(() {});
-      },
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          if (MediaQuery.of(context).size.height >
-              MediaQuery.of(context).size.width) {
-            return vertical_body();
-          } else {
-            return horizontal_body();
+        listener: (context, state) async {
+          if (state is FinancialDataLoaded) {
+            totalAssets = state.totalAssets;
+            totalDebts = state.totalDebts;
+            transaction_history = state.transactionList;
+            cashFlow_history = state.cashflowTransactionList;
+            totalCashFlow = state.totalCashflow;
+            totalExpense = state.totalExpense;
+            debtCount = state.unpaidDebt;
           }
+          alarming_limit = 0;
+          var debt_with_alarming = transaction_history
+              .where((e) => e.debt != null && (e.debt?.alarming_limit ?? 0) > 0)
+              .map((e) => e.debt)
+              .toSet()
+              .toList();
+
+          for (var d in debt_with_alarming) {
+            final t = transaction_history
+                .where((e) =>
+                    e.debt_id == (d?.id ?? 0) &&
+                    FormatterHelper.isSameMonthYear(
+                        e.created_at)) // Filter by debt_id
+                .map((e) => e.amount) // Extract the amount
+                .reduce((a, b) => a + b); // Sum the amounts
+
+            alarming_limit += max(0.00, t.abs() - (d?.alarming_limit ?? 0.0));
+          }
+
+          FocusScope.of(context).unfocus();
+          setState(() {});
         },
-      ),
-    );
+        child: vertical_body());
   }
 
   Widget AssetDebtSection() {
@@ -120,20 +135,49 @@ class _FinancialPageState extends State<FinancialPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Total Assets Card
-          AssetCard(
-            'Total Assets',
-            'RM${totalAssets.toStringAsFixed(2)}',
-            () => pushPage(const AssetDetailPage()),
+          Expanded(
+            flex: 2,
+            child: AssetCard(
+              'Total Assets',
+              'RM${totalAssets.toStringAsFixed(2)}',
+              () => pushPage(const AssetDetailPage()),
+            ),
           ),
           SizedBox(height: ResStyle.spacing),
-          // Total Debts Card
-          AssetCard(
-            'Total Debt/Bills',
-            'RM${totalDebts.toStringAsFixed(2)}',
-            () => pushPage(const DebtDetailPage()),
-            color: (totalDebts == 0) ? RM5_COLOR : TITLE_COLOR,
-            font_color: (totalDebts == 0) ? TEXT_COLOR : WHITE_TEXT_COLOR,
+          Expanded(
+            flex: 2,
+            child: Row(
+              children: [
+                Expanded(
+                  child: DebtCard(
+                    'Debts',
+                    'RM${totalDebts.toStringAsFixed(2)}',
+                    () => pushPage(const DebtDetailPage()),
+                    color: (debtCount == 0) ? RM5_COLOR : TITLE_COLOR,
+                     infotext: (debtCount > 0) ? '(${debtCount} unpaid debt)' : null,
+                    font_color:
+                        (debtCount == 0) ? TEXT_COLOR : WHITE_TEXT_COLOR,
+                  ),
+                ),
+                Expanded(
+                  child: DebtCard(
+                    'Expenses',
+                    'RM${totalExpense.abs().toStringAsFixed(2)}',
+                    () => pushPage(const DebtDetailPage()),
+                    color: (alarming_limit > 0) ? DANGER_COLOR : RM5_COLOR,
+                    infotext: (alarming_limit > 0) ? '(Over spending)' : null,
+                    font_color:
+                        (alarming_limit > 0) ? WHITE_TEXT_COLOR : TEXT_COLOR,
+                  ),
+                ),
+              ],
+            ),
           ),
+          Expanded(
+            child: SizedBox(),
+            flex: 1,
+          )
+          // Total Debts Card
         ],
       ),
     );
@@ -176,27 +220,39 @@ class _FinancialPageState extends State<FinancialPage> {
               // Total Assets Card
               Expanded(
                 flex: 3,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      AssetDebtSection(), // Page 1
-                      TransactionGraphSection(
-                        transactions: cashFlow_history,
-                        currentAsset: totalCashFlow,
-                        header: 'Cash Flow History',
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight:
+                              constraints.maxHeight, // Match parent height
+                        ),
+                        child: IntrinsicHeight(
+                          child: Column(
+                            children: [
+                              AssetDebtSection(), // Page 1
+                              TransactionGraphSection(
+                                transactions: cashFlow_history,
+                                currentAsset: totalCashFlow,
+                                header: 'Cash Flow History',
+                              ),
+                              TransactionGraphSection(
+                                transactions: transaction_history,
+                                currentAsset: totalAssets,
+                                header: 'Asset Flow History',
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      TransactionGraphSection(
-                        transactions: transaction_history,
-                        currentAsset: totalAssets,
-                        header: 'Asset Flow History',
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
 
-              Expanded(child: QuickActionSection(1))
               // Chart Card
+              Expanded(child: QuickActionSection(1)),
             ],
           ),
         ),
@@ -283,127 +339,127 @@ class TransactionGraphSection extends StatelessWidget {
   Widget build(BuildContext context) {
     List<FlSpot> spots = _calculateReverseCashFlowSpots();
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(MaterialPageRoute(
-            builder: (context) => TransactionGraphPage(
-                  currentAsset: currentAsset,
-                  transactions: transactions,
-                  header: header,
-                )));
-      },
-      child: Padding(
-        padding: EdgeInsets.all(ResStyle.spacing),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                    child: Container(
-                  decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(12),
-                          topRight: Radius.circular(12)),
-                      color: TITLE_COLOR),
-                  child: Text(
-                    header,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: ResStyle.medium_font,
-                        color: HIGHTLIGHT_COLOR,
-                        fontWeight: FontWeight.bold),
-                  ),
-                )),
+    return Padding(
+      padding: EdgeInsets.all(ResStyle.spacing),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                  child: Container(
+                decoration: const BoxDecoration(
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12)),
+                    color: TITLE_COLOR),
+                child: Text(
+                  header,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: ResStyle.medium_font,
+                      color: HIGHTLIGHT_COLOR,
+                      fontWeight: FontWeight.bold),
+                ),
+              )),
+            ],
+          ),
+          Container(
+            height: ResStyle.height * 0.3,
+            padding: EdgeInsets.symmetric(
+                vertical: ResStyle.spacing, horizontal: ResStyle.spacing * 1.5),
+            decoration: BoxDecoration(
+              color: HIGHTLIGHT_COLOR,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: TEXT_COLOR.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
               ],
             ),
-            Container(
-              height: ResStyle.height * 0.3,
-              padding: EdgeInsets.symmetric(
-                  vertical: ResStyle.spacing * 3,
-                  horizontal: ResStyle.spacing * 1.5),
-              decoration: BoxDecoration(
-                color: HIGHTLIGHT_COLOR,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: TEXT_COLOR.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: LineChart(
-                curve: Curves.bounceIn,
-                LineChartData(
-                  gridData: FlGridData(show: false),
-                  titlesData: const FlTitlesData(
-                    show: false,
-                  ),
-                  borderData: FlBorderData(show: false),
-                  extraLinesData: ExtraLinesData(
-                    horizontalLines: [
-                      HorizontalLine(
-                        y: 0,
-                        color: SECONDARY_COLOR.withOpacity(0.5),
-                        strokeWidth: 1,
-                        dashArray: [5, 5],
+            child: Column(
+              children: [
+                Expanded(
+                  child: LineChart(
+                    curve: Curves.bounceIn,
+                    LineChartData(
+                      gridData: FlGridData(show: false),
+                      titlesData: const FlTitlesData(
+                        show: false,
                       ),
-                    ],
-                  ),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: spots,
-                      isCurved: true,
-                      color: PRIMARY_COLOR,
-                      barWidth: 2,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          return FlDotCirclePainter(
-                            radius: 6,
-                            color: Colors.white,
-                            strokeWidth: 3,
-                            strokeColor: PRIMARY_COLOR,
-                          );
-                        },
+                      borderData: FlBorderData(show: false),
+                      extraLinesData: ExtraLinesData(
+                        horizontalLines: [
+                          HorizontalLine(
+                            y: 0,
+                            color: SECONDARY_COLOR.withOpacity(0.5),
+                            strokeWidth: 1,
+                            dashArray: [5, 5],
+                          ),
+                        ],
                       ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: PRIMARY_COLOR.withOpacity(0.1),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: spots,
+                          isCurved: true,
+                          color: PRIMARY_COLOR,
+                          barWidth: 2,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) {
+                              return FlDotCirclePainter(
+                                radius: 6,
+                                color: Colors.white,
+                                strokeWidth: 3,
+                                strokeColor: PRIMARY_COLOR,
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: PRIMARY_COLOR.withOpacity(0.1),
+                          ),
+                        ),
+                      ],
+                      lineTouchData: LineTouchData(
+                        enabled: true,
+                        touchSpotThreshold: 100,
+                        touchTooltipData: LineTouchTooltipData(
+                          getTooltipItems: (touchedSpots) {
+                            return touchedSpots.map((touchedSpot) {
+                              return LineTooltipItem(
+                                FormatterHelper.toDoubleString(touchedSpot.y),
+                                TextStyle(
+                                  color: HIGHTLIGHT_COLOR,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              );
+                            }).toList();
+                          },
+                        ),
                       ),
                     ),
-                  ],
-                  lineTouchData: LineTouchData(
-                    enabled: true,
-                    touchSpotThreshold: 100,
-                    touchCallback: (p0, p1) {
+                  ),
+                ),
+                SizedBox(
+                  height: ResStyle.spacing * 1,
+                ),
+                BugSmallButton(
+                    text: 'Details',
+                    onPressed: () {
                       Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => TransactionGraphPage(
                                 currentAsset: currentAsset,
                                 transactions: transactions,
                                 header: header,
                               )));
-                    },
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((touchedSpot) {
-                          return LineTooltipItem(
-                            FormatterHelper.toDoubleString(touchedSpot.y),
-                            TextStyle(
-                              color: HIGHTLIGHT_COLOR,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        }).toList();
-                      },
-                    ),
-                  ),
-                ),
-              ),
+                    }),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

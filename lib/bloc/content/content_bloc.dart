@@ -33,6 +33,23 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
       },
     );
 
+    on<ViewContentEvent>(
+      (event, emit) async {
+       await Future.wait(
+            content_list
+                .map((e) => ContentRepo.updateUserContent(e.id, 'viewed')),
+          );
+        // var res = await ContentRepo.updateUserContent(20,'viewed');
+      },
+    );
+
+     on<ClickContentEvent>(
+      (event, emit) async {
+        await ContentRepo.updateUserContent(event.id, 'clicked');
+      },
+    );
+
+
     on<SubmitContentTestEvent>(
       (event, emit) async {
         if (state is ContentLoadingState || state is ContentTestResultState) {

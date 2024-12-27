@@ -1,4 +1,5 @@
 import 'package:build_growth_mobile/api_services/gpt_repo.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
@@ -215,7 +216,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(
       (event, emit) async {
         await UserToken.reset();
-
+        await GoogleDriveBackupHelper.signOut();
+        MessageBloc.userMessages = [];
+        MessageBloc.gptReplies = [];
         emit(LoginInitial(email: UserToken.email));
       },
     );

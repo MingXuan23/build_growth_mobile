@@ -100,4 +100,23 @@ static bool isToday(DateTime? date) {
       {bool negative = false}) {
     controller.text = FormatterHelper.toFixed2(value, negative: negative);
   }
+
+  static String getMonthName(int month) {
+  const List<String> monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec'
+  ];
+  return monthNames[month - 1]; // Subtract 1 since the list is 0-based
+}
+
 }

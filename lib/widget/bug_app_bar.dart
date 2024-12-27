@@ -1,6 +1,7 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
@@ -41,6 +42,7 @@ void redirectToProfile(BuildContext context, bool gotoPrivacy) async {
             gotoPrivacy: gotoPrivacy,
           )));
 
+ BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
   BlocProvider.of<ContentBloc>(context).add(ContentRequest());
 
   BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());

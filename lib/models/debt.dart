@@ -9,6 +9,7 @@ class Debt {
   String name;
   String type; // Removed total_amount as it's not in the database schema
   double monthly_payment;
+  double alarming_limit = -1;
   int remaining_month;
   int total_month;
   bool
@@ -30,6 +31,7 @@ class Debt {
     required this.total_month,
     required this.status, // Assuming status is represented as an integer (0 or 1)
     this.desc,
+    this.alarming_limit = -1,
     this.last_payment_date, // Added last_payment to constructor
   }) {
     if (type == 'Expenses') {
@@ -49,6 +51,7 @@ class Debt {
           status ? 1 : 0, // No conversion needed since it's already an int
       'desc': desc,
       'user_code': UserToken.user_code,
+      'alarming_limit': alarming_limit,
       'last_payment_date': last_payment_date
           ?.toIso8601String(), // Convert DateTime to ISO string for storage
     };
@@ -92,7 +95,11 @@ class Debt {
       AND user_code = ?
       AND debt_id = ?
     ''',
-      [currentMonth, UserToken.user_code,id], // Use parameterized query for safety
+      [
+        currentMonth,
+        UserToken.user_code,
+        id
+      ], // Use parameterized query for safety
     );
 
     // Extract the sum from the query result
@@ -128,7 +135,7 @@ class Debt {
     }
   }
 
-  static Future<double> getTotalDebt() async {
+  static Future<(double, int)> getTotalDebt() async {
     var db = await DatabaseHelper().database;
 
     // Get the current date to check against the last_paid_date
@@ -142,11 +149,20 @@ class Debt {
       [currentMonth],
     );
 
-    // Retrieve the sum from the query result
-    double totalDebt = result.first['total'] ?? 0.0;
+    final List<Map<String, dynamic>> count = await db.rawQuery(
+      'SELECT COUNT(*) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = "${UserToken.user_code}"',
+      [currentMonth],
+    );
 
-    return totalDebt;
+    // Retrieve the sum from the query result
+
+
+    double totalDebt = result.first['total'] ?? 0.00;
+    int unpaidDebt =  count.first['total']??0;
+
+    return (totalDebt, unpaidDebt);
   }
+
 
   static Future<List<Debt>> getDebtList() async {
     var db = await DatabaseHelper().database;
@@ -159,21 +175,22 @@ class Debt {
 
     // Convert the List<Map<String, dynamic>> into List<Debt>
     return List.generate(maps.length, (i) {
-      return Debt(
-        maps[i]['user_code'],
-        id: maps[i]['id'],
-        name: maps[i]['name'],
-        type: maps[i]['type'],
-        monthly_payment: maps[i]['monthly_payment'],
-        remaining_month: maps[i]['remaining_month'],
-        total_month: maps[i]['total_month'],
-        status: maps[i]['status'] == 1,
-        desc: maps[i]['desc'],
-        last_payment_date: maps[i]['last_payment_date'] != null
-            ? DateTime.parse(maps[i]
-                ['last_payment_date']) // Convert ISO string back to DateTime
-            : null,
-      );
+      return Debt(maps[i]['user_code'],
+          id: maps[i]['id'],
+          name: maps[i]['name'],
+          type: maps[i]['type'],
+          monthly_payment: maps[i]['monthly_payment'],
+          remaining_month: maps[i]['remaining_month'],
+          total_month: maps[i]['total_month'],
+          status: maps[i]['status'] == 1,
+          desc: maps[i]['desc'],
+          last_payment_date: maps[i]['last_payment_date'] != null
+              ? DateTime.parse(maps[i]
+                  ['last_payment_date']) // Convert ISO string back to DateTime
+              : null,
+          alarming_limit: maps[i]['alarming_limit'] != null
+              ? maps[i]['alarming_limit'] as double
+              : -1);
     });
   }
 
@@ -190,21 +207,22 @@ class Debt {
     // If the result is empty, return null (debt not found)
     if (maps.isNotEmpty) {
       // Return the debt by mapping the first result
-      return Debt(
-        maps[0]['user_code'],
-        id: maps[0]['id'],
-        name: maps[0]['name'],
-        type: maps[0]['type'],
-        monthly_payment: maps[0]['monthly_payment'],
-        remaining_month: maps[0]['remaining_month'],
-        total_month: maps[0]['total_month'],
-        status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
-        desc: maps[0]['desc'],
-        last_payment_date: maps[0]['last_payment_date'] != null
-            ? DateTime.parse(maps[0]
-                ['last_payment_date']) // Convert ISO string back to DateTime
-            : null,
-      );
+      return Debt(maps[0]['user_code'],
+          id: maps[0]['id'],
+          name: maps[0]['name'],
+          type: maps[0]['type'],
+          monthly_payment: maps[0]['monthly_payment'],
+          remaining_month: maps[0]['remaining_month'],
+          total_month: maps[0]['total_month'],
+          status: maps[0]['status'] == 1, // Convert from 0/1 to boolean
+          desc: maps[0]['desc'],
+          last_payment_date: maps[0]['last_payment_date'] != null
+              ? DateTime.parse(maps[0]
+                  ['last_payment_date']) // Convert ISO string back to DateTime
+              : null,
+          alarming_limit: maps[0]['alarming_limit'] != null
+              ? maps[0]['alarming_limit'] as double
+              : -1);
     }
 
     // Return null if no debt is found

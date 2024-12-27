@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/services/database_helper.dart';
+import 'package:build_growth_mobile/services/formatter_helper.dart';
 
 class Transaction {
   final int? id;
@@ -31,7 +32,7 @@ class Transaction {
       required this.created_at,
       this.asset,
       this.debt,
-      this.transaction_type =1,
+      this.transaction_type = 1,
       this.image});
 
   Map<String, dynamic> toMap() {
@@ -43,7 +44,7 @@ class Transaction {
       'user_code': UserToken.user_code,
       'created_at': created_at.toIso8601String(),
       'transaction_type': transaction_type,
-      'image':image
+      'image': image
     };
   }
 
@@ -61,17 +62,32 @@ class Transaction {
     return await DatabaseHelper().deleteData('Transactions', id);
   }
 
-  static Future<(List<Transaction>, List<Transaction>)> getTransactionList() async {
+  static Future<(List<Transaction>, List<Transaction>, double)>
+      getTransactionList({int? month, int? year}) async {
     var db = await DatabaseHelper().database;
+    List<Map<String, dynamic>> maps = [];
 
-    // Query the database for all transactions with status true (1)
-    final List<Map<String, dynamic>> maps = await db.query('Transactions',
-        where: 'user_code = "${UserToken.user_code}"');
+    if (year != null && month != null) {
+      var range = '$year-$month';
+
+// Query the database for all transactions with status true (1)
+       maps = await db.query(
+        'Transactions',
+        where: 'user_code = ? AND strftime("%Y-%m", created_at) = ?',
+        whereArgs: [UserToken.user_code, range],
+      );
+    } else {
+      // Query the database for all transactions with status true (1)
+      maps = await db.query('Transactions',
+          where: 'user_code = "${UserToken.user_code}"');
+    }
+
 
     // Use Future.wait to handle multiple async operations
     List<Transaction> transactions = [];
     List<Transaction> cashFlowtransactions = [];
 
+    double total_expense = 0;
     for (var map in maps) {
       int? assetId = map['asset_id'];
       int? debtId = map['debt_id'];
@@ -81,40 +97,63 @@ class Transaction {
       Debt? debt = await Debt.getDebtById(debtId ?? -1);
 
       // Create a new Transaction and add it to the list
-      transactions.add(Transaction(
-        map['user_code'],
-        id: map['id'],
-        amount: map['amount'],
-        desc: map['desc'],
-        asset_id: assetId,
-        debt_id: debtId,
-        created_at: DateTime.parse(map['created_at']),
-        asset: asset,
-        debt: debt,
-        transaction_type: map['transaction_type']??1,
-        image: map['image']
-      ));
+      transactions.add(Transaction(map['user_code'],
+          id: map['id'],
+          amount: map['amount'],
+          desc: map['desc'],
+          asset_id: assetId,
+          debt_id: debtId,
+          created_at: DateTime.parse(map['created_at']),
+          asset: asset,
+          debt: debt,
+          transaction_type: map['transaction_type'] ?? 1,
+          image: map['image']));
 
       if (asset?.type == "Cash" ||
           asset?.type == "Bank Card" ||
           asset?.type == "Other Asset") {
-        cashFlowtransactions.add(Transaction(
-          map['user_code'],
-          id: map['id'],
-          amount: map['amount'],
-          desc: map['desc'],
-          asset_id: map['asset_id'], // Assuming `assetId` comes from `map`
-          debt_id: map['debt_id'], // Assuming `debtId` comes from `map`
-          created_at: DateTime.parse(map['created_at']),
-          asset: map['asset'], // Assuming `asset` comes from `map`
-          debt: map['debt'], // Assuming `debt` comes from `map`
-          transaction_type: map['transaction_type']??1,
-           image: map['image']
-        ));
+        cashFlowtransactions.add(Transaction(map['user_code'],
+            id: map['id'],
+            amount: map['amount'],
+            desc: map['desc'],
+            asset_id: map['asset_id'], // Assuming `assetId` comes from `map`
+            debt_id: map['debt_id'], // Assuming `debtId` comes from `map`
+            created_at: DateTime.parse(map['created_at']),
+            asset: map['asset'], // Assuming `asset` comes from `map`
+            debt: map['debt'], // Assuming `debt` comes from `map`
+            transaction_type: map['transaction_type'] ?? 1,
+            image: map['image']));
+      }
+
+      if (debt?.type == 'Expenses' &&
+          FormatterHelper.isSameMonthYear(DateTime.parse(map['created_at']))) {
+        total_expense += map['amount'];
       }
     }
 
-    return (transactions, cashFlowtransactions);
+    return (transactions, cashFlowtransactions, total_expense);
+  }
+
+  static Future<double> getTotalExpense() async {
+    var db = await DatabaseHelper().database;
+
+    // Get the current date to check against the last_paid_date
+    final DateTime now = DateTime.now();
+
+    // Query to calculate the sum of 'monthly_payment' column in the 'Debt' table
+    String currentMonth =
+        DateTime.now().toString().substring(0, 7); // Format as 'YYYY-MM'
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      'SELECT SUM(monthly_payment) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = "${UserToken.user_code}"',
+      [currentMonth],
+    );
+
+    // Retrieve the sum from the query result
+
+    var value = result.first['total'];
+    double totalDebt = result.first['total'] ?? 0.00;
+
+    return totalDebt;
   }
 
   //  static Future<List<Transaction>> getCashFlowTransactionList() async {
@@ -160,7 +199,7 @@ class Transaction {
     var total_asset = await Asset.getTotalAsset();
     var total_debt = await Debt.getTotalDebt();
 
-    var cash_flow_percent = amount * 100 / (total_asset - total_debt);
+    var cash_flow_percent = amount * 100 / (total_asset - total_debt.$1);
 
     if (amount < 0) {
       prompt = 'I spent RM ${amount.abs().toStringAsFixed(2)}.';

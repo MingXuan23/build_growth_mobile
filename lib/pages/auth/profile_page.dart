@@ -16,7 +16,7 @@ import 'package:build_growth_mobile/services/location_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
-import 'package:build_growth_mobile/widget/card.dart';
+import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -33,6 +33,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool useGPT = UserPrivacy.useGPT;
   bool pushContent = UserPrivacy.pushContent;
   bool useGoogleDriveBackup = UserPrivacy.googleDriveBackup;
+  bool promptProof = UserPrivacy.promptTransactionProof;
+  bool useThirdPartyGPT = UserPrivacy.useThirdPartyGPT;
   //String backupFrequency =
   ScrollController _scrollController = ScrollController();
 
@@ -101,6 +103,8 @@ class _ProfilePageState extends State<ProfilePage> {
         UserPrivacy.useGPT = useGPT;
         UserPrivacy.pushContent = pushContent;
         UserPrivacy.googleDriveBackup = useGoogleDriveBackup;
+        UserPrivacy.promptTransactionProof = promptProof;
+        UserPrivacy.useThirdPartyGPT = useThirdPartyGPT;
         setState(() {});
 
         await UserPrivacy.saveToPreferences(UserToken.user_code!);
@@ -140,6 +144,8 @@ class _ProfilePageState extends State<ProfilePage> {
       useGPT = UserPrivacy.useGPT;
       pushContent = UserPrivacy.pushContent;
       useGoogleDriveBackup = UserPrivacy.googleDriveBackup;
+      promptProof = UserPrivacy.promptTransactionProof;
+      useThirdPartyGPT = UserPrivacy.useThirdPartyGPT;
       setState(() {});
     }
   }
@@ -683,12 +689,27 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const Divider(),
                       CardWidgetivider(
-                        'Allow AI Financial Assitant Using Your Data',
+                        'Allow xBUG AI Financial Assitant Using Your Data',
                         BugSwitch(
                           value: useGPT,
                           onChanged: (value) {
                             setState(() {
                               useGPT = value;
+                               useThirdPartyGPT = value && useThirdPartyGPT;
+                            });
+                            updateUserPrivacy();
+                          },
+                        ),
+                      ),
+
+                       CardWidgetivider(
+                        'Allow Third Party AI Financial Assitant Using Your Data for Higher Performance',
+                        BugSwitch(
+                          value: useThirdPartyGPT,
+                          onChanged: (value) {
+                            setState(() {
+                              //useThirdPartyGPT = value;
+                              useThirdPartyGPT = value && useGPT;
                             });
                             updateUserPrivacy();
                           },
@@ -731,6 +752,18 @@ class _ProfilePageState extends State<ProfilePage> {
                       //     },
                       //   ),
                       // ),
+                      CardWidgetivider(
+                        'Always Prompt You to Add Transaction Proof',
+                        BugSwitch(
+                          value: promptProof,
+                          onChanged: (value) {
+                            setState(() {
+                              promptProof = value;
+                            });
+                            updateUserPrivacy();
+                          },
+                        ),
+                      ),
                       CardWidgetivider(
                         'Allow to use your Google Drive to backup your data',
                         BugSwitch(

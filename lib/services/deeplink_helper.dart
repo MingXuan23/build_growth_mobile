@@ -1,3 +1,4 @@
+import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:flutter/material.dart';
 import 'package:uni_links/uni_links.dart';
 
@@ -25,18 +26,20 @@ class DeepLinkHelper {
 
   static void _handleDeepLink(BuildContext context, String link) {
     print('Received deep link: $link');
-    
-    // Parse the link and navigate accordingly
     Uri uri = Uri.parse(link);
+    String? token = uri.queryParameters['token'];
+    
+   
     switch (uri.host) {
       case 'open':
         // Example: Navigate to a specific page
-        Navigator.pushNamed(context, '/specific-page');
+        Navigator.of(context).push(MaterialPageRoute(builder: (context)=> const AttendacneListenPage()));
+      //  Navigator.pushNamed(context, '/specific-page');
         break;
-      case 'action':
-        // Handle different actions
-        _handleSpecificAction(uri);
-        break;
+      // case 'action':
+      //   // Handle different actions
+      //   _handleSpecificAction(uri);
+      //   break;
       default:
         // Default navigation or handling
         Navigator.pushNamed(context, '/home');

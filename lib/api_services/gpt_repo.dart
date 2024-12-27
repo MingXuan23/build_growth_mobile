@@ -9,10 +9,10 @@ import 'package:http/http.dart' as http;
 const prefix_url = 'api/gpt';
 
 class GptRepo {
-  static Stream<String> fastResponse(String prompt, {List<Map<String,dynamic>> ?chat_histoy }) async* {
+  static Stream<String> fastResponse(String prompt, {List<Map<String,dynamic>> ?chat_history }) async* {
 
-    if(chat_histoy?.isEmpty??true){
-      chat_histoy = null;
+    if(chat_history?.isEmpty??true){
+      chat_history = null;
     }
 
     var request = http.Request(
@@ -28,7 +28,7 @@ class GptRepo {
     request.headers['Authorization'] = 'Bearer ${UserToken.remember_token}';
 
     var contentList = jsonEncode(ContentBloc.content_list.map((e)=>e.toGPTMap()).toList());
-    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_histoy, "use_content": UserPrivacy.pushContent,"contentList":contentList});
+    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_history, "use_content": UserPrivacy.pushContent,"contentList":contentList});
 
     try {    
       final response = await request.send();
@@ -74,6 +74,132 @@ class GptRepo {
      
     }
   }
+
+
+ static Stream<String> quickResponse(String prompt, {List<Map<String, dynamic>>? chat_history}) async* {
+    if (chat_history?.isEmpty ?? true) {
+      chat_history = null;
+    }
+
+
+var estimateWords = -2;
+ var final_prompt = '';
+  if (estimateWords == -1) {
+    final_prompt = '${prompt}. Response as short as possible.';
+  } else if (estimateWords == -2) {
+    final_prompt = '${prompt}. If related to financial domain or content, response within 200 words. If not related to the financial domain or unrealistic question, response in 30 words';
+  } else {
+    final_prompt = '${prompt}. Response in ${estimateWords} words.';
+  }
+
+
+  
+
+    // Fetch user information
+    var userInfo = await UserPrivacy.getUserSummary(UserToken.user_code ?? '');
+    var tone = userInfo['tone'];
+    userInfo.remove('tone');
+
+    var contentList = jsonEncode(ContentBloc.content_list.map((e) => e.toGPTMap()).toList());
+
+    List<Map<String, dynamic>> messages = [
+      {
+        'role': 'system',
+        'content':
+            'Your name is xBUG Ai, an experienced financial advisor in the "Build Growth" Mobile App, '
+            'If user initialising you, you need to tell the user "I am ready" in one sentence.'
+            'who always considers the user\'s financial situation and provides practical solutions to financial issues. '
+            'You use RM (Ringgit Malaysia) as the main currency and respond in English. '
+            'If the user asks for financial advice, ${tone ?? ''}. '
+            'The app has two additional sections: "Financial" and "Content." '
+            'The average daily expenses (excluding debt and bills) should be controlled within RM20 to RM50. '
+            'You have read and understood the user\'s financial information from the "Financial Section": ${jsonEncode(userInfo)}.'
+            '${contentList.isNotEmpty ? " You may suggest courses and events from the 'Content' section to increase income: $contentList." : " You may suggest the user explore the 'Content' section for self-investment opportunities."}'
+      },
+    ];
+
+    if (chat_history != null) {
+      messages.addAll(chat_history);
+    }
+
+    messages.add({'role': 'user', 'content': final_prompt});
+
+    final requestBody = {
+      'messages': messages,
+      'model': '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+      'stream': true,
+      'temperature': 0.5,
+    };
+
+    try {
+      // Create a request object instead of using http.post
+      final request = http.Request('POST', Uri.parse(GPT_ALTERNATIVE_URL));
+      request.headers.addAll({
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $GPT_ALTERNATIVE_TOKEN',
+      });
+      request.body = jsonEncode(requestBody);
+
+      // Send the request and get the stream
+      final streamedResponse = await request.send();
+
+      if (streamedResponse.statusCode == 200) {
+        String buffer = '';
+        await for (var chunk in streamedResponse.stream.transform(utf8.decoder)) {
+          buffer += chunk;
+          
+          // Split by newlines and process each line
+          var lines = buffer.split('\n');
+          
+          // Process all complete lines
+          for (var i = 0; i < lines.length - 1; i++) {
+            var line = lines[i].trim();
+            if (line.isNotEmpty) {
+              try {
+                // Remove "data: " prefix if present
+                if (line.startsWith('data: ')) {
+                  line = line.substring(5);
+                }
+                
+                if (line == '[DONE]') continue;
+
+                final Map<String, dynamic> jsonData = jsonDecode(line);
+                if (jsonData['response'] != null) {
+                  yield jsonData['response'];
+                }
+              } catch (e) {
+                print('Error parsing line: $e');
+              }
+            }
+          }
+          
+          // Keep the last incomplete line in the buffer
+          buffer = lines.last;
+        }
+        
+        // Process any remaining data in buffer
+        if (buffer.isNotEmpty) {
+          try {
+            if (buffer.startsWith('data: ')) {
+              buffer = buffer.substring(5);
+            }
+            if (buffer != '[DONE]') {
+              final Map<String, dynamic> jsonData = jsonDecode(buffer);
+              if (jsonData['response'] != null) {
+                yield jsonData['response'];
+              }
+            }
+          } catch (e) {
+            print('Error parsing final buffer: $e');
+          }
+        }
+      } else {
+        yield 'Error: API returned status code ${streamedResponse.statusCode}';
+      }
+    } catch (e) {
+      yield 'Error: Failed to connect to the server. Details: $e';
+    }
+ }
 
   static Future<String?> slowResponse(String prompt, int tokens) async {
     try {

@@ -105,9 +105,6 @@ class _RegisterPageState extends State<RegisterPage> {
     super.initState();
     states_list.sort((a, b) => a.compareTo(b));
 
-    _nameController.text = "mx";
-    _emailController.text = "gg@gmail.com";
-    _telController.text = "+601111051705";
 
     if (resendSecond > 0) {
       timer = Timer.periodic(

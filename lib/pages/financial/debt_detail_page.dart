@@ -8,7 +8,7 @@ import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
-import 'package:build_growth_mobile/widget/card.dart';
+import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:build_growth_mobile/models/debt.dart';
@@ -96,11 +96,12 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
         Expanded(
             child: ListView.builder(
                 itemCount: debts.length,
-                itemBuilder: (context, index)  {
+                itemBuilder: (context, index) {
                   if (debts[index].type == 'Expenses') {
-                  
-                    return ExpenseDetailCard(debts[index],
-                        () => showActionSheet(debts[index]));
+                    return ExpenseDetailCard(
+                      debts[index],
+                      () => showActionSheet(debts[index]),
+                    );
                   } else {
                     return DebtDetailCard(
                         debts[index], () => showActionSheet(debts[index]));
@@ -364,6 +365,13 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
         TextEditingController(text: debt.name);
     final TextEditingController descController =
         TextEditingController(text: debt.desc);
+    final TextEditingController limitController = TextEditingController();
+
+    if (debt.alarming_limit > 0 &&
+        (debt.type == 'Expenses' || debt.type == 'Dynamic Bills')) {
+      FormatterHelper.implement_RM_format(
+          limitController, debt.alarming_limit.toStringAsFixed(2));
+    }
 
     showModalBottomSheet(
       context: context,
@@ -382,6 +390,28 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
               hint: 'Enter Debt Name',
               prefixIcon: Icon(Icons.monetization_on),
             ),
+            SizedBox(height: ResStyle.spacing),
+            if (debt.type == 'Expenses' || debt.type == 'Dynamic Bills')
+              BugTextInput(
+                  controller: limitController,
+                  label: 'Alarming Limit',
+                  hint: 'No Limit Now',
+                  keyboardType: TextInputType.number,
+                  prefixIcon: Icon(Icons.attach_money),
+                  onChanged: (value) {
+                    FormatterHelper.implement_RM_format(limitController, value);
+                  },
+                  validator: (p0) {
+                    if (FormatterHelper.getAmountFromRM(p0 ?? 'RM 0.00') <= 0) {
+                      return 'The Alarming Limit should not be zero';
+                    }
+                  },
+                  suffixIcon: IconButton(
+                      icon: Icon(Icons.clear_rounded),
+                      onPressed: () {
+                        limitController.text = '';
+                        debt.alarming_limit = -1;
+                      })),
             SizedBox(height: ResStyle.spacing),
             BugTextInput(
                 controller: descController,
@@ -403,6 +433,10 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                       onPressed: () async {
                         debt.name = nameController.text;
                         debt.desc = descController.text;
+                        if (limitController.text.isNotEmpty) {
+                          debt.alarming_limit = FormatterHelper.getAmountFromRM(
+                              limitController.text);
+                        }
                         await Debt.updateDebt(debt);
                         await loadDebts();
                         Navigator.of(context).pop();
@@ -432,21 +466,31 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
   }
 
   void showAddDebtModal(String selectedType) {
-    final TextEditingController nameController = TextEditingController();
+    final TextEditingController nameController =
+        TextEditingController(text: 'New $selectedType');
     final TextEditingController descController = TextEditingController();
     final TextEditingController monthlyPaymentController =
         TextEditingController();
 
     final TextEditingController remainingMonthController =
+        TextEditingController(text: '1');
+    final TextEditingController AlarmingLimitController =
         TextEditingController();
+
+    double? alarming_limit;
+
     int? remainingMonths;
     String warning = '';
     // Set default remaining months based on type
     if (selectedType != 'Loans') {
       remainingMonths = -1;
+    } else {
+      remainingMonths = 1;
     }
     final _formKey = GlobalKey<FormState>();
-
+    if (selectedType == 'Recurring Bills' || selectedType == 'Loans') {
+      monthlyPaymentController.text = 'RM 0.01';
+    }
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -479,7 +523,38 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                     FormatterHelper.implement_RM_format(
                         monthlyPaymentController, value);
                   },
+                  validator: (p0) {
+                    if (FormatterHelper.getAmountFromRM(p0 ?? 'RM 0.00') <= 0) {
+                      return 'The Monthly Payment should not be zero';
+                    }
+                  },
                 ),
+              ] else ...[
+                BugTextInput(
+                    controller: AlarmingLimitController,
+                    label: 'Alarming Limit',
+                    hint: 'No Limit Now',
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icon(Icons.attach_money),
+                    onChanged: (value) {
+                      FormatterHelper.implement_RM_format(
+                          AlarmingLimitController, value);
+                      alarming_limit = FormatterHelper.getAmountFromRM(
+                          AlarmingLimitController.text);
+                    },
+                    validator: (p0) {
+                      if (p0?.isNotEmpty ?? false) {
+                        if (FormatterHelper.getAmountFromRM(p0!) <= 0) {
+                          return 'The Alarming Limit should not be zero';
+                        }
+                      }
+                    },
+                    suffixIcon: IconButton(
+                        icon: Icon(Icons.clear_rounded),
+                        onPressed: () {
+                          AlarmingLimitController.text = '';
+                          alarming_limit = -1;
+                        })),
               ],
               SizedBox(height: ResStyle.spacing),
               BugTextInput(
@@ -521,7 +596,17 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
+                children: [Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: ResStyle.spacing),
+                      child: BugPrimaryButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        color: DANGER_COLOR,
+                        text: 'Cancel',
+                      ),
+                    ),
+                  ),
                   Expanded(
                     child: Padding(
                       padding:
@@ -539,6 +624,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                                   monthlyPaymentController.text),
                               remaining_month: remainingMonths!,
                               total_month: remainingMonths!,
+                              alarming_limit: alarming_limit ?? -1,
                               status: true,
                             );
                             await Debt.insertDebt(newDebt);
@@ -558,17 +644,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: ResStyle.spacing),
-                      child: BugPrimaryButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        color: DANGER_COLOR,
-                        text: 'Cancel',
-                      ),
-                    ),
-                  ),
+                  
                 ],
               ),
             ],

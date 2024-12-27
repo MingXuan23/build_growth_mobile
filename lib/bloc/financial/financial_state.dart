@@ -14,9 +14,11 @@ final class FinancialDataLoaded extends FinancialState {
   final double totalCashflow;
   final List<Transaction> transactionList;
   final List<Transaction> cashflowTransactionList;
+  final double totalExpense;
+  final int unpaidDebt;
 
 
-  FinancialDataLoaded( {required this.totalAssets, required this.totalDebts, required this.transactionList, required this.totalCashflow, required this.cashflowTransactionList});
+  FinancialDataLoaded( {required this.totalAssets, required this.totalDebts, required this.transactionList, required this.totalCashflow, required this.cashflowTransactionList, required this.totalExpense, required this.unpaidDebt});
 
 
 

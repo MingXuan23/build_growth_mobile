@@ -4,12 +4,13 @@ import 'package:build_growth_mobile/bloc/transaction/transaction_bloc.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
-import 'package:build_growth_mobile/widget/card.dart';
+import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -83,9 +84,10 @@ class _TransactionPage2State extends State<TransactionPage2> {
 
 void continueAddProof() async{
   // Example condition: Check if the user has already rejected adding proof
-  bool userRejected = false; // Replace with actual condition or state management
+  bool userRejected = !UserPrivacy.promptTransactionProof; // Replace with actual condition or state management
 
   if (userRejected) {
+    Navigator.of(context).pop();
     return; // Exit if the user previously rejected adding proof
   }
 
@@ -321,6 +323,7 @@ void continueAddProof() async{
         },
         child: Scaffold(
           appBar: BugAppBar(appabar_title, context),
+          backgroundColor: HIGHTLIGHT_COLOR,
           body: Padding(
             padding: EdgeInsets.all(ResStyle.spacing),
             child: body,
@@ -366,7 +369,9 @@ void continueAddProof() async{
                     hint: 'Current Value',
                     prefixIcon: const Icon(null),
                     readOnly: true,
-                    validator: (value) {},
+                    validator: (value) {
+                     
+                    },
                   ),
                   SizedBox(height: ResStyle.spacing * 3),
                   BugTextInput(
@@ -407,7 +412,11 @@ void continueAddProof() async{
                     hint: 'New Asset Value',
                     prefixIcon: const Icon(null),
                     readOnly: true,
-                    validator: (value) {},
+                    validator: (value) {
+                       if(FormatterHelper.getAmountFromRM(value??'RM 0.00') < 0){
+                         return "You have not enough balance. Turn this into a lesson: Build assets and Reduce debts to grow your cash flow.";
+                      }
+                    },
                   ),
                   SizedBox(height: 2 * ResStyle.spacing),
                   BugTextInput(
@@ -742,7 +751,11 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                     prefixIcon: const Icon(null),
                     onChanged: onChangeTrigger,
                     readOnly: true,
-                    validator: (value) {},
+                    validator: (value) {
+                      if(FormatterHelper.getAmountFromRM(value??"0.00") < 0){
+                        return "If an asset is costing you money instead of making you money, it's actually a debt.";
+                      }
+                    },
                   ),
                   SizedBox(height: 2 * ResStyle.spacing),
 

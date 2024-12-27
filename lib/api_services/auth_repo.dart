@@ -88,7 +88,6 @@ class AuthRepo {
       ).timeout(
         const Duration(seconds: 5), // Set timeout duration
       );
-      
 
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
@@ -247,8 +246,14 @@ class AuthRepo {
       );
 
       if (response.statusCode == 200) {
-        var data = jsonDecode(response.body); 
-        UserPrivacy.fromMap(jsonDecode(data['user_privacy']['detail']));
+        var data = jsonDecode(response.body);
+
+        if (data['user_privacy'] != null) {
+          UserPrivacy.fromMap((data['user_privacy']['detail']) is String
+              ? jsonDecode(data['user_privacy']['detail'])
+              : (data['user_privacy']['detail']));
+        }
+
         return {
           'user_info': UserInfo(
             address: data['address'] ?? 'xxx',
@@ -283,7 +288,7 @@ class AuthRepo {
     }
   }
 
-   static Future<bool> updateUserPrivacy(String detail) async {
+  static Future<bool> updateUserPrivacy(String detail) async {
     try {
       final response =
           await http.post(Uri.parse('$HOST_URL/$url_prefix/update-privacy'),
@@ -292,7 +297,7 @@ class AuthRepo {
                 'Application-Id': appId,
                 'Authorization': 'Bearer ${UserToken.remember_token}'
               },
-              body: jsonEncode({'user_privacy':detail})) ;
+              body: jsonEncode({'user_privacy': detail}));
 
       return response.statusCode == 200;
     } catch (e) {

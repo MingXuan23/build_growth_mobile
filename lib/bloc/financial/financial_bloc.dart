@@ -14,12 +14,15 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
     on<FinancialLoadData>(
       (event, emit) async {
         var totalAssets = await Asset.getTotalAsset();
-        var totalDebts = await Debt.getTotalDebt();
+        var debt_data = await Debt.getTotalDebt();
+        var totalDebts = debt_data.$1;
+        var unpaidDebt = debt_data.$2;
         var data = await Transaction.getTransactionList();
         var transcationList = data.$1.where((x)=>x.transaction_type !=2).toList();
         var cashFlowList = data.$2;
         var totalCashFlow = await Asset.getTotalCashFlow();
-        emit(FinancialDataLoaded(totalAssets: totalAssets, totalDebts: totalDebts,transactionList:transcationList, totalCashflow: totalCashFlow, cashflowTransactionList: cashFlowList));
+        var total_expense = data.$3;
+        emit(FinancialDataLoaded(totalAssets: totalAssets, totalDebts: totalDebts,transactionList:transcationList, totalCashflow: totalCashFlow, cashflowTransactionList: cashFlowList, totalExpense: total_expense, unpaidDebt: unpaidDebt));
       },
     );
   }

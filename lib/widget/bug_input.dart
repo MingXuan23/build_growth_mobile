@@ -99,15 +99,17 @@ class _BugTextInputState extends State<BugTextInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
+    return 
+    TextFormField(
       controller: widget.controller,
       cursorColor: SECONDARY_COLOR,
       onChanged: (value) => _update(value),
-      style: TextStyle(fontSize: _fontSize, color: widget.readOnly?SECONDARY_COLOR:TEXT_COLOR),
+      style: TextStyle(
+          fontSize: _fontSize,
+          color: widget.readOnly ? SECONDARY_COLOR : TEXT_COLOR),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
-
         focusedBorder: OutlineInputBorder(
           borderSide: BorderSide(
             color: SECONDARY_COLOR, // Set your desired color here
@@ -120,10 +122,17 @@ class _BugTextInputState extends State<BugTextInput> {
         ),
         border: const OutlineInputBorder(),
         hintStyle: TextStyle(fontSize: ResStyle.font),
-        floatingLabelStyle: TextStyle(color: TEXT_COLOR,fontSize: ResStyle.font),
+        floatingLabelStyle:
+            TextStyle(color: TEXT_COLOR, fontSize: ResStyle.font),
         labelStyle: TextStyle(fontSize: ResStyle.font),
+         errorMaxLines: 3, 
         errorStyle: TextStyle(
-            fontSize: ResStyle.small_font, overflow: TextOverflow.clip),
+          fontSize: ResStyle.small_font,
+          color: DANGER_COLOR, // Optional: Ensure error color is visible
+          overflow: TextOverflow
+              .visible, // Ensure text wraps instead of being clipped
+          
+        ),
         prefixStyle: TextStyle(fontSize: ResStyle.font),
         counterText: "",
         suffixIcon: widget.obscureText

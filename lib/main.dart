@@ -1,3 +1,5 @@
+import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/bloc/attendance/attendance_bloc.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
@@ -32,7 +34,6 @@ void main() async {
     runApp(const MyApp(
       home: StartPage(),
     ));
-
   });
 }
 
@@ -58,16 +59,17 @@ class MyApp extends StatelessWidget {
         BlocProvider<ContentBloc>(
             create: (context) => ContentBloc(ContentLoadingState())),
         BlocProvider<BankCardNfcBloc>(
-            create: (context) => BankCardNfcBloc(BankCardInitialState()))
+            create: (context) => BankCardNfcBloc(BankCardInitialState())),
+        BlocProvider<AttendanceBloc>(
+            create: (context) => AttendanceBloc(AttendanceInitialState()))
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],
-
       child: MaterialApp(
           title: 'BUild Growth',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            colorScheme: ColorScheme.fromSeed(seedColor: HIGHTLIGHT_COLOR),
             useMaterial3: true,
           ),
           home: UpgradeAlert(
@@ -79,4 +81,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-

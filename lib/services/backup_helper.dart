@@ -33,7 +33,7 @@ class GoogleDriveBackupHelper {
   }
 
   static final folder_name =
-      'Build_Growth_${UserToken.user_code?.substring(10) ?? 'Build_Growth_Data'}';
+      'Build_Growth_${UserToken.user_code?.substring(10) ?? '_Data'}';
 
   /// Sign in the user using Google Sign-In
   static Future<bool> signIn() async {
@@ -407,13 +407,13 @@ class GoogleDriveBackupHelper {
 
       // Create or get the images folder
       if (main_folder_id != null) {
-        final imagesFolderId = await createFolder('transaction_images',
+        final imagesFolderId = await createFolder('images',
             parentFolderId: main_folder_id);
 
         if (imagesFolderId != null) {
           // Generate a unique filename using transaction details
-          String fileName =
-              'transaction_${transaction.id}_${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
+          // String fileName =
+          //     'transaction_${transaction.id}_${DateTime.now().millisecondsSinceEpoch}${path.extension(imageFile.path)}';
 
           // Upload the file
           final uploadedFile = await uploadFile(
@@ -511,6 +511,13 @@ class GoogleDriveBackupHelper {
   /// Sign out the user
   static Future<void> signOut() async {
     await _googleSignIn.signOut();
+
+    main_folder_id = null;
+    image_folder_id = null;
+
+    total_file = 0;
+    current_file = 0;
+    backup_running = false;
     print("User signed out successfully");
   }
 }

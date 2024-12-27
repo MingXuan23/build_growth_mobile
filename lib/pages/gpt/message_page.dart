@@ -1,11 +1,16 @@
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
+import 'package:build_growth_mobile/models/chat_history.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
+import 'package:build_growth_mobile/pages/gpt/star_message_page.dart';
 import 'package:build_growth_mobile/pages/map/place_selection_page.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class MessagePage extends StatefulWidget {
@@ -21,7 +26,6 @@ class _MessagePageState extends State<MessagePage> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -36,6 +40,55 @@ class _MessagePageState extends State<MessagePage> {
         }
       }
     });
+  }
+
+  void showMenu(int index) async {
+    await showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => CupertinoActionSheet(
+        actions: <CupertinoActionSheetAction>[
+           CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.pop(context);
+                await Clipboard.setData(ClipboardData(text: MessageBloc.gptReplies[index]));
+              ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Copy the message successfully', 5));
+            },
+            child: Text('Copy This Message',
+                style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.pop(context);
+              var gpt =MessageBloc.gptReplies[index];
+              var user = MessageBloc.userMessages[index];
+              Chat_History chat = Chat_History(DateTime.now(), '1', UserToken.user_code, request: user, response: gpt, transaction_id: null);
+
+              await Chat_History.insertChatHistory(chat);
+
+              ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Star the message successfully', 5));
+            },
+            child: Text('Star This Message',
+                style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () async {
+              Navigator.pop(context);
+              Navigator.of(context).push(MaterialPageRoute(builder: (context)=> StarMessagePage()));
+            },
+            child: Text('View Star Messages',
+                style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel',
+              style: TextStyle(color: DANGER_COLOR, fontSize: ResStyle.font)),
+        ),
+      ),
+    );
   }
 
   @override
@@ -104,7 +157,7 @@ class _MessagePageState extends State<MessagePage> {
                     child: Column(
                       children: [
                         _gptMessage(
-                            "Oh no! 😢 You've cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨"),
+                            "Oh no! 😢 You've cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨", -1),
                       ],
                     ),
                   ),
@@ -130,9 +183,8 @@ class _MessagePageState extends State<MessagePage> {
   }
 
   List<Widget> _buildMessages(BuildContext context, MessageState state) {
-    final bloc = BlocProvider.of<MessageBloc>(context);
-    final userMessages = bloc.userMessages;
-    final gptReplies = bloc.gptReplies;
+    final userMessages = MessageBloc.userMessages;
+    final gptReplies = MessageBloc.gptReplies;
 
     final List<Widget> widgets = [
       _systemMessage("GPT: Hello, I am willing to answer your questions"),
@@ -141,7 +193,7 @@ class _MessagePageState extends State<MessagePage> {
     for (int i = 0; i < userMessages.length; i++) {
       widgets.add(_userMessage(userMessages[i]));
       if (i < gptReplies.length) {
-        widgets.add(_gptMessage(gptReplies[i]));
+        widgets.add(_gptMessage(gptReplies[i],i));
       }
     }
 
@@ -191,8 +243,24 @@ class _MessagePageState extends State<MessagePage> {
     );
   }
 
-  Widget _gptMessage(String message) {
-    return BugEmoji(message: message);
+  Widget _gptMessage(String message, int index) {
+    return BlocBuilder<MessageBloc, MessageState>(
+      builder: (context, state) {
+        return GestureDetector(
+          onTap: () {
+            if (state is MessageSending || state is MessageReply) {
+              return;
+            }
+
+            if(index > 0 && index < MessageBloc.gptReplies.length){
+            showMenu(index);
+
+            }
+          },
+          child: BugEmoji(message: message),
+        );
+      },
+    );
   }
 
   Widget _buildInputField(BuildContext context) {
@@ -224,16 +292,18 @@ class _MessagePageState extends State<MessagePage> {
                               Navigator.of(context).push(new MaterialPageRoute(
                                   builder: (context) => PlaceSelectionPage()));
                             } else if (label == 'My Budget Plan') {
-                              BlocProvider.of<MessageBloc>(context)
-                                  .add(SendMessageEvent('Based on my cashflow, suggest the budget plan for today, this month, and this year'));
-                            } else if(label =='Investment Tips'){
-                               BlocProvider.of<MessageBloc>(context)
-                                  .add(SendMessageEvent('Based on my cashflow, suggest the short-term and long-term investment plan that suitable for me'));
-                            }else if(label == 'Savings Advice'){
-                               BlocProvider.of<MessageBloc>(context)
-                                  .add(SendMessageEvent('Based on my cashflow and expense behaviour, what is the critical saving advice for me?'));
-                            }
-                            else {
+                              BlocProvider.of<MessageBloc>(context).add(
+                                  SendMessageEvent(
+                                      'Based on my cashflow, suggest the budget plan for today, this month, and this year'));
+                            } else if (label == 'Investment Tips') {
+                              BlocProvider.of<MessageBloc>(context).add(
+                                  SendMessageEvent(
+                                      'Based on my cashflow, suggest the short-term and long-term investment plan that suitable for me'));
+                            } else if (label == 'Savings Advice') {
+                              BlocProvider.of<MessageBloc>(context).add(
+                                  SendMessageEvent(
+                                      'Based on my cashflow and expense behaviour, what is the critical saving advice for me?'));
+                            } else {
                               BlocProvider.of<MessageBloc>(context)
                                   .add(SendMessageEvent(label));
                             }
@@ -300,8 +370,9 @@ class _MessagePageState extends State<MessagePage> {
               ),
               BlocBuilder<MessageBloc, MessageState>(
                 builder: (context, state) {
-                  var isSending =
-                      (state is MessageSending || state is MessageReply);
+                  var isSending = (state is MessageSending ||
+                      state is MessageReply ||
+                      state is MessageInitial);
 
                   return IconButton(
                     icon: isSending

@@ -53,7 +53,7 @@ class Content{
       link: (map['link']??'') as String,
       isLike: map['isLike'] != null ? map['isLike'] as bool : null,
       content_category: (map['content_type_id']??'').toString(),
-      enrollment_price: double.tryParse(map['enrollment_price']),
+      enrollment_price: double.tryParse(map['enrollment_price']??""),
       firstDate: map['first_date'],
       place: map['place']
 

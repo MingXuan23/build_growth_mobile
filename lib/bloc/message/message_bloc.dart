@@ -10,8 +10,8 @@ part 'message_event.dart';
 part 'message_state.dart';
 
 class MessageBloc extends Bloc<MessageEvent, MessageState> {
-  final List<String> userMessages = [];
-  final List<String> gptReplies = [];
+ static   List<String> userMessages = [];
+  static  List<String> gptReplies = [];
   bool ready = false;
   StreamSubscription<String>? _streamSubscription;
 
@@ -46,7 +46,39 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           chat_histoy.add({"role":"assistant", "content":gptReplies[gptReplies.length -1 ]});
 
         }
-        _streamSubscription = GptRepo.fastResponse(event.message, chat_histoy: chat_histoy).listen(
+        // _streamSubscription = GptRepo.fastResponse(event.message, chat_histoy: chat_histoy).listen(
+        //   (chunk) {
+        //     // Append each chunk to the latest reply
+        //     if (gptReplies.isEmpty ||
+        //         gptReplies.last == '' ||
+        //         gptReplies.length < userMessages.length) {
+        //       gptReplies.add(chunk);
+        //     } else {
+        //       gptReplies[gptReplies.length - 1] += chunk;
+        //     }
+
+        //     // Emit the updated state
+        //     emit(MessageReply([...userMessages], [...gptReplies]));
+        //   },
+        //   onError: (error) {
+        //     emit(MessageSendError(error.toString()));
+        //     completer.complete(); // Complete on error
+        //   },
+        //   onDone: () {
+        //     // Handle when the stream ends
+        //     if (gptReplies.isNotEmpty && gptReplies.last == '') {
+        //       gptReplies.removeLast(); // Remove empty response, if any
+        //     }
+        //     emit(MessageReply([...userMessages], [...gptReplies]));
+        //     completer.complete(); // Complete when done
+
+        //     emit(MessageCompleted());
+        //   },
+        //   cancelOnError: true,
+        // );
+
+if(UserPrivacy.useThirdPartyGPT){
+   _streamSubscription = GptRepo.quickResponse(event.message, chat_history: chat_histoy).listen(
           (chunk) {
             // Append each chunk to the latest reply
             if (gptReplies.isEmpty ||
@@ -79,6 +111,42 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
         // Wait for the stream to finish
         await completer.future;
+}else{
+   _streamSubscription = GptRepo.fastResponse(event.message, chat_history: chat_histoy).listen(
+          (chunk) {
+            // Append each chunk to the latest reply
+            if (gptReplies.isEmpty ||
+                gptReplies.last == '' ||
+                gptReplies.length < userMessages.length) {
+              gptReplies.add(chunk);
+            } else {
+              gptReplies[gptReplies.length - 1] += chunk;
+            }
+
+            // Emit the updated state
+            emit(MessageReply([...userMessages], [...gptReplies]));
+          },
+          onError: (error) {
+            emit(MessageSendError(error.toString()));
+            completer.complete(); // Complete on error
+          },
+          onDone: () {
+            // Handle when the stream ends
+            if (gptReplies.isNotEmpty && gptReplies.last == '') {
+              gptReplies.removeLast(); // Remove empty response, if any
+            }
+            emit(MessageReply([...userMessages], [...gptReplies]));
+            completer.complete(); // Complete when done
+
+            emit(MessageCompleted());
+          },
+          cancelOnError: true,
+        );
+
+        // Wait for the stream to finish
+        await completer.future;
+}
+        
       } catch (error) {
         emit(MessageSendError(error.toString()));
       }

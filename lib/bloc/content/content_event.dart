@@ -17,6 +17,15 @@ class SubmitContentTestEvent extends ContentEvent {
   
 }
 
+class ViewContentEvent extends ContentEvent {}
+
+class ClickContentEvent extends ContentEvent {
+  final int id;
+
+  ClickContentEvent({required this.id});
+  
+}
+
 class ContentRebuildEvent extends ContentEvent{}
 
 

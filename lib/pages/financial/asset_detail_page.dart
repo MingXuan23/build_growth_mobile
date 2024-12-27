@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/models/card.dart';
-import 'package:build_growth_mobile/models/emv_card_reader.dart';
+import 'package:build_growth_mobile/services/emv_card_reader.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
@@ -11,7 +11,7 @@ import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
-import 'package:build_growth_mobile/widget/card.dart';
+import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:build_growth_mobile/models/asset.dart';
@@ -465,6 +465,20 @@ class _AssetDetailPageState extends State<AssetDetailPage>
               SizedBox(height: ResStyle.spacing),
               SizedBox(height: ResStyle.spacing * 2),
               Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+                
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: BugPrimaryButton(
+                      onPressed: () {
+                        startReading();
+                        Navigator.of(context).pop();
+                      },
+                      color: DANGER_COLOR,
+                      text: 'Cancel',
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -499,19 +513,6 @@ class _AssetDetailPageState extends State<AssetDetailPage>
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      onPressed: () {
-                        startReading();
-                        Navigator.of(context).pop();
-                      },
-                      color: DANGER_COLOR,
-                      text: 'Cancel',
-                    ),
-                  ),
-                )
               ])
             ]);
       },

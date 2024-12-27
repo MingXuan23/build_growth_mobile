@@ -40,6 +40,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Nevermind'),
               onPressed: () {
                 Navigator.pop(context, false);
+                 FocusScope.of(context).unfocus();
               },
             ),
             TextButton(
@@ -49,6 +50,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Leave'),
               onPressed: () {
                 SystemNavigator.pop();
+                 FocusScope.of(context).unfocus();
               },
             ),
           ],

@@ -30,12 +30,17 @@ class ContentRepo {
         var list = data.map((map) => Content.fromMap(map)).toList();
 
         return {'result': response.statusCode, 'list': list};
-      } else if(response.statusCode  == 200){
-         var data = jsonDecode(response.body);
+      } else if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
 
-        var list = data['contentList'].map((map) => Content.fromMap(map)).toList();
-        return {'result': response.statusCode, 'list': list, "microlearning_id":data['microlearning_id']};
-      }else{
+        var list =
+            data['contentList'].map((map) => Content.fromMap(map)).toList();
+        return {
+          'result': response.statusCode,
+          'list': list,
+          "microlearning_id": data['microlearning_id']
+        };
+      } else {
         return {'result': response.statusCode, 'list': []};
       }
     } catch (e) {
@@ -63,6 +68,101 @@ class ContentRepo {
       return res['message'];
     } catch (e) {
       return e.toString();
+    }
+  }
+
+  static Future<int> saveContentEnrollment(
+      String card_id, String verification_code) async {
+    String url = "$HOST_URL/$content_prefix/save-content-attendance";
+
+    try {
+      final response = await http.post(Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Application-Id': appId,
+            'Authorization': 'Bearer ${UserToken.remember_token}'
+          },
+          body: jsonEncode(
+              {'card_id': card_id, 'verification_code': verification_code}));
+
+      return response.statusCode;
+    } catch (e) {
+      return 500;
+    }
+  }
+
+  static Future<int> updateUserContent(int id, String action) async {
+    String url = "$HOST_URL/$content_prefix/update-user-content";
+
+    try {
+      final response = await http.post(Uri.parse(url),
+          headers: {
+            'Content-Type': 'application/json',
+            'Application-Id': appId,
+            'Authorization': 'Bearer ${UserToken.remember_token}'
+          },
+          body: jsonEncode({'content_id': id, 'action': action}));
+
+      return response.statusCode;
+    } catch (e) {
+      return 500;
+    }
+  }
+
+  static Future<List<Content>> getAttendanceHistory() async {
+    String url = "$HOST_URL/$content_prefix/get-attendance-history";
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        var list = (data['history'] as List)
+            .map((map) => Content.fromMap(map))
+            .toList();
+        return list;
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static Future<List<Content>> getViewContents() async {
+    String url = "$HOST_URL/$content_prefix/get-clicked-content";
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
+      );
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+
+        var list = (data['clicked_list'] as List)
+            .map((map) => Content.fromMap(map))
+            .toList();
+
+        return list;
+      }
+
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 }

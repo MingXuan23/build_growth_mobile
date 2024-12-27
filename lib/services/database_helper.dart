@@ -26,11 +26,23 @@ class DatabaseHelper {
     // Open the database
     return await openDatabase(
       path,
-      version: 2, // Increment version to trigger onUpgrade
+      version: 3, // Increment version to trigger onUpgrade
       onCreate: _onCreate,
-    //  onUpgrade: _onUpgrade, // Handle upgrades
+      onUpgrade: _onUpgrade, // Handle upgrades
     );
   }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  if (oldVersion < 3) {
+    // Run only if upgrading from a version less than 2
+    await db.execute('''
+      ALTER TABLE Debt ADD COLUMN alarming_limit REAL DEFAULT -1
+    ''');
+   
+  }
+
+  // Add future upgrades here by checking the version range
+}
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
@@ -92,6 +104,7 @@ class DatabaseHelper {
     await db.execute('''
         ALTER TABLE Transactions ADD COLUMN image TEXT 
       ''');
+
   }
 
 

@@ -1,5 +1,5 @@
 import 'package:build_growth_mobile/models/card.dart';
-import 'package:build_growth_mobile/models/emv_card_reader.dart';
+import 'package:build_growth_mobile/services/emv_card_reader.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

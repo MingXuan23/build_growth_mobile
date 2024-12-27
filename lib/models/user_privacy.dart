@@ -8,10 +8,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class UserPrivacy {
   static bool useGPT = true;
+  static bool useThirdPartyGPT = false;
+
   static bool pushContent = true;
   //static String backUpFrequency = "First Transaction In A Day";
 
   static bool googleDriveBackup = false;
+
+  static bool promptTransactionProof = true;
 
   // static String backUpFrequency = "No Backup";
 
@@ -22,8 +26,10 @@ class UserPrivacy {
   static Map<String, dynamic> toMap() {
     return {
       'useGPT': useGPT,
+      'useThirdPartyGPT': useThirdPartyGPT && useGPT,
       'useContent': pushContent,
       'useGoogleDriveBackup': googleDriveBackup,
+      'promptTransactionProof': promptTransactionProof,
     };
   }
 
@@ -31,21 +37,23 @@ class UserPrivacy {
     useGPT = map['useGPT'] ?? false;
     pushContent = map['useContent'] ?? false;
     googleDriveBackup = map['useGoogleDriveBackup'] ?? false;
+    promptTransactionProof = map['promptTransactionProof'] ?? false;
+    useThirdPartyGPT = map['useThirdPartyGPT'] ?? false;
   }
 
   // Save settings as JSON to SharedPreferences
   static Future<void> saveToPreferences(String usercode) async {
     if (googleDriveBackup) {
       var result = await GoogleDriveBackupHelper.initialize();
-      if(!result){
+      if (!result) {
         UserPrivacy.googleDriveBackup = false;
-         throw new Exception('Error in login to Google Drive') ;
+        throw new Exception('Error in login to Google Drive');
       }
     } else {
       await GoogleDriveBackupHelper.signOut();
     }
 
-
+    useThirdPartyGPT = useThirdPartyGPT && useGPT;
     final prefs = await SharedPreferences.getInstance();
     final jsonString = jsonEncode(toMap());
     await prefs.setString('user_privacy_$usercode', jsonString);
@@ -132,6 +140,7 @@ class UserPrivacy {
     var cash_flow = await Asset.getTotalCashFlow();
     var total_asset = await Asset.getTotalAsset();
 
+
     double cash_flow_percent = totalIncome * 100 / max(totalExpense.abs(), 100);
     int financial_freedom = (total_asset / ((max(totalExpense.abs(), 900)) / 3))
         .floor(); //the month can survive without work
@@ -140,38 +149,38 @@ class UserPrivacy {
     if (cash_flow_percent <= -30 || financial_freedom <= 0) {
       // Most negative
       tone =
-          'You are deeply concerned about my spending habits and lack of savings. Please give an immediate and extremely stern warning, using mindset of the poor dad';
+          'You are deeply concerned about my spending habits and lack of savings. Please give an immediate and extremely stern warning, using Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= -10) {
       tone =
-          'You are seriously worried about my spending behavior and insufficient savings. Please provide a serious warning,  using mindset of the poor dad."';
+          'You are seriously worried about my spending behavior and insufficient savings. Please provide a serious warning,  using Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 0 || financial_freedom <= 1) {
       tone =
-          'You are concerned about my spending habits and limited savings. Please provide firm and practical advice,  using mindset of the poor dad"';
+          'You are concerned about my spending habits and limited savings. Please provide firm and practical advice,  using Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 10) {
       tone =
-          'You believe I should prioritize increasing my savings. Please give constructive advice, using mindset of the poor dad';
+          'You believe I should prioritize increasing my savings. Please give constructive advice, using Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 30 || financial_freedom <= 2) {
       tone =
-          'You are pleased to see that my savings and income are stable. Please provide neutral feedback, using mindset of the poor dad';
+          'You are pleased to see that my savings and income are stable. Please provide neutral feedback, using Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 50) {
       tone =
-          'You are happy that I have adequate cash flow. Please provide simple positive feedback using the Rich Dad mindset.';
+          'You are happy that I have adequate cash flow. Please provide simple positive feedback using the Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 70 || financial_freedom <= 4) {
       tone =
-          'You are delighted that I have enough assets and cash flow. Please provide positive feedback using the Rich Dad mindset.';
+          'You are delighted that I have enough assets and cash flow. Please provide positive feedback using the Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 100) {
       tone =
-          'You are impressed by my growing cash flow. Please provide uplifting feedback using the Rich Dad mindset.';
+          'You are impressed by my growing cash flow. Please provide uplifting feedback using the Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 150 || financial_freedom <= 6) {
       tone =
-          'You are proud of my ability to grow my finances. Please provide encouraging suggestions using the Rich Dad mindset.';
+          'You are proud of my ability to grow my finances. Please provide encouraging suggestions using the Rich Dad mindset and called me as "friend".';
     } else if (cash_flow_percent <= 300 || financial_freedom <= 12) {
       tone =
-          'You are inspired by my financial progress. Please provide inspirational suggestions using the Rich Dad mindset.';
+          'You are inspired by my financial progress. Please provide inspirational suggestions using the Rich Dad mindset and called me as "friend".';
     } else {
       // Most positive
       tone =
-          'You are amazed by my exceptional financial success. Please provide highly motivational suggestions using the Rich Dad mindset.';
+          'You are amazed by my exceptional financial success. Please provide highly motivational suggestions using the Rich Dad mindset and called me as "friend".';
     }
 
     // Prepare the result as a JSON string
