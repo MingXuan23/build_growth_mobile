@@ -107,3 +107,7 @@ class UserStartRestore extends AuthEvent {
   UserStartRestore({required this.backupData});
 }
 
+class UserTourGuide extends AuthEvent{
+  
+}
+

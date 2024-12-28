@@ -13,6 +13,7 @@ import 'package:build_growth_mobile/pages/auth/backup_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
 import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/location_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
@@ -25,6 +26,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key, required this.gotoPrivacy}) : super(key: key);
   final bool gotoPrivacy;
+
+  static final ScrollController scrollController = ScrollController();
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -36,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool promptProof = UserPrivacy.promptTransactionProof;
   bool useThirdPartyGPT = UserPrivacy.useThirdPartyGPT;
   //String backupFrequency =
-  ScrollController _scrollController = ScrollController();
+  
 
   bool privacy_updated = false;
   String privacy_message = '';
@@ -64,10 +67,10 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      _scrollController.position.maxScrollExtent;
-      if (_scrollController.hasClients) {
-        await _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent + 100,
+      ProfilePage.scrollController.position.maxScrollExtent;
+      if (ProfilePage.scrollController.hasClients) {
+        await ProfilePage.scrollController.animateTo(
+          ProfilePage.scrollController.position.maxScrollExtent + 100,
           duration: const Duration(milliseconds: 1000),
           curve: Curves.easeOut,
         );
@@ -590,12 +593,13 @@ class _ProfilePageState extends State<ProfilePage> {
         body: Padding(
           padding: EdgeInsets.all(ResStyle.spacing),
           child: SingleChildScrollView(
-            controller: _scrollController,
+            controller: ProfilePage.scrollController,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // User Information Card
                 Card(
+                  key: TutorialHelper.profileKeys[1],
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -619,7 +623,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
                           (UserToken.online)
                               ? BugRoundButton(
+                                  key: TutorialHelper.profileKeys[2],
                                   icon: Icons.edit,
+                                  
                                   onPressed: showUpdateProfileDialog,
                                   size: ResStyle.spacing * 3)
                               : Container(),
@@ -689,6 +695,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const Divider(),
                       CardWidgetivider(
+                          key: TutorialHelper.profileKeys[3],
                         'Allow xBUG AI Financial Assitant Using Your Data',
                         BugSwitch(
                           value: useGPT,
@@ -703,6 +710,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
 
                        CardWidgetivider(
+                          key: TutorialHelper.profileKeys[4],
                         'Allow Third Party AI Financial Assitant Using Your Data for Higher Performance',
                         BugSwitch(
                           value: useThirdPartyGPT,
@@ -716,6 +724,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       CardWidgetivider(
+                          key: TutorialHelper.profileKeys[5],
                           'Enable Content Browsing and Receiving Recommendations',
                           BugSwitch(
                             value: pushContent,
@@ -753,6 +762,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       //   ),
                       // ),
                       CardWidgetivider(
+                          key: TutorialHelper.profileKeys[6],
                         'Always Prompt You to Add Transaction Proof',
                         BugSwitch(
                           value: promptProof,
@@ -764,7 +774,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           },
                         ),
                       ),
+                      
                       CardWidgetivider(
+                          key: TutorialHelper.profileKeys[7],
                         'Allow to use your Google Drive to backup your data',
                         BugSwitch(
                           value: useGoogleDriveBackup,
@@ -840,6 +852,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      BugPrimaryButton(
+                        key: TutorialHelper.profileKeys[8],
+                          text: "Tour Guide",
+                          onPressed: (){
+                            Navigator.of(context).pop();
+                            BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
+                          },
+                          color: RM1_COLOR),
+                           SizedBox(height: ResStyle.spacing),
                       BugPrimaryButton(
                           text: "Change Password",
                           onPressed: showChangePasswordDialog,

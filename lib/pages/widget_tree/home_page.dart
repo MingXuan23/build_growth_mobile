@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/pages/auth/backup_page.dart';
+import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:build_growth_mobile/pages/content/content_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
@@ -11,18 +12,34 @@ import 'package:build_growth_mobile/pages/gpt/gpt_page.dart';
 import 'package:build_growth_mobile/pages/gpt/message_page.dart';
 import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:nfc_manager/nfc_manager.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
+ static final GlobalKey<_HomePageState> homePageKey = GlobalKey<_HomePageState>();
   @override
   State<HomePage> createState() => _HomePageState();
+
+   static void setTab(int index) {
+    homePageKey.currentState?._setTab(index);
+  }
 }
 
 class _HomePageState extends State<HomePage> {
+
+   void _setTab(int index) {
+    if (index != currentIndex) {
+      setState(() {
+        currentIndex = index;
+      });
+    }
+  }
+
   Future<bool?> _showBackDialog() {
     return showDialog<bool>(
       context: context,
@@ -40,7 +57,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Nevermind'),
               onPressed: () {
                 Navigator.pop(context, false);
-                 FocusScope.of(context).unfocus();
+                FocusScope.of(context).unfocus();
               },
             ),
             TextButton(
@@ -50,7 +67,7 @@ class _HomePageState extends State<HomePage> {
               child: const Text('Leave'),
               onPressed: () {
                 SystemNavigator.pop();
-                 FocusScope.of(context).unfocus();
+                FocusScope.of(context).unfocus();
               },
             ),
           ],
@@ -61,7 +78,8 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> tabs = [FinancialPage(), MessagePage(), ContentPage()];
   //List<Widget> tabs = [FinancialPage(), MessagePage(),   DriveBackupWidget()];
-
+int currentIndex = 0;
+   
   @override
   void initState() {
     super.initState();
@@ -76,9 +94,40 @@ class _HomePageState extends State<HomePage> {
     BlocProvider.of<MessageBloc>(context).add(
       SendMessageEvent('Initialising xBUG Ai...'),
     );
+
+    if(AuthBloc.first_user){
+       BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
+       AuthBloc.first_user = false;
+    }
+    _startNFCReading();
   }
 
-  int currentIndex = 0;
+   void _startNFCReading() async {
+    try {
+      var nfc_available = await NfcManager.instance.isAvailable();
+
+      
+      //We first check if NFC is available on the device.
+      if (nfc_available) {
+        //If NFC is available, start an NFC session and listen for NFC tags to be discovered.
+        NfcManager.instance.startSession(
+          onDiscovered: (NfcTag tag) async {
+            // Process NFC tag, When an NFC tag is discovered, print its data to the console.
+            var ndef = Ndef.from(tag);
+            if (ndef == null || ndef.cachedMessage == null) {
+              return;
+            }
+
+            Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AttendacneListenPage()));
+            
+          },
+        );
+      } 
+    } catch (e) {
+      debugPrint('Error reading NFC: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -88,6 +137,7 @@ class _HomePageState extends State<HomePage> {
         final bool shouldPop = await _showBackDialog() ?? false;
       },
       child: DefaultTabController(
+       
         length: 3,
         child: Scaffold(
           body: IndexedStack(
@@ -104,6 +154,7 @@ class _HomePageState extends State<HomePage> {
             },
             items: [
               BottomNavigationBarItem(
+                key: TutorialHelper.financialKeys[0],
                   icon: Icon(
                     Icons.monetization_on_rounded,
                     color: currentIndex == 0
@@ -114,6 +165,7 @@ class _HomePageState extends State<HomePage> {
                   label: 'Financial',
                   backgroundColor: RM1_COLOR),
               BottomNavigationBarItem(
+                key: TutorialHelper.gptKeys[0],
                   icon: Icon(
                     Icons.receipt,
                     color: currentIndex == 1 ? TITLE_COLOR : HIGHTLIGHT_COLOR,
@@ -122,6 +174,7 @@ class _HomePageState extends State<HomePage> {
                   label: 'Assistant',
                   backgroundColor: RM50_COLOR),
               BottomNavigationBarItem(
+                key: TutorialHelper.contentKeys[0],
                   icon: Icon(
                     Icons.article,
                     color: currentIndex == 2 ? TITLE_COLOR : HIGHTLIGHT_COLOR,

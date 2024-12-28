@@ -110,5 +110,8 @@ class UserBackUpEnded extends AuthState{}
 
 class UserRestoreEnded extends AuthState{}
 
+class UserTourGuiding extends AuthState{}
+
+
 
 

@@ -5,6 +5,7 @@ import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_input.dart';
@@ -16,6 +17,7 @@ import 'package:build_growth_mobile/models/debt.dart';
 class DebtDetailPage extends StatefulWidget {
   const DebtDetailPage({super.key});
 
+  static final page_controller = PageController();
   @override
   State<DebtDetailPage> createState() => _DebtDetailPageState();
 }
@@ -39,8 +41,6 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     'Variable amount paid monthly.',
   ];
 
-  final page_controller = PageController();
-
   @override
   void initState() {
     super.initState();
@@ -50,7 +50,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
   @override
   void dispose() {
     // TODO: implement dispose
-    page_controller.dispose();
+    //page_controller.dispose();
 
     super.dispose();
   }
@@ -67,10 +67,10 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                 : debts.isNotEmpty
                     ? Column(
                         children: [
-                          BugPageIndicator(page_controller, 2),
+                          BugPageIndicator(DebtDetailPage.page_controller, 2),
                           Expanded(
                             child: PageView(
-                              controller: page_controller,
+                              controller: DebtDetailPage.page_controller,
                               children: [
                                 _buildDebtList(),
                                 _buildDebtTutorialPage(),
@@ -86,7 +86,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     debts = await Debt.getDebtList();
     isLoading = false;
 
-    await Future.delayed(const Duration(milliseconds: 500));
+    //await Future.delayed(const Duration(milliseconds: 500));
     setState(() {});
   }
 
@@ -122,7 +122,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     // await page_controller.nextPage(
     //     duration: Duration(milliseconds: 600), curve: Curves.fastOutSlowIn);
 
-    page_controller.nextPage(
+    DebtDetailPage.page_controller.nextPage(
       duration: Duration(milliseconds: 700),
       curve: Curves.fastOutSlowIn,
     );
@@ -134,6 +134,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
       child: Column(
         children: [
           Expanded(
+            
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -144,6 +145,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
               itemCount: debtTypes.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
+               key: TutorialHelper.debtKeys[index],
                   onTap: () => showAddDebtModal(debtTypes[index]),
                   child: _buildDebtCard(context, index),
                 );
@@ -166,6 +168,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     String debtType = debtTypes[index];
 
     return Container(
+      
       decoration: BoxDecoration(
         color: TITLE_COLOR,
         borderRadius: BorderRadius.circular(12),
@@ -219,7 +222,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
           setState(() {
             _isExpanded = !_isExpanded;
             if (!_isExpanded) {
-              page_controller.animateTo(
+              DebtDetailPage.page_controller.animateTo(
                 0,
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeOut,
@@ -596,7 +599,8 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [Expanded(
+                children: [
+                  Expanded(
                     child: Padding(
                       padding:
                           EdgeInsets.symmetric(horizontal: ResStyle.spacing),
@@ -631,8 +635,8 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                             await loadDebts();
                             Navigator.of(context).pop();
 
-                            if (page_controller.hasClients) {
-                              page_controller.animateToPage(
+                            if (DebtDetailPage.page_controller.hasClients) {
+                              DebtDetailPage.page_controller.animateToPage(
                                 0,
                                 duration: const Duration(milliseconds: 700),
                                 curve: Curves.fastOutSlowIn,
@@ -644,7 +648,6 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                       ),
                     ),
                   ),
-                  
                 ],
               ),
             ],

@@ -7,6 +7,7 @@ import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
@@ -22,6 +23,7 @@ import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 class AssetDetailPage extends StatefulWidget {
   const AssetDetailPage({super.key});
 
+static   final page_controller = PageController();
   @override
   State<AssetDetailPage> createState() => _AssetDetailPageState();
 }
@@ -47,7 +49,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
 
   StreamSubscription<EmvCard?>? _subscription;
 
-  final page_controller = PageController();
+
 
   // ====== LIFECYCLE METHODS ======
   @override
@@ -61,7 +63,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
   void dispose() {
 
     super.dispose();
-    page_controller.dispose();
+ //   page_controller.dispose();
  
   }
 
@@ -95,10 +97,10 @@ class _AssetDetailPageState extends State<AssetDetailPage>
                       padding: EdgeInsets.all(ResStyle.spacing),
                       child: Column(
                         children: [
-                          BugPageIndicator(page_controller, 2),
+                          BugPageIndicator(AssetDetailPage.page_controller, 2),
                           Expanded(
                             child: PageView(
-                              controller: page_controller,
+                              controller: AssetDetailPage.page_controller,
                               children: [
                                 _buildAssetList(),
                                 _buildTutorialPage(),
@@ -134,7 +136,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     // await page_controller.nextPage(
     //     duration: Duration(milliseconds: 600), curve: Curves.fastOutSlowIn);
 
-    page_controller.nextPage(
+    AssetDetailPage.page_controller.nextPage(
       duration: Duration(milliseconds: 700),
       curve: Curves.fastOutSlowIn,
     );
@@ -501,8 +503,8 @@ class _AssetDetailPageState extends State<AssetDetailPage>
                        
                         Navigator.of(context).pop();
 
-                        if (page_controller.hasClients) {
-                          page_controller.animateToPage(
+                        if (AssetDetailPage.page_controller.hasClients) {
+                          AssetDetailPage.page_controller.animateToPage(
                             0,
                             duration: const Duration(milliseconds: 700),
                             curve: Curves.fastOutSlowIn,
@@ -553,8 +555,9 @@ class _AssetDetailPageState extends State<AssetDetailPage>
     return icon;
   }
 
-  Widget _buildAssetCard(BuildContext context, String assetType) {
+  Widget _buildAssetCard(BuildContext context, String assetType, GlobalKey key) {
     return Container(
+      key: key,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -679,7 +682,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
               itemBuilder: (context, index) {
                 return GestureDetector(
                   onTap: () => showAddAssetModal(assetTypes[index]),
-                  child: _buildAssetCard(context, assetTypes[index]),
+                  child: _buildAssetCard(context, assetTypes[index], TutorialHelper.assetKeys[index]),
                 );
               },
             ),

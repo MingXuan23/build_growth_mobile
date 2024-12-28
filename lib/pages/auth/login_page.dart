@@ -84,16 +84,10 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(height: ResStyle.spacing),
-                                GestureDetector(
-                                  onTap: () {
-                                   
-                                    HOST_URL = 'http://${_emailController.text}:30000' ;
-                                  },
-                                  child: Image.asset(
-                                    'lib/assets/playstore-icon.png',
-                                    height: ResStyle.spacing * 5,
-                                    width: ResStyle.spacing * 5,
-                                  ),
+                                Image.asset(
+                                  'lib/assets/playstore-icon.png',
+                                  height: ResStyle.spacing * 5,
+                                  width: ResStyle.spacing * 5,
                                 ),
                                 SizedBox(height: ResStyle.spacing),
                                 BugTextInput(

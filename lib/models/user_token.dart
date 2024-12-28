@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
+import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserToken {
@@ -51,13 +53,21 @@ class UserToken {
   // Save the UserToken to SharedPreferences
   static Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
+     final exists = prefs.getString('user_privacy_${UserToken.user_code}');
+     if(exists == null){
+        AuthBloc.first_user = true;
+        UserPrivacy.saveToPreferences(UserToken.user_code??'');
+     }
     final jsonString = json.encode(toJson());
     await prefs.setString('user_token', jsonString);
+  
+
   }
 
   // Load the UserToken from SharedPreferences
   static Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
+   
     final jsonString = prefs.getString('user_token');
     if (jsonString != null) {
       final jsonMap = json.decode(jsonString) as Map<String, dynamic>;

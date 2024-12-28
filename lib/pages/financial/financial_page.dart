@@ -12,6 +12,7 @@ import 'package:build_growth_mobile/pages/financial/debt_detail_page.dart';
 import 'package:build_growth_mobile/pages/financial/flow_graph.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
@@ -23,7 +24,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FinancialPage extends StatefulWidget {
   const FinancialPage({Key? key}) : super(key: key);
-
+static PageController financialPageController = PageController(viewportFraction: 1.0);
   @override
   _FinancialPageState createState() => _FinancialPageState();
 }
@@ -39,7 +40,7 @@ class _FinancialPageState extends State<FinancialPage> {
   List<Transaction> transaction_history = [];
   List<Transaction> cashFlow_history = [];
 
-  PageController _pageController = PageController(viewportFraction: 1.0);
+  //static PageController financialPageController = PageController(viewportFraction: 1.0);
   List<Widget> quick_actions = [];
 
   double? graph_selected_value;
@@ -136,6 +137,7 @@ class _FinancialPageState extends State<FinancialPage> {
         children: [
           // Total Assets Card
           Expanded(
+            key: TutorialHelper.financialKeys[1],
             flex: 2,
             child: AssetCard(
               'Total Assets',
@@ -149,6 +151,7 @@ class _FinancialPageState extends State<FinancialPage> {
             child: Row(
               children: [
                 Expanded(
+                   key: TutorialHelper.financialKeys[2],
                   child: DebtCard(
                     'Debts',
                     'RM${totalDebts.toStringAsFixed(2)}',
@@ -160,6 +163,7 @@ class _FinancialPageState extends State<FinancialPage> {
                   ),
                 ),
                 Expanded(
+                   key: TutorialHelper.financialKeys[3],
                   child: DebtCard(
                     'Expenses',
                     'RM${totalExpense.abs().toStringAsFixed(2)}',
@@ -199,6 +203,7 @@ class _FinancialPageState extends State<FinancialPage> {
           ),
           itemBuilder: (context, index) {
             return SizedBox.expand(
+               key: TutorialHelper.financialKeys[4 +index],
               child: quick_actions[index],
             );
           },
@@ -233,6 +238,7 @@ class _FinancialPageState extends State<FinancialPage> {
                             children: [
                               AssetDebtSection(), // Page 1
                               TransactionGraphSection(
+                                gkey: TutorialHelper.financialKeys[8],
                                 transactions: cashFlow_history,
                                 currentAsset: totalCashFlow,
                                 header: 'Cash Flow History',
@@ -271,16 +277,17 @@ class _FinancialPageState extends State<FinancialPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Total Assets Card
-              Center(child: BugPageIndicator(_pageController, 3)),
+              Center(child: BugPageIndicator(FinancialPage.financialPageController, 3)),
               Expanded(
                 flex: 3,
                 child: PageView(
-                  controller: _pageController,
+                  controller: FinancialPage.financialPageController,
                   physics: ClampingScrollPhysics(),
                   children: [
                     AssetDebtSection(),
                     // Page 1
                     TransactionGraphSection(
+                      key: TutorialHelper.financialKeys[8],
                       transactions: cashFlow_history,
                       currentAsset: totalCashFlow,
                       header: 'Cash Flow History',
@@ -308,12 +315,14 @@ class _FinancialPageState extends State<FinancialPage> {
 class TransactionGraphSection extends StatelessWidget {
   final double currentAsset;
   final String header;
+  final GlobalKey? gkey;
   final List<Transaction> transactions;
 
   const TransactionGraphSection(
       {Key? key,
       required this.currentAsset,
       required this.transactions,
+      this.gkey,
       required this.header})
       : super(key: key);
 
@@ -340,8 +349,10 @@ class TransactionGraphSection extends StatelessWidget {
     List<FlSpot> spots = _calculateReverseCashFlowSpots();
 
     return Padding(
+
       padding: EdgeInsets.all(ResStyle.spacing),
       child: Column(
+        
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Row(
@@ -365,6 +376,7 @@ class TransactionGraphSection extends StatelessWidget {
             ],
           ),
           Container(
+               key: gkey,
             height: ResStyle.height * 0.3,
             padding: EdgeInsets.symmetric(
                 vertical: ResStyle.spacing, horizontal: ResStyle.spacing * 1.5),
@@ -383,6 +395,7 @@ class TransactionGraphSection extends StatelessWidget {
               children: [
                 Expanded(
                   child: LineChart(
+                 
                     curve: Curves.bounceIn,
                     LineChartData(
                       gridData: FlGridData(show: false),

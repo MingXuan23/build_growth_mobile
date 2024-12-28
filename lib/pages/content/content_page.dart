@@ -6,6 +6,7 @@ import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/content/content_init_page.dart';
 import 'package:build_growth_mobile/pages/content/content_list_page.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
@@ -42,7 +43,7 @@ class _ContentPageState extends State<ContentPage> {
         builder: (context, state) {
           if (!UserPrivacy.pushContent) {
             return Scaffold(
-              appBar: BugAppBar('Content', context),
+              appBar: BugAppBar('Content', context, gkey: TutorialHelper.profileKeys[0]),
               backgroundColor: HIGHTLIGHT_COLOR,
               body: Center(
                   child: Padding(
@@ -71,7 +72,7 @@ class _ContentPageState extends State<ContentPage> {
             );
           } else if (!UserToken.online) {
             return Scaffold(
-              appBar: BugAppBar('Content', context),
+              appBar: BugAppBar('Content', context, gkey: TutorialHelper.profileKeys[0]),
               backgroundColor: HIGHTLIGHT_COLOR,
               body: Center(
                   child: Padding(

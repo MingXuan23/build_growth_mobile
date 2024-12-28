@@ -1,3 +1,6 @@
+import 'dart:ui';
+
+import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -55,41 +58,29 @@ class LocationHelper {
     // Check the current permission status.
     LocationPermission permission = await Geolocator.checkPermission();
 
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       // Request permission if it's denied.
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
         // Permissions are denied again, handle appropriately.
-        print('Location permissions are denied');
+      
         return false;
       }
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are permanently denied, we cannot request permissions.
-      print(
-          'Location permissions are permanently denied, we cannot request permissions.');
-      return false;
-    }
 
     // Check if location services are enabled.
     bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!isLocationServiceEnabled) {
       // Prompt the user to enable location services.
       await Geolocator.openLocationSettings();
-      int maxDurationSeconds = 10;
-      int elapsedTime = 0;
-      while (elapsedTime < maxDurationSeconds &&
-          !await Geolocator.isLocationServiceEnabled()) {
-        elapsedTime++;
-        
-        await Future.delayed(Duration(seconds: 1));
-
-      } // Return false since location services are not yet enabled.
-
+     await Future.delayed(Duration(milliseconds: 100));
+        while (WidgetsBinding.instance?.lifecycleState != AppLifecycleState.resumed) {
+          await Future.delayed(Duration(milliseconds: 300));
+        }
         return await Geolocator.isLocationServiceEnabled();
 
-    }
+    } 
 
     // Permissions are granted and location services are enabled.
     return true;

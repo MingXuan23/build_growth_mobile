@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:build_growth_mobile/pages/content/clicked_content_Page.dart';
 import 'package:build_growth_mobile/pages/content/enrolled_content_page.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
@@ -33,7 +34,7 @@ class _ContentPageState extends State<ContentListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BugAppBar('Content For You', context),
+      appBar: BugAppBar('Content For You', context, gkey: TutorialHelper.profileKeys[0]),
       backgroundColor: HIGHTLIGHT_COLOR,
       body: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {

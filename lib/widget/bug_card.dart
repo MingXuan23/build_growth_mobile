@@ -50,13 +50,14 @@ Widget AssetCard(String header, String text, Function() func,
                 ),
               ],
             ),
-            SizedBox(height: ResStyle.spacing),
+            SizedBox(height: ResStyle.spacing/2),
             Text(
               text,
               maxLines: 2,
               style: TextStyle(
-                  fontSize: text.length >= 15 ? ResStyle.body_font : ResStyle.header_font,
-                  
+                  fontSize: text.length >= 15
+                      ? ResStyle.body_font
+                      : ResStyle.header_font,
                   fontWeight: FontWeight.bold,
                   color: font_color),
             ),
@@ -64,6 +65,29 @@ Widget AssetCard(String header, String text, Function() func,
         ),
       ),
     ),
+  );
+}
+
+Widget TutorialCard(String text) {
+  return Padding(
+    padding:  EdgeInsets.all( ResStyle.spacing),
+    child: Container(
+        padding:  EdgeInsets.all(
+           ResStyle.spacing ), // Adds padding around the text
+        decoration: BoxDecoration(
+          color:RM50_COLOR, // Black background color
+         // border: Border.all(color: RM1_COLOR, width: ResStyle.small_font /2), // Yellow border
+          borderRadius: BorderRadius.circular(8), // Optional rounded corners
+        ),
+        child: Text(
+         text,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color:HIGHTLIGHT_COLOR, // Text color for better contrast
+            fontSize: ResStyle.font, // Use your defined font size
+            fontWeight: FontWeight.bold, // Bold text
+          ),
+        )),
   );
 }
 
@@ -100,9 +124,8 @@ Widget DebtCard(String header, String text, Function() func,
               Text(
                 infotext,
                 style: TextStyle(
-                    fontSize:
-                      ResStyle.small_font,
-                   // fontWeight: FontWeight.bold,
+                    fontSize: ResStyle.small_font,
+                    // fontWeight: FontWeight.bold,
                     color: font_color),
               ),
             SizedBox(height: ResStyle.spacing / 4),
@@ -130,8 +153,6 @@ Widget GeneralCard({
 }) {
   final currentDate = DateTime.now();
   final startYear = 2020;
-  
- 
 
   return Container(
     padding: const EdgeInsets.all(16),
@@ -154,7 +175,9 @@ Widget GeneralCard({
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Month Dropdown
-            SizedBox(width: ResStyle.spacing *2 ,),
+            SizedBox(
+              width: ResStyle.spacing * 2,
+            ),
             Expanded(
               child: DropdownButton<int>(
                 value: selectedMonth,
@@ -162,9 +185,9 @@ Widget GeneralCard({
                 isExpanded: true,
                 items: List.generate(12, (index) {
                   final month = index + 1;
-                  final isDisabled = selectedYear == currentDate.year && 
-                                   month > currentDate.month;
-                  
+                  final isDisabled = selectedYear == currentDate.year &&
+                      month > currentDate.month;
+
                   return DropdownMenuItem(
                     alignment: Alignment.center,
                     value: month,
@@ -185,17 +208,20 @@ Widget GeneralCard({
                 },
               ),
             ),
-            
+
             // Year Selection with arrows
-            SizedBox(width: ResStyle.spacing ,),
+            SizedBox(
+              width: ResStyle.spacing,
+            ),
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
                   icon: const Icon(Icons.chevron_left),
-                  onPressed: selectedYear <= startYear 
-                    ? null 
-                    : () => onMonthYearChanged(selectedMonth, selectedYear - 1),
+                  onPressed: selectedYear <= startYear
+                      ? null
+                      : () =>
+                          onMonthYearChanged(selectedMonth, selectedYear - 1),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -209,43 +235,53 @@ Widget GeneralCard({
                 ),
                 IconButton(
                   icon: const Icon(Icons.chevron_right),
-                  onPressed: selectedYear >= currentDate.year 
-                    ? null 
-                    : () => onMonthYearChanged(selectedMonth, selectedYear + 1),
+                  onPressed: selectedYear >= currentDate.year
+                      ? null
+                      : () =>
+                          onMonthYearChanged(selectedMonth, selectedYear + 1),
                 ),
-
-                 SizedBox(width: ResStyle.spacing ,),
+                SizedBox(
+                  width: ResStyle.spacing,
+                ),
               ],
             ),
           ],
         ),
-       SizedBox(height: ResStyle.spacing  ,),
+        SizedBox(
+          height: ResStyle.spacing,
+        ),
 
         // Inflow and Outflow Totals
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-             Text(
+            Text(
               'Total Inflow:',
-              style: TextStyle(fontSize:  ResStyle.medium_font, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: ResStyle.medium_font, fontWeight: FontWeight.bold),
             ),
             Text(
               'RM ${totalInflow.toStringAsFixed(2)}',
-              style:  TextStyle(fontSize:  ResStyle.medium_font, color: Colors.green),
+              style: TextStyle(
+                  fontSize: ResStyle.medium_font, color: Colors.green),
             ),
           ],
         ),
-       SizedBox(height: ResStyle.spacing/2 ,),
+        SizedBox(
+          height: ResStyle.spacing / 2,
+        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-             Text(
+            Text(
               'Total Outflow:',
-              style: TextStyle(fontSize:  ResStyle.medium_font, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: ResStyle.medium_font, fontWeight: FontWeight.bold),
             ),
             Text(
               'RM ${totalOutflow.toStringAsFixed(2)}',
-              style:  TextStyle(fontSize: ResStyle.medium_font, color: Colors.red),
+              style:
+                  TextStyle(fontSize: ResStyle.medium_font, color: Colors.red),
             ),
           ],
         ),
@@ -393,8 +429,6 @@ Widget DebtDetailCard(Debt debt, VoidCallback func,
   );
 }
 
-
-
 Widget ExpenseDetailCard(
   Debt debt,
   VoidCallback func,
@@ -484,7 +518,7 @@ Widget ExpenseDetailCard(
                 if (debt.alarming_limit > 0)
                   Text(
                     debt.month_total_expense > debt.alarming_limit
-                        ? 'Limit: ${FormatterHelper.toDoubleString(debt.alarming_limit)} (Over ${(100 * ((debt.month_total_expense.abs()) / debt.alarming_limit.abs() -1)).toStringAsFixed(1)}%)'
+                        ? 'Limit: ${FormatterHelper.toDoubleString(debt.alarming_limit)} (Over ${(100 * ((debt.month_total_expense.abs()) / debt.alarming_limit.abs() - 1)).toStringAsFixed(1)}%)'
                         : 'Limit: ${FormatterHelper.toDoubleString(debt.alarming_limit)} (Used ${100 * (debt.month_total_expense.abs()) / debt.alarming_limit.abs()}%)',
                     style: TextStyle(
                       fontSize: ResStyle.small_font,
@@ -612,10 +646,11 @@ Widget CardInfoDivider(String title, String info, {bool isLast = false}) {
   );
 }
 
-Widget CardWidgetivider(String title, Widget trailing, {bool isLast = false}) {
+Widget CardWidgetivider(String title, Widget trailing, {bool isLast = false, GlobalKey? key}) {
   return Column(
     children: [
       Padding(
+        key: key,
         padding: EdgeInsets.symmetric(
             horizontal: ResStyle.spacing, vertical: ResStyle.spacing / 2),
         child: LayoutBuilder(
@@ -624,6 +659,7 @@ Widget CardWidgetivider(String title, Widget trailing, {bool isLast = false}) {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
+                 
                   child: Text(
                     title,
                     style: TextStyle(
@@ -876,10 +912,18 @@ class _TransactionCardState extends State<TransactionCard> {
                   onPressed: () {
                     _deleteNote();
                   }),
-              SizedBox(height: ResStyle.spacing/2,),
-            Text('**Deleting a transaction will not restore the values of assets and debts. To roll back the effect of the transaction, You can restore from the current backup available on the profile page.**',
-
-              style: TextStyle(fontSize: ResStyle.small_font, color: DANGER_COLOR,), maxLines: 4, textAlign: TextAlign.center,)
+              SizedBox(
+                height: ResStyle.spacing / 2,
+              ),
+              Text(
+                '**Deleting a transaction will not restore the values of assets and debts. To roll back the effect of the transaction, You can restore from the current backup available on the profile page.**',
+                style: TextStyle(
+                  fontSize: ResStyle.small_font,
+                  color: DANGER_COLOR,
+                ),
+                maxLines: 4,
+                textAlign: TextAlign.center,
+              )
             ]);
       },
     );
@@ -928,7 +972,7 @@ class _TransactionCardState extends State<TransactionCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-              flex: 3,
+                flex: 3,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -947,7 +991,7 @@ class _TransactionCardState extends State<TransactionCard> {
                 ),
               ),
               Expanded(
-                 flex: 2,
+                flex: 2,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -957,7 +1001,10 @@ class _TransactionCardState extends State<TransactionCard> {
                       maxLines: 3,
                       overflow: TextOverflow.visible,
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, color: (widget.transaction.amount >=0)? Colors.green : Colors.red),
+                          fontWeight: FontWeight.bold,
+                          color: (widget.transaction.amount >= 0)
+                              ? Colors.green
+                              : Colors.red),
                     ),
                     BugSmallButton(
                       text: proofExists ? 'View Proof' : 'Add Proof',

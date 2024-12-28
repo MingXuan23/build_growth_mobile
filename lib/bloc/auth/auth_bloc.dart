@@ -16,6 +16,7 @@ part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  static bool first_user = false;
   AuthBloc(AuthState loginInitial) : super(loginInitial) {
     on<LoginRequested>((event, emit) async {
       emit(AuthLoading());
@@ -27,7 +28,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await UserPrivacy.loadFromPreferences(UserToken.user_code ?? '');
         emit(LoginSuccess());
 
-        await GptRepo.loadModel();
+        
       } else {
         emit(LoginFailure(result['message']));
       }
@@ -170,6 +171,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       },
     );
 
+    on<UserTourGuide>(
+      (event, emit) {
+        emit(UserTourGuiding());
+      },
+    );
     on<AuthServiceNotAvailable>(
       (event, emit) async {
         if (state is! RegisterReject) {

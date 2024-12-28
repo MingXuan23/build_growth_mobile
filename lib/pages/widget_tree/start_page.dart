@@ -10,6 +10,7 @@ import 'package:build_growth_mobile/pages/financial/financial_page.dart';
 import 'package:build_growth_mobile/pages/financial/nfc_card_example.dart';
 import 'package:build_growth_mobile/pages/widget_tree/home_page.dart';
 import 'package:build_growth_mobile/services/deeplink_helper.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -90,7 +91,7 @@ class _StartPageState extends State<StartPage> {
                 );
               } else if (state is LoginSuccess || state is AuthChangePasswordResult || state is AuthUpdateProfileResult) {
                  isHome = true;
-                return HomePage();
+                return HomePage(key: HomePage.homePageKey,);
               } else if (state is RegisterSuccess) {
                 isHome = false;
 
@@ -100,7 +101,11 @@ class _StartPageState extends State<StartPage> {
                   body: BugLoading(),
                 );
               }else if(isHome){
-                return HomePage();
+
+                if(state is UserTourGuiding){
+                  TutorialHelper.loadTutorial(context);
+                }
+                return HomePage(key: HomePage.homePageKey);
               }
 
               return LoginPage();

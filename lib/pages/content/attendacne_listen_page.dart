@@ -25,7 +25,7 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
   @override
   void initState() {
     super.initState();
-    _startNFCReading();
+    _startNFCReading(prompt: false);
   }
 
   @override
@@ -56,7 +56,7 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
                   // Card with the message
                   Expanded(
                     child: Card(
-                      color: RM20_COLOR.withOpacity(0.9),
+                      color: nfc_available ?RM20_COLOR.withOpacity(0.9): TITLE_COLOR,
                       elevation:
                           4, // You can adjust the elevation to change the shadow
                       shape: RoundedRectangleBorder(
@@ -68,13 +68,13 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
                             2), // Add padding inside the card
                         child: Center(
                           child: Text(
-                            'Place your phone at the xBUG Stand',
+                            nfc_available? 'Place your phone at the xBUG Stand':'NFC Not Granted',
                             textAlign: TextAlign.center,
                             maxLines: 3,
                             style: TextStyle(
                               fontSize: ResStyle.body_font, // Text size
                               fontWeight: FontWeight.bold, // Text weight
-                              color: TITLE_COLOR, // Text color
+                              color: nfc_available? TITLE_COLOR:HIGHTLIGHT_COLOR, // Text color
                             ),
                           ),
                         ),
@@ -105,9 +105,14 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
     );
   }
 
-  void _startNFCReading() async {
+  void _startNFCReading({bool prompt = true}) async {
     try {
       nfc_available = await NfcManager.instance.isAvailable();
+
+      if(!nfc_available &&prompt){
+        await EmvCardReader.openNFCSetting(context);
+           nfc_available = await NfcManager.instance.isAvailable();
+      }
       setState(() {});
       //We first check if NFC is available on the device.
       if (nfc_available) {

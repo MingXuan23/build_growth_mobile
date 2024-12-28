@@ -5,11 +5,13 @@ import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/start_page.dart';
+import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+
 PreferredSizeWidget BugAppBar(String title, BuildContext context,
-    {bool show_icon = true}) {
+    {bool show_icon = true, GlobalKey? gkey}) {
   return AppBar(
     backgroundColor: TITLE_COLOR,
     centerTitle: true,
@@ -25,6 +27,7 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
     actions: [
       if (show_icon)
         IconButton(
+         key:gkey,
           icon: Icon(Icons.account_circle,
               color: HIGHTLIGHT_COLOR), // Profile icon
           onPressed: () {

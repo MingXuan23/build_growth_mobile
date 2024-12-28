@@ -6,10 +6,12 @@ Widget BugPrimaryButton(
     {required String text,
     required VoidCallback onPressed,
     Color color = ALTERNATIVE_COLOR,
+    GlobalKey? key,
     double borderRadius = 30.0}) {
   return Row(
     children: [
       Expanded(
+        key: key,
         child: ElevatedButton(
           onPressed: onPressed,
           style: ElevatedButton.styleFrom(
@@ -203,6 +205,7 @@ class _DoubleTapButtonState extends State<BugDoubleTapButton> {
 Widget BugRoundButton(
     {required IconData icon,
     required VoidCallback onPressed,
+    GlobalKey? key,
     Color color = HIGHTLIGHT_COLOR,
     Color text_color = TITLE_COLOR,
     double size = 50,
@@ -218,6 +221,7 @@ Widget BugRoundButton(
           padding: EdgeInsets.zero, // Ensure the container determines the size
         ),
         child: Container(
+          key: key,
           width: size,
           height: size,
           decoration: BoxDecoration(
