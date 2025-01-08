@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/models/asset.dart';
+import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
@@ -10,6 +12,13 @@ import 'package:flutter/material.dart';
 
 
 class TransactionHistoryPage extends StatefulWidget {
+
+  final Asset? assetId;
+  final Debt? debtId;
+
+  const TransactionHistoryPage({super.key, this.assetId, this.debtId});
+
+  
   @override
   _TransactionHistoryPageState createState() => _TransactionHistoryPageState();
 }
@@ -28,8 +37,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
   }
 
   void loadData() async {
-    var data = await Transaction.getTransactionList(month: selectedMonth, year: selectedYear);
+    var data = await Transaction.getTransactionList(month: selectedMonth, year: selectedYear, asset_id: widget.assetId?.id, debt_id: widget.debtId?.id);
     transactionList = data.$1;
+    transactionList.sort((a,b)=> a.created_at.isAfter(b.created_at)?0:1);
     calculateTotals();
     setState(() {});
   }
@@ -66,6 +76,12 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
         padding: EdgeInsets.all(ResStyle.spacing),
         children: [
           // General Card for inflow/outflow totals with month/year selection
+            if(widget.assetId != null)
+            BugIconGradientButton(text: "${widget.assetId!.name} History", icon: Icons.monetization_on, onPressed: (){}),
+
+          if(widget.debtId != null)
+            BugIconGradientButton(text: "${widget.debtId!.name} History", icon: Icons.payments, onPressed: (){}),
+            SizedBox(height: ResStyle.spacing,),
           GeneralCard(
             totalInflow: totalInflow,
             totalOutflow: totalOutflow,
@@ -73,7 +89,9 @@ class _TransactionHistoryPageState extends State<TransactionHistoryPage> {
             selectedYear: selectedYear,
             onMonthYearChanged: _onMonthYearChanged,
           ),
-          SizedBox(height: 16),
+        
+          
+          SizedBox(height: ResStyle.spacing),
 
           // List of transactions
           ListView.builder(

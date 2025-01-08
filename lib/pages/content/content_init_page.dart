@@ -13,7 +13,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class ContentInitPage extends StatefulWidget {
-
   const ContentInitPage({Key? key}) : super(key: key);
 
   @override
@@ -27,10 +26,8 @@ class _ContentInitPageState extends State<ContentInitPage>
   late Animation<Offset> _swipeAnimation;
   Offset _dragOffset = Offset.zero;
   bool _isSwipeComplete = false;
-  String  message =
-              "Hooray, you're so close to discovering something awesome! 🏆Before you continue, there is a fun little personility test waiting for you. Let's ace it together! 🌟";
-
-
+  String message =
+      "Hooray, you're so close to discovering something awesome! 🏆Before you continue, there is a fun little personility test waiting for you. Let's ace it together! 🌟";
 
   // @override
   // void didChangeDependencies() {
@@ -46,9 +43,9 @@ class _ContentInitPageState extends State<ContentInitPage>
 
   void _checkVisibility() {
     setState(() {
-          message =
-              "Hooray, you're so close to discovering something awesome! 🏆Before you continue, there is a fun little personility test waiting for you. Let's ace it together! 🌟";
-        });
+      message =
+          "Hooray, you're so close to discovering something awesome! 🏆Before you continue, there is a fun little personility test waiting for you. Let's ace it together! 🌟";
+    });
   }
 
   @override
@@ -65,7 +62,7 @@ class _ContentInitPageState extends State<ContentInitPage>
       }
     });
 
-   // BlocProvider.of<ContentInitBloc>(context).add(ResetContentEvent( widget.contentList));
+    // BlocProvider.of<ContentInitBloc>(context).add(ResetContentEvent( widget.contentList));
   }
 
   @override
@@ -138,212 +135,290 @@ class _ContentInitPageState extends State<ContentInitPage>
     // Calculate rotation and opacity based on drag offset
     double rotation =
         _dragOffset.dx / 500; // Adjust divisor to control rotation sensitivity
-    Color indicatorColor = _dragOffset.dx > 0 ? SUCCESS_COLOR : DANGER_COLOR;
+    Color indicatorColor = _dragOffset.dx == 0
+        ? LOGO_COLOR
+        : _dragOffset.dx > 0
+            ? SUCCESS_COLOR
+            : DANGER_COLOR;
 
     return Align(
       alignment: Alignment.topCenter,
-      child: Center(
-        child: Opacity(
-          opacity: max(min(_dragOffset.dx.abs() / 200, 1),
-              0), // Fade in/out based on drag
-          child: Transform.rotate(
-            angle: rotation,
-            child: Container(
-              padding: EdgeInsets.all(ResStyle.spacing),
-              decoration: BoxDecoration(
-                color: indicatorColor.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                _dragOffset.dx > 0 ? 'LIKE' : 'DISLIKE',
-                style: const TextStyle(
-                  color: HIGHTLIGHT_COLOR,
-                  fontWeight: FontWeight.bold,
+      child: Column(
+        children: [
+          Center(
+            child: Opacity(
+              opacity: _dragOffset.dx == 0
+                  ? 1
+                  : max(min(_dragOffset.dx.abs() / 200, 1),
+                      0), // Fade in/out based on drag
+              child: Transform.rotate(
+                angle: rotation,
+                child: Container(
+                  padding: EdgeInsets.all(ResStyle.spacing),
+                  decoration: BoxDecoration(
+                    color: indicatorColor.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: _dragOffset.dx == 0
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Transform.rotate(
+                              angle: -45 *
+                                  3.1415927 /
+                                  180, // Convert degrees to radians
+                              child: Icon(
+                                Icons.swipe_left,
+                                color: DANGER_COLOR,
+                                size: ResStyle.spacing * 2,
+                              ),
+                            ),
+                            SizedBox(
+                              width: ResStyle.spacing / 2,
+                            ),
+                            Text(
+                              'Swipe',
+                              style: TextStyle(
+                                  color: HIGHTLIGHT_COLOR,
+                                  fontSize: ResStyle.font),
+                            ),
+                            SizedBox(
+                              width: ResStyle.spacing / 2,
+                            ),
+                            Transform.rotate(
+                              angle: 45 *
+                                  3.1415927 /
+                                  180, // Convert degrees to radians
+                              child: Icon(
+                                Icons.swipe_right,
+                                color: SUCCESS_COLOR,
+                                size: ResStyle.spacing * 2,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          _dragOffset.dx > 0 ? 'LIKE' : 'DISLIKE',
+                          style: const TextStyle(
+                            color: HIGHTLIGHT_COLOR,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: BugAppBar('Content', context,gkey: TutorialHelper.profileKeys[0]),
-        backgroundColor: HIGHTLIGHT_COLOR,
-        body: BlocBuilder<ContentInitBloc, ContentInitState>(
-            builder: (context, state) {
-          if (state is ContentInitialState) {
-            return Padding(
-              padding: EdgeInsets.all(ResStyle.spacing),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  AnimatedBugEmoji(message: message),
-                  SizedBox(height: ResStyle.spacing,),
-                  Padding(
-                     padding:  EdgeInsets.symmetric( horizontal:  ResStyle.spacing),
-                    child: BugPrimaryButton(
-                      color: TITLE_COLOR,
-                        text: "Let's go >>",
-                        onPressed: () {
-                          BlocProvider.of<ContentInitBloc>(context)
-                              .add(LoadContentEvent());
-                        }),
-                  )
-                ],
-              ),
-            );
-          } else if (state is NextContentState) {
-            return Column(
-              children: [
-                Center(
-                  child: GestureDetector(
-                    onPanUpdate: _onPanUpdate,
-                    onPanEnd: _onPanEnd,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Swipe Indicator
-                        SizedBox(
-                          height: ResStyle.spacing,
-                        ),
-                        _buildSwipeIndicator(),
+    return BlocBuilder<ContentInitBloc, ContentInitState>(
+      builder: (context, state) {
+        if (state is ContentTestResultState) {
+          BlocProvider.of<ContentBloc>(context).add(ContentRequest());
+        } else if (state is ContentSubmittedState) {
+          BlocProvider.of<ContentBloc>(context).add(SubmitContentTestEvent(
+              like_list: state.like_list, dislike_list: state.dislike_list));
+        }
+        return Scaffold(
+          appBar: state is NextContentState
+              ? BugAppBarWithContainer('Content', context,
+                  containerChild: _buildSwipeIndicator())
+              : BugAppBar('Content',
+                  context), // Ensure 'appbar' is a PreferredSizeWidget
 
-                        // Card with Swipe Animation
-                        AnimatedBuilder(
-                          animation: _animationController,
-                          builder: (context, child) {
-                            return Transform.translate(
-                              offset: _animationController.status !=
-                                      AnimationStatus.forward
-                                  ? _dragOffset
-                                  : _swipeAnimation.value,
-                              child: Transform.rotate(
-                                angle: _dragOffset.dx /
-                                    1500, // Subtle rotation during drag
-                                child: Card(
-                                  elevation: 8,
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(16),
-                                      side: BorderSide(
-                                          color: TITLE_COLOR, width: 5)),
-                                  child: Container(
-                                    width: ResStyle.width * 0.8,
-                                    height: ResStyle.height * 0.5,
-                                    padding: EdgeInsets.all(ResStyle.spacing),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      color: HIGHTLIGHT_COLOR,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        // Image
-                                        ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          child: Image.network(
-                                            state.content.image,
-                                            height: ResStyle.height * 0.3,
-                                            width: double.infinity,
-                                            fit: BoxFit.cover,
-                                            loadingBuilder: (context, child,
-                                                loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return const Center(
-                                                child:
-                                                    CircularProgressIndicator(),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
+          backgroundColor: HIGHTLIGHT_COLOR,
 
-                                              return Image.asset('lib/assets/playstore-icon.png',height: ResStyle.height * 0.2 , width:  ResStyle.height *0.2,);
-                                              // return Icon(Icons.error,
-                                              //     size: ResStyle.height * 0.2);
-                                            },
-                                          ),
-                                        ),
-                                        SizedBox(height: ResStyle.spacing),
-                                        // Title
-                                        Text(
-                                          state.content.name,
-                                          style: TextStyle(
-                                            fontSize: ResStyle.font,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        SizedBox(height: ResStyle.spacing / 2),
-
-                                        // Description
-                                        Text(
-                                          state.content.desc,
-                                          style: TextStyle(
-                                              fontSize: ResStyle.small_font),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
+          body: state is ContentInitialState
+              ? Padding(
+                  padding: EdgeInsets.all(ResStyle.spacing),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedBugEmoji(message: message),
+                      SizedBox(height: ResStyle.spacing),
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: ResStyle.spacing),
+                        child: BugPrimaryButton(
+                          color: TITLE_COLOR,
+                          text: "Let's go >>",
+                          onPressed: () {
+                            BlocProvider.of<ContentInitBloc>(context)
+                                .add(LoadContentEvent());
                           },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
-                Expanded(child: Container()),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Dislike Button (Quarter-circle at bottom left)
-                    CustomQuarterCircleButton(
-                      isRight: false,
-                      color: DANGER_COLOR.withOpacity(0.7),
-                      icon: Icons.close,
-                      onPressed: () => _manualSwipe(false),
-                      label: 'Dislike',
-                    ),
-                    // Like Button (Quarter-circle at bottom right)
-                    CustomQuarterCircleButton(
-                      isRight: true,
-                      color: SUCCESS_COLOR,
-                      icon: Icons.favorite_border_outlined,
-                      onPressed: () => _manualSwipe(true),
-                      label: 'Like',
-                    ),
-                  ],
-                ),
-              ],
-            );
-          }else if(state is ContentSubmittedState){
-            BlocProvider.of<ContentBloc>(context).add(SubmitContentTestEvent(like_list: state.like_list, dislike_list: state.dislike_list));
-            return BugLoading();
-          } 
-          else {
-            // return const Center(
-            //   child: Text(
-            //     'No more content',
-            //     style: TextStyle(fontSize: 24),
-            //   ),
-            // );
+                )
+              : state is NextContentState
+                  ? Column(
+                      children: [
+                        Center(
+                          child: GestureDetector(
+                            onPanUpdate: _onPanUpdate,
+                            onPanEnd: _onPanEnd,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Swipe Indicator
+                                SizedBox(height: ResStyle.spacing),
 
-            return Center(
-              child: ElevatedButton(
-                  onPressed: () {
-                    BlocProvider.of<ContentInitBloc>(context)
-                        .add(LoadContentEvent());
-                  },
-                  child: Text('Refresh')),
-            );
-          }
-        }));
+                                // Card with Swipe Animation
+                                AnimatedBuilder(
+                                  animation: _animationController,
+                                  builder: (context, child) {
+                                    return Transform.translate(
+                                      offset: _animationController.status !=
+                                              AnimationStatus.forward
+                                          ? _dragOffset
+                                          : _swipeAnimation.value,
+                                      child: Transform.rotate(
+                                        angle: _dragOffset.dx /
+                                            1500, // Subtle rotation during drag
+                                        child: Card(
+                                          elevation: 8,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                            side: BorderSide(
+                                                color: TITLE_COLOR, width: 5),
+                                          ),
+                                          child: Container(
+                                            width: ResStyle.width * 0.8,
+                                            height: ResStyle.height * 0.5,
+                                            padding: EdgeInsets.all(
+                                                ResStyle.spacing),
+                                            decoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                              color: HIGHTLIGHT_COLOR,
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                // Image
+                                                ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  child: Image.network(
+                                                    state.content.image
+                                                            .startsWith(
+                                                                'asset1/')
+                                                        ? 'https://xbug.online/storage/${state.content.image}'
+                                                        : state.content.image,
+                                                    height:
+                                                            ResStyle.height *
+                                                                0.2,
+                                                        width: ResStyle.height *
+                                                            0.2,
+                                                    fit: BoxFit.cover,
+                                                    loadingBuilder: (context,
+                                                        child,
+                                                        loadingProgress) {
+                                                      if (loadingProgress ==
+                                                          null) return child;
+                                                      return const Center(
+                                                        child:
+                                                            CircularProgressIndicator(),
+                                                      );
+                                                    },
+                                                    errorBuilder: (context,
+                                                        error, stackTrace) {
+                                                      return Image.asset(
+                                                        'lib/assets/playstore-icon.png',
+                                                        height:
+                                                            ResStyle.height *
+                                                                0.2,
+                                                        width: ResStyle.height *
+                                                            0.2,
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                    height: ResStyle.spacing),
+                                                // Title
+                                                Text(
+                                                  state.content.name,
+                                                  maxLines: 3,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontSize: ResStyle.font,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                SizedBox(
+                                                    height:
+                                                        ResStyle.spacing / 2),
+
+                                                // Description
+                                                Text(
+                                                  state.content.desc,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                    maxLines: 5,
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                          ResStyle.small_font),
+                                                  textAlign: TextAlign.center,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(child: Container()),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Dislike Button (Quarter-circle at bottom left)
+                            CustomQuarterCircleButton(
+                              isRight: false,
+                              color: DANGER_COLOR.withOpacity(0.7),
+                              icon: Icons.close,
+                              onPressed: () => _manualSwipe(false),
+                              label: 'Dislike',
+                            ),
+                            // Like Button (Quarter-circle at bottom right)
+                            CustomQuarterCircleButton(
+                              isRight: true,
+                              color: SUCCESS_COLOR,
+                              icon: Icons.favorite_border_outlined,
+                              onPressed: () => _manualSwipe(true),
+                              label: 'Like',
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : state is ContentSubmittedState
+                      ? BugLoading()
+                      : Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              BlocProvider.of<ContentInitBloc>(context)
+                                  .add(LoadContentEvent());
+                            },
+                            child: Text('Refresh'),
+                          ),
+                        ),
+        );
+      },
+    );
   }
 }

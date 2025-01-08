@@ -35,10 +35,11 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
         if (state is AttendanceSubmittedState) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar(state.message, 5));
-          Navigator.of(context).pop();
+          Navigator.of(context).pop(state.link);
         } else if (state is AttendanceErrorState) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar(state.message, 5));
+              _startNFCReading();
         }
       },
       builder: (context, state) {
@@ -117,6 +118,8 @@ class _NfcReadingPageState extends State<AttendacneListenPage> {
       //We first check if NFC is available on the device.
       if (nfc_available) {
         //If NFC is available, start an NFC session and listen for NFC tags to be discovered.
+           NfcManager.instance
+                .stopSession(errorMessage: 'No matching data found.');
         NfcManager.instance.startSession(
           onDiscovered: (NfcTag tag) async {
             // Process NFC tag, When an NFC tag is discovered, print its data to the console.

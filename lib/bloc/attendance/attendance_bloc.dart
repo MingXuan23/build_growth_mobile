@@ -16,15 +16,17 @@ class AttendanceBloc extends Bloc<AttendanceEvent, AttendanceState> {
         var result = await ContentRepo.saveContentEnrollment(
             event.card_id, event.verification_code);
 
-        if (result == 200) {
+        if (result.$1 == 200) {
           emit(AttendanceSubmittedState(
-             'You have enrolled into this content!'
+             'You have enrolled into this content!',
+             result.$2??''
           ));
-        }else if(result ==201){
+        }else if(result.$1  ==201){
           emit(AttendanceSubmittedState(
-             'Enroll into content successfully!'
+             'Enroll into content successfully!',
+             result.$2??''
           ));
-        }else if(result == 400){
+        }else if(result.$1  == 400){
             emit(AttendanceErrorState(
              'Information Expired. Please contact the nearby staff'
           ));

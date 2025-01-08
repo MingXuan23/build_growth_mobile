@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
+import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
 import 'package:build_growth_mobile/pages/financial/transaction_page.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/services/tutorial_helper.dart';
@@ -84,6 +85,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
 
   Future<void> loadDebts() async {
     debts = await Debt.getDebtList();
+
     isLoading = false;
 
     //await Future.delayed(const Duration(milliseconds: 500));
@@ -134,7 +136,6 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
       child: Column(
         children: [
           Expanded(
-            
             child: GridView.builder(
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -145,7 +146,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
               itemCount: debtTypes.length,
               itemBuilder: (context, index) {
                 return GestureDetector(
-               key: TutorialHelper.debtKeys[index],
+                  key: TutorialHelper.debtKeys[index],
                   onTap: () => showAddDebtModal(debtTypes[index]),
                   child: _buildDebtCard(context, index),
                 );
@@ -153,10 +154,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
             ),
           ),
           BugInfoCard(
-            'Your financial data will never be shared with third parties. '
-            'Any processing of your sensitive financial data on the server, '
-            'with your permission, will be securely encrypted. Thank you for your trust.',
-          ),
+              'Your financial data will never be stored in the server side. Any processing of your sensitive financial data in the server, with your permission, will be securely handled. Thank you for your trust.'),
         ],
       ),
     );
@@ -168,9 +166,15 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     String debtType = debtTypes[index];
 
     return Container(
-      
       decoration: BoxDecoration(
-        color: TITLE_COLOR,
+        gradient: LinearGradient(
+          colors: [
+            TITLE_COLOR,
+            TITLE_COLOR.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -265,7 +269,9 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
           style: TextStyle(color: TITLE_COLOR), // Title color
         ),
         message: Text(
-          '\$${debt.monthly_payment.toStringAsFixed(2)}',
+          debt.type == 'Expenses'
+              ? 'RM${debt.month_total_expense.abs().toStringAsFixed(2)}'
+              : 'RM${debt.monthly_payment.toStringAsFixed(2)}',
           style: TextStyle(
               color: TITLE_COLOR, fontSize: ResStyle.font), // Message color
         ),
@@ -296,6 +302,19 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
                 ),
               ),
             ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => TransactionHistoryPage(
+                        debtId: debt,
+                      )));
+            },
+            child: Text(
+              'View Transactions',
+              style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
+            ),
+          ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
@@ -369,7 +388,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     final TextEditingController descController =
         TextEditingController(text: debt.desc);
     final TextEditingController limitController = TextEditingController();
-
+    final _formKey = GlobalKey<FormState>();
     if (debt.alarming_limit > 0 &&
         (debt.type == 'Expenses' || debt.type == 'Dynamic Bills')) {
       FormatterHelper.implement_RM_format(
@@ -383,86 +402,94 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (context) {
-        return BugBottomModal(
-          context: context,
-          header: 'Edit Debt Details',
-          widgets: [
-            BugTextInput(
-              controller: nameController,
-              label: 'Debt Name',
-              hint: 'Enter Debt Name',
-              prefixIcon: Icon(Icons.monetization_on),
-            ),
-            SizedBox(height: ResStyle.spacing),
-            if (debt.type == 'Expenses' || debt.type == 'Dynamic Bills')
+        return Form(
+          key: _formKey,
+          child: BugBottomModal(
+            context: context,
+            header: 'Edit Debt Details',
+            widgets: [
               BugTextInput(
-                  controller: limitController,
-                  label: 'Alarming Limit',
-                  hint: 'No Limit Now',
-                  keyboardType: TextInputType.number,
-                  prefixIcon: Icon(Icons.attach_money),
-                  onChanged: (value) {
-                    FormatterHelper.implement_RM_format(limitController, value);
-                  },
-                  validator: (p0) {
-                    if (FormatterHelper.getAmountFromRM(p0 ?? 'RM 0.00') <= 0) {
-                      return 'The Alarming Limit should not be zero';
-                    }
-                  },
-                  suffixIcon: IconButton(
-                      icon: Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        limitController.text = '';
-                        debt.alarming_limit = -1;
-                      })),
-            SizedBox(height: ResStyle.spacing),
-            BugTextInput(
-                controller: descController,
-                label: 'Description',
-                hint: 'Enter Description',
-                prefixIcon: Icon(Icons.note_alt_sharp),
-                validator: (value) {
-                  return null;
-                }),
-            SizedBox(height: ResStyle.spacing * 2),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      color: RM50_COLOR,
-                      onPressed: () async {
-                        debt.name = nameController.text;
-                        debt.desc = descController.text;
-                        if (limitController.text.isNotEmpty) {
-                          debt.alarming_limit = FormatterHelper.getAmountFromRM(
-                              limitController.text);
-                        }
-                        await Debt.updateDebt(debt);
-                        await loadDebts();
-                        Navigator.of(context).pop();
-                      },
-                      text: 'Update',
+                controller: nameController,
+                label: 'Debt Name',
+                hint: 'Enter Debt Name',
+                prefixIcon: Icon(Icons.monetization_on),
+              ),
+              SizedBox(height: ResStyle.spacing),
+              if (debt.type == 'Expenses' || debt.type == 'Dynamic Bills')
+                BugTextInput(
+                    controller: limitController,
+                    label: 'Alarming Limit',
+                    hint: 'No Limit Now',
+                    keyboardType: TextInputType.number,
+                    prefixIcon: Icon(Icons.attach_money),
+                    onChanged: (value) {
+                      FormatterHelper.implement_RM_format(
+                          limitController, value);
+                    },
+                    validator: (p0) {
+                      if (FormatterHelper.getAmountFromRM(p0 ?? 'RM 0.00') <=
+                          0) {
+                        return 'The Alarming Limit should not be zero';
+                      }
+                    },
+                    suffixIcon: IconButton(
+                        icon: Icon(Icons.clear_rounded),
+                        onPressed: () {
+                          limitController.text = '';
+                          debt.alarming_limit = -1;
+                        })),
+              SizedBox(height: ResStyle.spacing),
+              BugTextInput(
+                  controller: descController,
+                  label: 'Description',
+                  hint: 'Enter Description',
+                  prefixIcon: Icon(Icons.note_alt_sharp),
+                  validator: (value) {
+                    return null;
+                  }),
+              SizedBox(height: ResStyle.spacing * 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: BugPrimaryButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        color: DANGER_COLOR,
+                        text: 'Cancel',
+                      ),
                     ),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                      },
-                      color: DANGER_COLOR,
-                      text: 'Cancel',
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: BugPrimaryButton(
+                        color: RM50_COLOR,
+                        onPressed: () async {
+                          if (_formKey.currentState!.validate()) {
+                            debt.name = nameController.text;
+                            debt.desc = descController.text;
+                            if (limitController.text.isNotEmpty) {
+                              debt.alarming_limit =
+                                  FormatterHelper.getAmountFromRM(
+                                      limitController.text);
+                            }
+                            await Debt.updateDebt(debt);
+                            await loadDebts();
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        text: 'Update',
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -476,7 +503,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
         TextEditingController();
 
     final TextEditingController remainingMonthController =
-        TextEditingController(text: '1');
+        TextEditingController();
     final TextEditingController AlarmingLimitController =
         TextEditingController();
 
@@ -487,9 +514,8 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
     // Set default remaining months based on type
     if (selectedType != 'Loans') {
       remainingMonths = -1;
-    } else {
-      remainingMonths = 1;
     }
+
     final _formKey = GlobalKey<FormState>();
     if (selectedType == 'Recurring Bills' || selectedType == 'Loans') {
       monthlyPaymentController.text = 'RM 0.01';

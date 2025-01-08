@@ -2,6 +2,7 @@ import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/chat_history.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_emoji.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -53,7 +54,8 @@ class _StarMessagePageState extends State<StarMessagePage> {
                                       onPressed: () async {
                                         Navigator.pop(context);
                                         await Clipboard.setData(ClipboardData(
-                                            text:  '[${chat.create_at.toString()}]\nYou: ${chat.request} \n\nResponse: ${chat.response}'));
+                                            text:
+                                                '[${chat.create_at.toString()}]\nYou: ${chat.request} \n\nResponse: ${chat.response}'));
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(BugSnackBar(
                                                 'Copy the message successfully',
@@ -67,16 +69,51 @@ class _StarMessagePageState extends State<StarMessagePage> {
                                     CupertinoActionSheetAction(
                                       onPressed: () async {
                                         Navigator.pop(context);
-                                        await Chat_History.deleteChatHistory(
-                                            chat.id ?? 0);
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(BugSnackBar(
-                                                'Starred message removed', 5));
-                                        loadata();
+
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return BugInfoDialog(
+                                              title: 'Delete Confirmation',
+                                              main_color:
+                                                  DANGER_COLOR, // Set a color for the delete confirmation
+                                              message:
+                                                  'Are you sure you want to delete this message?',
+                                              actions: [
+                                                BugPrimaryButton(
+                                                    onPressed: () async {
+                                                      // Perform delete action here
+
+                                                      await Chat_History
+                                                          .deleteChatHistory(
+                                                              chat.id ?? 0);
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(BugSnackBar(
+                                                              'Starred message removed',
+                                                              5));
+                                                      loadata();
+                                                    },
+                                                    text: 'Delete',
+                                                    color: DANGER_COLOR),
+                                                SizedBox(
+                                                  height: ResStyle.spacing,
+                                                ),
+                                                BugPrimaryButton(
+                                                    onPressed: () {
+                                                      Navigator.of(context)
+                                                          .pop(); // Close the dialog
+                                                    },
+                                                    text: 'Cancel',
+                                                    color: PRIMARY_COLOR),
+                                              ],
+                                            );
+                                          },
+                                        );
                                       },
                                       child: Text('Remove This Starred Message',
                                           style: TextStyle(
-                                              color: TITLE_COLOR,
+                                              color: DANGER_COLOR,
                                               fontSize: ResStyle.font)),
                                     ),
                                   ],
@@ -94,7 +131,8 @@ class _StarMessagePageState extends State<StarMessagePage> {
                               );
                             },
                             child: BugEmoji(
-                                message: '[${chat.create_at.toString()}]\nYou: ${chat.request} \n\nResponse: ${chat.response}'),
+                                message:
+                                    '[${chat.create_at.toString()}]\nYou: ${chat.request} \n\nResponse: ${chat.response}'),
                           )),
                     ],
                   ),

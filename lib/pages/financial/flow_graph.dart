@@ -26,21 +26,22 @@ class TransactionGraphPage extends StatefulWidget {
       _TransactionGraphSectionState();
 }
 
-class _TransactionGraphSectionState extends State<TransactionGraphPage> with SingleTickerProviderStateMixin {
+class _TransactionGraphSectionState extends State<TransactionGraphPage>
+    with SingleTickerProviderStateMixin {
   late List<FlSpot> spots;
   late double minX, maxX, minY, maxY;
   late AnimationController _animationController;
-late Animation<double> _animation;
+  late Animation<double> _animation;
   bool _isLandscape = false;
-  
+
   @override
   void initState() {
     super.initState();
     // Force horizontal orientation
-spots = _calculateReverseCashFlowSpots();
+    spots = _calculateReverseCashFlowSpots();
     _calculateAxisRanges();
 
-      _animationController = AnimationController(
+    _animationController = AnimationController(
       duration: const Duration(milliseconds: 100),
       vsync: this,
     );
@@ -50,13 +51,12 @@ spots = _calculateReverseCashFlowSpots();
       curve: Curves.bounceIn,
     );
 
-     WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       _setLandscapeOrientation();
     });
-    
   }
 
- Future<void> _setLandscapeOrientation() async {
+  Future<void> _setLandscapeOrientation() async {
     setState(() => _isLandscape = true);
     await _animationController.forward();
     await SystemChrome.setPreferredOrientations([
@@ -65,19 +65,16 @@ spots = _calculateReverseCashFlowSpots();
     ]);
   }
 
-   Future<void> _restoreOrientation() async {
-    await    _animationController.reverse();
-    
-
+  Future<void> _restoreOrientation() async {
+    await _animationController.reverse();
   }
-
 
   @override
   void dispose() {
     // Restore orientation to default
-   _restoreOrientation();
+    _restoreOrientation();
     _animationController.dispose();
-     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     super.dispose();
   }
 
@@ -132,141 +129,174 @@ spots = _calculateReverseCashFlowSpots();
     final verticalInterval = _calculateSafeInterval(minX, maxX);
 
     return AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child){
-          return Scaffold(
-        appBar: BugAppBar(widget.header, context, show_icon: false),
-        backgroundColor: HIGHTLIGHT_COLOR.withOpacity(0.9),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(ResStyle.spacing),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    height: MediaQuery.of(context).size.height * 0.6,
-                    padding: EdgeInsets.all(ResStyle.spacing),
-                    decoration: BoxDecoration(
-                      color: HIGHTLIGHT_COLOR,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: TEXT_COLOR.withOpacity(0.05),
-                          blurRadius: 10,
-                          offset: Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: SizedBox(
-                        width: graphWidth,
-                        height: MediaQuery.of(context).size.height * 0.6,
-                        child: Padding(
-                          padding: EdgeInsets.all(ResStyle.spacing),
-                          child: LineChart(
-                            LineChartData(
-                              minX: minX,
-                              maxX: maxX,
-                              minY: minY,
-                              maxY: maxY,
-                              gridData: FlGridData(
-                                show: true,
-                                drawVerticalLine: true,
-                                horizontalInterval: horizontalInterval,
-                                verticalInterval: verticalInterval,
-                              ),
-                              titlesData: FlTitlesData(
-                                show: true,
-                                leftTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    interval: horizontalInterval,
-                                    reservedSize: ResStyle.width * 0.2,
-                                    getTitlesWidget: (value, meta) {
-                                      // Format the value to avoid overlapping
-                                      if ((value - minY).abs() < 0.01) {
-                                        return SizedBox
-                                            .shrink(); // Return an empty widget to hide the label
-                                      }
-                                      return Padding(
-                                        padding: EdgeInsets.only(right: 0),
-                                        child: Text(
-                                          FormatterHelper.toDoubleString(value),
-                                          style: TextStyle(
-                                            color: TEXT_COLOR,
-                                            fontSize: ResStyle.small_font,
-                                            fontWeight: FontWeight.normal,
+      animation: _animation,
+      builder: (context, child) {
+        return Scaffold(
+          appBar: BugAppBar(widget.header, context, show_icon: false),
+          backgroundColor: HIGHTLIGHT_COLOR.withOpacity(0.9),
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(ResStyle.spacing),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      height: MediaQuery.of(context).size.height * 0.7,
+                      padding: EdgeInsets.all(ResStyle.spacing),
+                      decoration: BoxDecoration(
+                        color: HIGHTLIGHT_COLOR,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: TEXT_COLOR.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: graphWidth,
+                          height: MediaQuery.of(context).size.height * 0.6,
+                          child: Padding(
+                            padding: EdgeInsets.all(ResStyle.spacing),
+                            child: LineChart(
+                              LineChartData(
+                                minX: minX,
+                                maxX: maxX,
+                                minY: minY,
+                                maxY: maxY,
+                                gridData: FlGridData(
+                                  show: true,
+                                  drawVerticalLine: true,
+                                  horizontalInterval: horizontalInterval,
+                                  verticalInterval: verticalInterval,
+                                ),
+                                titlesData: FlTitlesData(
+                                  show: true,
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: horizontalInterval,
+                                      reservedSize: ResStyle.width * 0.2,
+                                      getTitlesWidget: (value, meta) {
+                                        // Format the value to avoid overlapping
+                                        if ((value - minY).abs() < 0.01) {
+                                          return SizedBox
+                                              .shrink(); // Return an empty widget to hide the label
+                                        }
+                                        return Padding(
+                                          padding: EdgeInsets.only(right: 0),
+                                          child: Text(
+                                            FormatterHelper.toDoubleString(
+                                                value),
+                                            style: TextStyle(
+                                              color: TEXT_COLOR,
+                                              fontSize: ResStyle.small_font,
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles:  AxisTitles(
+                                    sideTitles: SideTitles(showTitles: true,   interval: verticalInterval,getTitlesWidget: (value, meta){
+                                      return SizedBox.shrink();
+                                    }),
+                                  ),
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: verticalInterval,
+                                      getTitlesWidget: (value, meta) {
+                                        int index = value.toInt();
+                                        if (index < 0 ||
+                                            index >=
+                                                widget.transactions.length) {
+                                          return SizedBox.shrink();
+                                        }
+
+                                        // Get the date of the transaction
+                                        String date =
+                                            FormatterHelper.dateFormat(
+                                          widget.transactions[index].created_at,
+                                        );
+
+                                        return Padding(
+                                          padding: EdgeInsets.only(top: 8),
+                                          child: Text(
+                                            date,
+                                            style: TextStyle(
+                                              color: TEXT_COLOR,
+                                              fontSize: ResStyle.small_font,
+                                              fontWeight: FontWeight.normal,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
                                 ),
-                                rightTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
+                                borderData: FlBorderData(show: false),
+                                extraLinesData: ExtraLinesData(
+                                  horizontalLines: [
+                                    HorizontalLine(
+                                      y: 0,
+                                      color: SECONDARY_COLOR.withOpacity(0.5),
+                                      strokeWidth: 1,
+                                      dashArray: [5, 5],
+                                    ),
+                                  ],
                                 ),
-                                topTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                                bottomTitles: const AxisTitles(
-                                  sideTitles: SideTitles(showTitles: false),
-                                ),
-                              ),
-                              borderData: FlBorderData(show: false),
-                              extraLinesData: ExtraLinesData(
-                                horizontalLines: [
-                                  HorizontalLine(
-                                    y: 0,
-                                    color: SECONDARY_COLOR.withOpacity(0.5),
-                                    strokeWidth: 1,
-                                    dashArray: [5, 5],
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: spots,
+                                    isCurved: true,
+                                    color: PRIMARY_COLOR,
+                                    barWidth: 2,
+                                    dotData: FlDotData(
+                                      show: true,
+                                      getDotPainter:
+                                          (spot, percent, barData, index) {
+                                        return FlDotCirclePainter(
+                                          radius: 6,
+                                          color: Colors.white,
+                                          strokeWidth: 3,
+                                          strokeColor: PRIMARY_COLOR,
+                                        );
+                                      },
+                                    ),
+                                    belowBarData: BarAreaData(
+                                      show: true,
+                                      color: PRIMARY_COLOR.withOpacity(0.1),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              lineBarsData: [
-                                LineChartBarData(
-                                  spots: spots,
-                                  isCurved: true,
-                                  color: PRIMARY_COLOR,
-                                  barWidth: 2,
-                                  dotData: FlDotData(
-                                    show: true,
-                                    getDotPainter:
-                                        (spot, percent, barData, index) {
-                                      return FlDotCirclePainter(
-                                        radius: 6,
-                                        color: Colors.white,
-                                        strokeWidth: 3,
-                                        strokeColor: PRIMARY_COLOR,
-                                      );
+                                lineTouchData: LineTouchData(
+                                  enabled: true,
+                                  touchSpotThreshold: 300,
+                                  touchTooltipData: LineTouchTooltipData(
+                                    getTooltipItems: (touchedSpots) {
+                                      return touchedSpots.map((touchedSpot) {
+                                        return LineTooltipItem(
+                                          FormatterHelper.toDoubleString(
+                                              touchedSpot.y),
+                                          TextStyle(
+                                            color: HIGHTLIGHT_COLOR,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        );
+                                      }).toList();
                                     },
                                   ),
-                                  belowBarData: BarAreaData(
-                                    show: true,
-                                    color: PRIMARY_COLOR.withOpacity(0.1),
-                                  ),
-                                ),
-                              ],
-                              lineTouchData: LineTouchData(
-                                enabled: true,
-                                touchSpotThreshold: 300,
-                                touchTooltipData: LineTouchTooltipData(
-                                  getTooltipItems: (touchedSpots) {
-                                    return touchedSpots.map((touchedSpot) {
-                                      return LineTooltipItem(
-                                        FormatterHelper.toDoubleString(
-                                            touchedSpot.y),
-                                        TextStyle(
-                                          color: HIGHTLIGHT_COLOR,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      );
-                                    }).toList();
-                                  },
                                 ),
                               ),
                             ),
@@ -275,18 +305,16 @@ spots = _calculateReverseCashFlowSpots();
                       ),
                     ),
                   ),
-                ),
-                // SizedBox(
-                //   height: ResStyle.spacing,
-                // ),
-                // BugInfoCard('Incoming Feature')
-              ],
+                  // SizedBox(
+                  //   height: ResStyle.spacing,
+                  // ),
+                  // BugInfoCard('Incoming Feature')
+                ],
+              ),
             ),
           ),
-        ),
-      );
-        },
-      
+        );
+      },
     );
   }
 }

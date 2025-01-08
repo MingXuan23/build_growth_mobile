@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/models/card.dart';
+import 'package:build_growth_mobile/pages/financial/transaction_history_page.dart';
 import 'package:build_growth_mobile/services/emv_card_reader.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/financial/TransactionPage2.dart';
@@ -257,6 +258,16 @@ class _AssetDetailPageState extends State<AssetDetailPage>
               style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
             ),
           ),
+           CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(MaterialPageRoute(builder: (context)=> TransactionHistoryPage(assetId: asset,)));
+            },
+            child: Text(
+              'View Transactions',
+              style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font),
+            ),
+          ),
           CupertinoActionSheetAction(
             onPressed: () {
               Navigator.pop(context);
@@ -337,191 +348,230 @@ class _AssetDetailPageState extends State<AssetDetailPage>
   }
 
   void showEditAssetDetailsDialog(Asset asset) {
-    final TextEditingController nameController =
-        TextEditingController(text: asset.name);
-    final TextEditingController descController =
-        TextEditingController(text: asset.desc);
+  final TextEditingController nameController =
+      TextEditingController(text: asset.name);
+  final TextEditingController descController =
+      TextEditingController(text: asset.desc);
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return BugBottomModal(
-            context: context,
-            header: 'Edit ${asset.type}\n${asset.name}',
-            widgets: [
-              BugTextInput(
-                controller: nameController,
-                label: 'Asset Name',
-                hint: 'Enter Asset Name',
-                prefixIcon: Icon(getIcon(asset.type)),
-              ),
-              SizedBox(height: ResStyle.spacing),
-              BugTextInput(
-                controller: descController,
-                label: 'Description',
-                hint: 'Enter Description',
-                prefixIcon: Icon(Icons.note_alt_sharp),
-                validator: (p0) {
-                  return null;
-                },
-              ),
-              SizedBox(height: ResStyle.spacing * 2),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      color: RM50_COLOR,
-                      onPressed: () async {
-                        asset.name = nameController.text;
-                        asset.desc = descController.text;
-                        await Asset.updateAsset(asset);
-                        await loadAssets();
-                        Navigator.of(context).pop();
-                      },
-                      text: 'Update',
-                    ),
-                  ),
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return BugBottomModal(
+        context: context,
+        header: 'Edit ${asset.type}\n${asset.name}',
+        widgets: [
+          Form(
+            key: formKey,
+            child: Column(
+              children: [
+                BugTextInput(
+                  controller: nameController,
+                  label: 'Asset Name',
+                  hint: 'Enter Asset Name',
+                  prefixIcon: Icon(getIcon(asset.type)),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Asset Name is required';
+                    }
+                   
+                    return null;
+                  },
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      onPressed: () {
-                        startReading();
-                        Navigator.of(context).pop();
-                      },
-                      color: DANGER_COLOR,
-                      text: 'Cancel',
+                SizedBox(height: ResStyle.spacing),
+                BugTextInput(
+                  controller: descController,
+                  label: 'Description',
+                  hint: 'Enter Description',
+                  prefixIcon: Icon(Icons.note_alt_sharp),
+                  validator: (value){
+                    return null;
+                  },
+                  
+                ),
+                SizedBox(height: ResStyle.spacing * 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: BugPrimaryButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          color: DANGER_COLOR,
+                          text: 'Cancel',
+                        ),
+                      ),
                     ),
-                  ),
-                )
-              ])
-            ]);
-      },
-    );
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: BugPrimaryButton(
+                          color: RM50_COLOR,
+                          onPressed: () async {
+                            if (formKey.currentState?.validate() ?? false) {
+                              // If form is valid, update the asset
+                              asset.name = nameController.text;
+                              asset.desc = descController.text;
+                              await Asset.updateAsset(asset);
+                              await loadAssets();
+                              Navigator.of(context).pop();
+                            }
+                          },
+                          text: 'Update',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+ void showAddAssetModal(String selectedType, {EmvCard? card}) async {
+  final TextEditingController nameController =
+      TextEditingController(text: 'New ${selectedType}');
+  final TextEditingController valueController =
+      TextEditingController(text: 'RM 0.00');
+  final TextEditingController descController = TextEditingController();
+  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  String? unique_code;
+
+  if (dialog_key.currentContext != null) {
+    Navigator.pop(context); // Close the dialog
+    await Future.delayed(const Duration(milliseconds: 300));
   }
 
-  void showAddAssetModal(String selectedType, {EmvCard? card}) async {
-    final TextEditingController nameController =
-        TextEditingController(text: 'New ${selectedType}');
-    final TextEditingController valueController =
-        TextEditingController(text: 'RM 0.00');
-    final TextEditingController descController = TextEditingController();
-    String? unique_code;
-
-    if (dialog_key.currentContext!= null) {
-       Navigator.pop(context); // Close the dialog
-       await Future.delayed(const Duration(milliseconds: 300));
-    }
-    
-    if (card != null) {
-      nameController.text = 'Card ' + (card.number?.substring(12) ?? '');
-      descController.text =
-          (card.type ?? '') + " expired at " + (card.expire ?? '');
-      unique_code = "${card.number?.substring(12)}-${(card.expire ?? '')}}";
-    }
-
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return BugBottomModal(
-            context: context,
-            key: dialog_key,
-            header: 'Add New ${selectedType}',
-            widgets: [
-              BugTextInput(
-                controller: nameController,
-                label: 'Asset Name',
-                hint: 'Enter Asset Name',
-                prefixIcon: Icon(getIcon(selectedType)),
-              ),
-              SizedBox(height: ResStyle.spacing),
-              BugTextInput(
-                controller: valueController,
-                label: 'Amount (RM)',
-                hint: 'Enter Amount (RM)',
-                prefixIcon: Icon(Icons.diamond_sharp),
-                onChanged: (value) {
-                  FormatterHelper.implement_RM_format(valueController, value);
-                },
-              ),
-              SizedBox(height: ResStyle.spacing),
-              BugTextInput(
-                controller: descController,
-                label: 'Description',
-                hint: 'Enter Description',
-                prefixIcon: Icon(Icons.note_alt_sharp),
-                validator: (p0) {
-                  return null;
-                },
-              ),
-              SizedBox(height: ResStyle.spacing),
-              SizedBox(height: ResStyle.spacing * 2),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-                
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      onPressed: () {
-                        startReading();
-                        Navigator.of(context).pop();
-                      },
-                      color: DANGER_COLOR,
-                      text: 'Cancel',
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: BugPrimaryButton(
-                      color: RM50_COLOR,
-                      onPressed: () async {
-                        Asset newAsset = Asset(
-                          UserToken.user_code,
-                          name: nameController.text,
-                          value: FormatterHelper.getAmountFromRM(
-                              valueController.text),
-                          desc: descController.text,
-                          type: selectedType,
-                          unique_code: unique_code,
-                          status: true,
-                        );
-
-                        await Asset.insertAsset(newAsset);
-                        await loadAssets();
-                       
-                        Navigator.of(context).pop();
-
-                        if (AssetDetailPage.page_controller.hasClients) {
-                          AssetDetailPage.page_controller.animateToPage(
-                            0,
-                            duration: const Duration(milliseconds: 700),
-                            curve: Curves.fastOutSlowIn,
-                          );
-                        }
-                      },
-                      text: 'Add',
-                    ),
-                  ),
-                ),
-              ])
-            ]);
-      },
-    );
-
-    BlocProvider.of<BankCardNfcBloc>(context).add(BankCardDisappearEvent());
+  if (card != null) {
+    nameController.text = 'Card ' + (card.number?.substring(12) ?? '');
+    descController.text =
+        (card.type ?? '') + " expired at " + (card.expire ?? '');
+    unique_code = "${card.number?.substring(12)}-${(card.expire ?? '')}}";
   }
+
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (context) {
+      return BugBottomModal(
+        context: context,
+        key: dialog_key,
+        header: 'Add New ${selectedType}',
+        widgets: [
+          Form(
+            key: formKey,
+            child: Column(
+              children: [
+                BugTextInput(
+                  controller: nameController,
+                  label: 'Asset Name',
+                  hint: 'Enter Asset Name',
+                  prefixIcon: Icon(getIcon(selectedType)),
+                  
+                ),
+                SizedBox(height: ResStyle.spacing),
+                BugTextInput(
+                  controller: valueController,
+                  label: 'Amount (RM)',
+                  hint: 'Enter Amount (RM)',
+                  prefixIcon: Icon(Icons.diamond_sharp),
+                  onChanged: (value) {
+                    FormatterHelper.implement_RM_format(valueController, value);
+                  },
+                 
+                ),
+                SizedBox(height: ResStyle.spacing),
+                BugTextInput(
+                  controller: descController,
+                  label: 'Description',
+                  hint: 'Enter Description',
+                  prefixIcon: Icon(Icons.note_alt_sharp),
+                  validator: (value) {
+                    
+                    return null;
+                  },
+                ),
+                SizedBox(height: ResStyle.spacing * 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: BugPrimaryButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          color: DANGER_COLOR,
+                          text: 'Cancel',
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: BugPrimaryButton(
+                          color: RM50_COLOR,
+                          onPressed: () async {
+                            if (formKey.currentState?.validate() ?? false) {
+                              Asset newAsset = Asset(
+                                UserToken.user_code,
+                                name: nameController.text,
+                                value: FormatterHelper.getAmountFromRM(
+                                    valueController.text),
+                                desc: descController.text,
+                                type: selectedType,
+                                unique_code: unique_code,
+                                status: true,
+                              );
+
+                              await Asset.insertAsset(newAsset);
+                              await loadAssets();
+
+                              Navigator.of(context).pop();
+
+                              if (AssetDetailPage.page_controller.hasClients) {
+                                AssetDetailPage.page_controller.animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 700),
+                                  curve: Curves.fastOutSlowIn,
+                                );
+                              }
+                            }
+                          },
+                          text: 'Add',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
+
+  BlocProvider.of<BankCardNfcBloc>(context).add(BankCardDisappearEvent());
+}
+
 
   // ====== UI WIDGETS ======
 
@@ -602,7 +652,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
         Expanded(
           child: ListView(
             children: assets.map((asset) {
-              return AssetDetailCard(asset, () => showActionSheet(asset));
+              return AssetDetailCard(asset, () => showActionSheet(asset), icon: getIcon(asset.type));
             }).toList(),
           ),
         ),
@@ -688,7 +738,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
             ),
           ),
           BugInfoCard(
-              'Your financial data will never be shared with third parties. Any processing of your sensitive financial data in the server, with your permission, will be securely encrypted. Thank you for your trust.')
+              'Your financial data will never be stored in the server side. Any processing of your sensitive financial data in the server, with your permission, will be securely handled. Thank you for your trust.')
         ],
       ),
     );

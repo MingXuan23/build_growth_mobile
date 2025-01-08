@@ -3,6 +3,7 @@ import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/chat_history.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
+import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/gpt/star_message_page.dart';
 import 'package:build_growth_mobile/pages/map/place_selection_page.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
@@ -47,11 +48,13 @@ class _MessagePageState extends State<MessagePage> {
       context: context,
       builder: (BuildContext context) => CupertinoActionSheet(
         actions: <CupertinoActionSheetAction>[
-           CupertinoActionSheetAction(
+          CupertinoActionSheetAction(
             onPressed: () async {
               Navigator.pop(context);
-                await Clipboard.setData(ClipboardData(text: MessageBloc.gptReplies[index]));
-              ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Copy the message successfully', 5));
+              await Clipboard.setData(
+                  ClipboardData(text: MessageBloc.gptReplies[index]));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  BugSnackBar('Copy the message successfully', 5));
             },
             child: Text('Copy This Message',
                 style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
@@ -59,13 +62,16 @@ class _MessagePageState extends State<MessagePage> {
           CupertinoActionSheetAction(
             onPressed: () async {
               Navigator.pop(context);
-              var gpt =MessageBloc.gptReplies[index];
+              var gpt = MessageBloc.gptReplies[index];
               var user = MessageBloc.userMessages[index];
-              Chat_History chat = Chat_History(DateTime.now(), '1', UserToken.user_code, request: user, response: gpt, transaction_id: null);
+              Chat_History chat = Chat_History(
+                  DateTime.now(), '1', UserToken.user_code,
+                  request: user, response: gpt, transaction_id: null);
 
               await Chat_History.insertChatHistory(chat);
 
-              ScaffoldMessenger.of(context).showSnackBar(BugSnackBar('Star the message successfully', 5));
+              ScaffoldMessenger.of(context).showSnackBar(
+                  BugSnackBar('Star the message successfully', 5));
             },
             child: Text('Star This Message',
                 style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
@@ -73,7 +79,10 @@ class _MessagePageState extends State<MessagePage> {
           CupertinoActionSheetAction(
             onPressed: () async {
               Navigator.pop(context);
-              Navigator.of(context).push(MaterialPageRoute(builder: (context)=> StarMessagePage()));
+              await Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => StarMessagePage()));
+              FocusScope.of(context).unfocus();
+              FocusManager.instance.primaryFocus?.unfocus();
             },
             child: Text('View Star Messages',
                 style: TextStyle(color: TITLE_COLOR, fontSize: ResStyle.font)),
@@ -95,7 +104,44 @@ class _MessagePageState extends State<MessagePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: false,
-      appBar: BugAppBar('Financial Assistant', context),
+      appBar: BugAppBarWithContainer('Financial Assistant', context,
+          containerChild:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+            // Text('By using this service, I acknowledge that my data may be shared with third parties to enhance response performance.'),
+            if (UserPrivacy.useGPT)
+              (UserPrivacy.useThirdPartyGPT)
+                  ? BugSmallButton(
+                      text: 'Use xBUG Self-Hosted Assistant',
+                      onPressed: () async {
+                        await Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => ProfilePage(
+                                  gotoPrivacy: true,
+                                )));
+
+                        FocusScope.of(context).unfocus();
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      })
+                  : BugSmallButton(
+                      text: 'Use Third Party Assistant',
+                      onPressed: () async {
+                        await Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) => ProfilePage(
+                                  gotoPrivacy: true,
+                                )));
+
+                        FocusScope.of(context).unfocus();
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      }),
+            BugSmallButton(
+                text: 'View Star Message',
+                onPressed: () async {
+                  await Navigator.of(context).push(MaterialPageRoute(
+                      builder: (context) => StarMessagePage()));
+
+                  FocusScope.of(context).unfocus();
+                  FocusManager.instance.primaryFocus?.unfocus();
+                }),
+          ])),
       backgroundColor: HIGHTLIGHT_COLOR,
       body: BlocListener<MessageBloc, MessageState>(
         listener: (context, state) {
@@ -137,7 +183,9 @@ class _MessagePageState extends State<MessagePage> {
                   ),
                 ),
                 // Input field area that adjusts based on keyboard visibility
-
+                SizedBox(
+                  height: ResStyle.spacing / 2,
+                ),
                 Padding(
                   padding: EdgeInsets.only(
                     bottom: MediaQuery.of(context)
@@ -157,7 +205,8 @@ class _MessagePageState extends State<MessagePage> {
                     child: Column(
                       children: [
                         _gptMessage(
-                            "Oh no! 😢 You've cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨", -1),
+                            "Oh no! 😢 You've cut off our connection. To get your financial assistant buzzing again, just enable it in your profile page! 💸✨",
+                            -1),
                       ],
                     ),
                   ),
@@ -193,7 +242,7 @@ class _MessagePageState extends State<MessagePage> {
     for (int i = 0; i < userMessages.length; i++) {
       widgets.add(_userMessage(userMessages[i]));
       if (i < gptReplies.length) {
-        widgets.add(_gptMessage(gptReplies[i],i));
+        widgets.add(_gptMessage(gptReplies[i], i));
       }
     }
 
@@ -252,9 +301,8 @@ class _MessagePageState extends State<MessagePage> {
               return;
             }
 
-            if(index > 0 && index < MessageBloc.gptReplies.length){
-            showMenu(index);
-
+            if (index > 0 && index < MessageBloc.gptReplies.length) {
+              showMenu(index);
             }
           },
           child: BugEmoji(message: message),
@@ -287,18 +335,22 @@ class _MessagePageState extends State<MessagePage> {
                           horizontal: ResStyle.spacing / 2),
                       child: BugSmallButton(
                           text: label,
-                          onPressed: () {
+                          onPressed: () async {
                             if (label == 'Budget Places') {
-                              Navigator.of(context).push(new MaterialPageRoute(
-                                  builder: (context) => PlaceSelectionPage()));
+                              await Navigator.of(context).push(
+                                  new MaterialPageRoute(
+                                      builder: (context) =>
+                                          PlaceSelectionPage()));
+                              FocusScope.of(context).unfocus();
+                              FocusManager.instance.primaryFocus?.unfocus();
                             } else if (label == 'My Budget Plan') {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(
-                                      'Based on my cashflow, suggest the budget plan for today, this month, and this year'));
+                                      'Based on my cashflow, suggest the detailed budget plan for today, this month, and yearly goal'));
                             } else if (label == 'Investment Tips') {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(
-                                      'Based on my cashflow, suggest the short-term and long-term investment plan that suitable for me'));
+                                      'Based on my cashflow, suggest the short-term and long-term detailed investment plan that suitable for me'));
                             } else if (label == 'Savings Advice') {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(

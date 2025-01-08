@@ -12,8 +12,9 @@ final class ContentTestState extends ContentState {
 
 final class ContentReadyState extends ContentState {
   final List<Content> list;
+  final List<String> recommendations;
 
-  ContentReadyState( {required this.list });
+  ContentReadyState( {required this.list, required this.recommendations });
 }
 
 final class ContentLoadingState extends ContentState {}

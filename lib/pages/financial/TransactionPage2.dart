@@ -82,50 +82,54 @@ class _TransactionPage2State extends State<TransactionPage2> {
     setState(() {});
   }
 
-void continueAddProof() async{
-  // Example condition: Check if the user has already rejected adding proof
-  bool userRejected = !UserPrivacy.promptTransactionProof; // Replace with actual condition or state management
+  void continueAddProof() async {
+    // Example condition: Check if the user has already rejected adding proof
+    bool userRejected = !UserPrivacy
+        .promptTransactionProof; // Replace with actual condition or state management
 
-  if (userRejected) {
-    Navigator.of(context).pop();
-    return; // Exit if the user previously rejected adding proof
+    if (userRejected) {
+      Navigator.of(context).pop();
+      return; // Exit if the user previously rejected adding proof
+    }
+
+    // Show a dialog to prompt the user to add proof
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return BugInfoDialog(
+            main_color: RM50_COLOR,
+            title: 'Transaction Proof',
+            message: 'Would you like to add proof for this transaction?\n\n'
+                '*Tip: You can disable this prompt in the settings if you prefer not to see it again.*',
+            actions: [
+              BugPrimaryButton(
+                  text: 'Yes',
+                  color: RM50_COLOR,
+                  onPressed: () async {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
+                    // Navigate to the transaction history page
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) => TransactionHistoryPage()),
+                    );
+
+                    //
+                  }),
+              SizedBox(
+                height: ResStyle.spacing,
+              ),
+              BugPrimaryButton(
+                  text: 'No',
+                  color: DANGER_COLOR,
+                  onPressed: () async {
+                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop(); // Exit the page
+                  })
+            ]);
+      },
+    );
   }
-
-  // Show a dialog to prompt the user to add proof
-  await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-
-      return BugInfoDialog(  
-        main_color:RM50_COLOR ,
-
-        title: 'Transaction Proof',
-  message: 'Would you like to add proof for this transaction?\n\n'
-           '*Tip: You can disable this prompt in the settings if you prefer not to see it again.*',
-      actions: [
-
-        BugPrimaryButton(text: 'Yes',
-        color: RM50_COLOR, onPressed: () async{
-            Navigator.of(context).pop(); // Close the dialog
-              Navigator.of(context).pop();
-              // Navigate to the transaction history page
-              await  Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => TransactionHistoryPage()),
-              );
-
-              //
-        }),
-        SizedBox(height: ResStyle.spacing,),
-         BugPrimaryButton(text: 'No' ,color: DANGER_COLOR , onPressed: () async{
-            Navigator.of(context).pop(); // Close the dialog
-                Navigator.of(context).pop(); // Exit the page
-        })
-        
-      ]);
-
-    },
-  );
-}
 
   void loadPage() async {
     await loadData();
@@ -298,25 +302,28 @@ void continueAddProof() async{
           } else if (state is AssetTransactionrPageShow) {
             body = AssetTransactionPage(asset: widget.asset!);
           } else if (state is TransactionCompleted) {
-            await showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return BugInfoDialog(
-                      title: 'Success',
-                      main_color: RM50_COLOR,
-                      message: 'Transaction Saved Successfully',
-                      actions: [
-                        BugPrimaryButton(
-                            text: 'Ok',
-                            color: RM50_COLOR,
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            })
-                      ]);
-                });
+            if (!UserPrivacy.promptTransactionProof) {
+              await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return BugInfoDialog(
+                        title: 'Success',
+                        main_color: RM50_COLOR,
+                        message: 'Transaction Saved Successfully',
+                        actions: [
+                          BugPrimaryButton(
+                              text: 'Ok',
+                              color: RM50_COLOR,
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                Navigator.of(context).pop();
 
-             continueAddProof();
-            
+                              })
+                        ]);
+                  });
+            } else {
+              continueAddProof();
+            }
           }
 
           setState(() {});
@@ -369,9 +376,7 @@ void continueAddProof() async{
                     hint: 'Current Value',
                     prefixIcon: const Icon(null),
                     readOnly: true,
-                    validator: (value) {
-                     
-                    },
+                    validator: (value) {},
                   ),
                   SizedBox(height: ResStyle.spacing * 3),
                   BugTextInput(
@@ -413,8 +418,9 @@ void continueAddProof() async{
                     prefixIcon: const Icon(null),
                     readOnly: true,
                     validator: (value) {
-                       if(FormatterHelper.getAmountFromRM(value??'RM 0.00') < 0){
-                         return "You have not enough balance. Turn this into a lesson: Build assets and Reduce debts to grow your cash flow.";
+                      if (FormatterHelper.getAmountFromRM(value ?? 'RM 0.00') <
+                          0) {
+                        return "You have not enough balance. Turn this into a lesson: Build assets and Reduce debts to grow your cash flow.";
                       }
                     },
                   ),
@@ -691,31 +697,32 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                             ),
                           ),
                         ),
-                        if(widget.asset.type != "Deposit Account")
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => updateTransactionType(true),
-                            child: Container(
-                              padding: EdgeInsets.symmetric(
-                                  vertical: ResStyle.spacing),
-                              decoration: BoxDecoration(
-                                color:
-                                    negative ? TITLE_COLOR : HIGHTLIGHT_COLOR,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                               getReduceTerm(widget.asset.type),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: ResStyle.font,
+                        if (widget.asset.type != "Deposit Account")
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => updateTransactionType(true),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                    vertical: ResStyle.spacing),
+                                decoration: BoxDecoration(
                                   color:
-                                      negative ? HIGHTLIGHT_COLOR : TITLE_COLOR,
-                                  fontWeight: FontWeight.w500,
+                                      negative ? TITLE_COLOR : HIGHTLIGHT_COLOR,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  getReduceTerm(widget.asset.type),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: ResStyle.font,
+                                    color: negative
+                                        ? HIGHTLIGHT_COLOR
+                                        : TITLE_COLOR,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -752,7 +759,8 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                     onChanged: onChangeTrigger,
                     readOnly: true,
                     validator: (value) {
-                      if(FormatterHelper.getAmountFromRM(value??"0.00") < 0){
+                      if (FormatterHelper.getAmountFromRM(value ?? "0.00") <
+                          0) {
                         return "If an asset is costing you money instead of making you money, it's actually a debt.";
                       }
                     },
@@ -807,7 +815,8 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
 
   int? selected_asset_id;
   int? alternative_asset_id;
-  TextEditingController transaction_controller = TextEditingController(text:'RM 0.00');
+  TextEditingController transaction_controller =
+      TextEditingController(text: 'RM 0.00');
   TextEditingController desc_controller = TextEditingController();
 
   @override
@@ -870,25 +879,21 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
       var to_asset =
           widget.asset_list.firstWhere((e) => e.id == alternative_asset_id);
 
-      final from_transaction = Transaction(
-        from_asset.user_code,
-        amount: -transactionAmount,
-        desc: desc_controller.text,
-        asset_id: from_asset.id,
-        debt_id: null,
-        created_at: DateTime.now(),
-        transaction_type: 2
-      );
+      final from_transaction = Transaction(from_asset.user_code,
+          amount: -transactionAmount,
+          desc: desc_controller.text,
+          asset_id: from_asset.id,
+          debt_id: null,
+          created_at: DateTime.now(),
+          transaction_type: 2);
 
-      final to_transaction = Transaction(
-        to_asset.user_code,
-        amount: transactionAmount,
-        desc: desc_controller.text,
-        asset_id: to_asset.id,
-        debt_id: null,
-        created_at: DateTime.now(),
-        transaction_type: 2
-      );
+      final to_transaction = Transaction(to_asset.user_code,
+          amount: transactionAmount,
+          desc: desc_controller.text,
+          asset_id: to_asset.id,
+          debt_id: null,
+          created_at: DateTime.now(),
+          transaction_type: 2);
 
       await Transaction.insertTransaction(from_transaction);
       await Transaction.insertTransaction(to_transaction);

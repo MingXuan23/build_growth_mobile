@@ -1,4 +1,4 @@
-import 'package:build_growth_mobile/api_services/auth_repo.dart';
+
 import 'package:build_growth_mobile/models/content.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,7 +20,9 @@ class ContentInitBloc extends Bloc<ContentInitEvent, ContentInitState> {
         dislikedList = [];
 
        
-
+        if(contentList.isEmpty){
+          return;
+        }
         emit(NextContentState(content: contentList[0]));
       },
     );
@@ -34,6 +36,7 @@ class ContentInitBloc extends Bloc<ContentInitEvent, ContentInitState> {
         }
 
         if ((likedList.length + dislikedList.length) >= contentList.length) {
+          
           emit(ContentSubmittedState(dislike_list: dislikedList,like_list: likedList));
           return;
         }

@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 
 import 'package:build_growth_mobile/main.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
@@ -24,8 +27,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key, required this.gotoPrivacy}) : super(key: key);
+  const ProfilePage(
+      {Key? key,
+      required this.gotoPrivacy,
+      this.useGKey = false,
+      this.useStaticController = false})
+      : super(key: key);
   final bool gotoPrivacy;
+  final bool useGKey;
+  final bool useStaticController;
 
   static final ScrollController scrollController = ScrollController();
   @override
@@ -38,8 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
   bool useGoogleDriveBackup = UserPrivacy.googleDriveBackup;
   bool promptProof = UserPrivacy.promptTransactionProof;
   bool useThirdPartyGPT = UserPrivacy.useThirdPartyGPT;
+
+  final ScrollController scrollController = ScrollController();
   //String backupFrequency =
-  
 
   bool privacy_updated = false;
   String privacy_message = '';
@@ -65,12 +76,17 @@ class _ProfilePageState extends State<ProfilePage> {
     loadData();
   }
 
+  bool _isOperationInProgress = false; // Add this at the start of the class
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      ProfilePage.scrollController.position.maxScrollExtent;
-      if (ProfilePage.scrollController.hasClients) {
-        await ProfilePage.scrollController.animateTo(
-          ProfilePage.scrollController.position.maxScrollExtent + 100,
+      var controller = widget.useStaticController
+          ? ProfilePage.scrollController
+          : scrollController;
+      controller.position.maxScrollExtent;
+      if (controller.hasClients) {
+        await controller.animateTo(
+          controller.position.maxScrollExtent - ResStyle.height * 0.2,
           duration: const Duration(milliseconds: 1000),
           curve: Curves.easeOut,
         );
@@ -98,7 +114,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> saveUserPrivacy() async {
     privacy_updated = false;
-
+    _isOperationInProgress = true;
+    setState(() {});
     var res = await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
 
     if (res) {
@@ -112,19 +129,31 @@ class _ProfilePageState extends State<ProfilePage> {
 
         await UserPrivacy.saveToPreferences(UserToken.user_code!);
         await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
+
+        BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
+        BlocProvider.of<ContentBloc>(context).add(ContentRequest());
+
+        BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());
+        BlocProvider.of<AuthBloc>(context).add(UserPrivacyUpdated());
+
         showTopSnackBar(context, 'Your Privacy Setting update successfully', 5);
       } catch (e) {
         try {
           showTopSnackBar(context, e.toString(), 5);
-            await loadData();
+          await loadData();
         } catch (e) {}
-      
       }
     } else {
       privacy_updated = true;
       setState(() {});
-      showTopSnackBar(
-          context, 'Oops. We are failed to update your Privacy Setting.', 5);
+      try {
+        BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
+        BlocProvider.of<ContentBloc>(context).add(ContentRequest());
+        BlocProvider.of<AuthBloc>(context).add(UserPrivacyUpdated());
+        BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());
+        showTopSnackBar(
+            context, 'Oops. We are failed to update your Privacy Setting.', 5);
+      } catch (e) {}
     }
   }
 
@@ -153,9 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-
-
-  void showChangePasswordDialog() {
+  void showChangePasswordDialog() async{
     if (!UserToken.online) {
       showTopSnackBar(
           context, 'Connection time out. Please try to restart the app', 5);
@@ -163,7 +190,7 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     final _formKey = GlobalKey<FormState>();
-    showModalBottomSheet(
+   await  showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
@@ -277,6 +304,8 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       },
     );
+
+    FocusScope.of(context).unfocus();
   }
 
   void fetchAddress(TextEditingController addressController,
@@ -502,6 +531,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     if (!_formKey.currentState!.validate()) {
                       return;
                     }
+                    _isOperationInProgress = true;
+                    setState(() {});
                     BlocProvider.of<AuthBloc>(context).add(
                       UpdateProfileRequest(
                         name: nameController.text,
@@ -510,6 +541,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         telno: telnoController.text,
                       ),
                     );
+                    
                     Navigator.of(context).pop();
                   }),
               SizedBox(
@@ -573,307 +605,356 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state is AuthChangePasswordResult) {
-          // ScaffoldMessenger.of(context)
-          //     .showSnackBar(BugSnackBar(state.message, 5));
-          showTopSnackBar(context, state.message, 5);
-          if (state.success) {
-            logOut();
-          }
-        } else if (state is AuthUpdateProfileResult) {
-          showTopSnackBar(context, state.message, 5);
-          loadData();
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (bool pop) async {
+        // Show the confirmation dialog when user presses the back button
+       if(pop){
+        return;
+       }
+
+        if (_isOperationInProgress) {
+          showTopSnackBar(
+              context, 'Please wait your operation is completing', 5);
+        }else{
+            Navigator.of(context).pop();
         }
       },
-      child: Scaffold(
-        appBar: BugAppBar('Your Profile', context, show_icon: false),
-        backgroundColor: HIGHTLIGHT_COLOR,
-        body: Padding(
-          padding: EdgeInsets.all(ResStyle.spacing),
-          child: SingleChildScrollView(
-            controller: ProfilePage.scrollController,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // User Information Card
-                Card(
-                  key: TutorialHelper.profileKeys[1],
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  color: HIGHTLIGHT_COLOR.withOpacity(0.85),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.all(ResStyle.spacing),
-                            child: Text(
-                              'Profile Information',
-                              style: TextStyle(
-                                  fontSize: ResStyle.body_font,
-                                  fontWeight: FontWeight.bold),
+      child: BlocListener<AuthBloc, AuthState>(
+        listener: (context, state) {
+          if (state is AuthChangePasswordResult) {
+            // ScaffoldMessenger.of(context)
+            //     .showSnackBar(BugSnackBar(state.message, 5));
+            showTopSnackBar(context, state.message, 5);
+            if (state.success) {
+              logOut();
+            }
+          } else if (state is AuthUpdateProfileResult) {
+            showTopSnackBar(context, state.message, 5);
+            _isOperationInProgress = false;
+            loadData();
+          } else if (state is UserPrivacyReload) {
+            _isOperationInProgress = false;
+
+            loadData();
+          }
+        },
+        child: Scaffold(
+          appBar: BugAppBar(
+            'Your Profile',
+            context,
+            show_icon: false,
+          ),
+          backgroundColor: HIGHTLIGHT_COLOR,
+          body: Padding(
+            padding: EdgeInsets.only(
+              left: ResStyle.spacing,
+              right: ResStyle.spacing,
+              top: ResStyle.spacing,
+            ),
+            child: SingleChildScrollView(
+              controller: widget.useStaticController
+                  ? ProfilePage.scrollController
+                  : scrollController,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // User Information Card
+                  Card(
+                    key:
+                        (widget.useGKey) ? TutorialHelper.profileKeys[1] : null,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    color: HIGHTLIGHT_COLOR.withOpacity(0.85),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(ResStyle.spacing),
+                              child: Text(
+                                'Profile Information',
+                                style: TextStyle(
+                                    fontSize: ResStyle.body_font,
+                                    fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ),
 
-                          (UserToken.online)
-                              ? BugRoundButton(
-                                  key: TutorialHelper.profileKeys[2],
-                                  icon: Icons.edit,
-                                  
-                                  onPressed: showUpdateProfileDialog,
-                                  size: ResStyle.spacing * 3)
-                              : Container(),
-                          //SizedBox(width:  ResStyle.spacing/2,)
-                        ],
-                      ),
-                      const Divider(),
-                      CardInfoDivider("Name", user.name),
-                      CardInfoDivider("Email", user.email),
-                      CardInfoDivider("Tel Num", user.telno),
-                      CardInfoDivider("State", user.state),
-                      CardInfoDivider("Address", user.address, isLast: true),
-                    ],
+                            (UserToken.online)
+                                ? BugRoundButton(
+                                    key: (widget.useGKey)
+                                        ? TutorialHelper.profileKeys[2]
+                                        : null,
+                                    icon: Icons.edit,
+                                    onPressed: showUpdateProfileDialog,
+                                    size: ResStyle.spacing * 3)
+                                : Container(),
+                            //SizedBox(width:  ResStyle.spacing/2,)
+                          ],
+                        ),
+                        const Divider(),
+                        CardInfoDivider("Name", user.name),
+                        CardInfoDivider("Email", user.email),
+                        CardInfoDivider("Tel Num", user.telno),
+                        CardInfoDivider("State", user.state),
+                        CardInfoDivider("Address", user.address, isLast: true),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: ResStyle.spacing), // Spacing between cards
+                  SizedBox(height: ResStyle.spacing), // Spacing between cards
 
-                // Privacy Settings Card
-                Card(
-                  color: HIGHTLIGHT_COLOR.withOpacity(0.85),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.all(ResStyle.spacing),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Privacy Settings',
-                                  style: TextStyle(
-                                      fontSize: ResStyle.body_font,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                if (privacy_updated)
+                  // Privacy Settings Card
+                  Card(
+                    color: HIGHTLIGHT_COLOR.withOpacity(0.85),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(ResStyle.spacing),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                                   Text(
-                                    privacy_message,
+                                    'Privacy Settings',
                                     style: TextStyle(
-                                        fontSize: ResStyle.small_font,
-                                        color: DANGER_COLOR),
-                                    softWrap:
-                                        true, // Allows text to wrap to the next line
-                                    overflow: TextOverflow
-                                        .visible, // Ensures text doesn't get clipped
+                                        fontSize: ResStyle.body_font,
+                                        fontWeight: FontWeight.bold),
                                   ),
-                              ],
+                                  if (privacy_updated)
+                                    Text(
+                                      privacy_message,
+                                      style: TextStyle(
+                                          fontSize: ResStyle.small_font,
+                                          color: DANGER_COLOR),
+                                      softWrap:
+                                          true, // Allows text to wrap to the next line
+                                      overflow: TextOverflow
+                                          .visible, // Ensures text doesn't get clipped
+                                    ),
+                                ],
+                              ),
                             ),
-                          ),
-                          (privacy_updated && UserToken.online)
-                              ? BugRoundButton(
-                                  icon: Icons.save,
-                                  label: 'Save',
-                                  onPressed: saveUserPrivacy,
-                                  color: SUCCESS_COLOR,
-                                  text_color: HIGHTLIGHT_COLOR,
-                                  size: ResStyle.spacing * 3)
-                              : Container(),
-                        ],
-                      ),
-                      const Divider(),
-                      CardWidgetivider(
-                          key: TutorialHelper.profileKeys[3],
-                        'Allow xBUG AI Financial Assitant Using Your Data',
-                        BugSwitch(
-                          value: useGPT,
-                          onChanged: (value) {
-                            setState(() {
-                              useGPT = value;
-                               useThirdPartyGPT = value && useThirdPartyGPT;
-                            });
-                            updateUserPrivacy();
-                          },
+                            (privacy_updated && UserToken.online)
+                                ? BugRoundButton(
+                                    icon: Icons.save,
+                                    label: 'Save',
+                                    onPressed: saveUserPrivacy,
+                                    color: SUCCESS_COLOR,
+                                    text_color: HIGHTLIGHT_COLOR,
+                                    icon_color: HIGHTLIGHT_COLOR,
+                                    size: ResStyle.spacing * 3)
+                                : Container(),
+                          ],
                         ),
-                      ),
-
-                       CardWidgetivider(
-                          key: TutorialHelper.profileKeys[4],
-                        'Allow Third Party AI Financial Assitant Using Your Data for Higher Performance',
-                        BugSwitch(
-                          value: useThirdPartyGPT,
-                          onChanged: (value) {
-                            setState(() {
-                              //useThirdPartyGPT = value;
-                              useThirdPartyGPT = value && useGPT;
-                            });
-                            updateUserPrivacy();
-                          },
-                        ),
-                      ),
-                      CardWidgetivider(
-                          key: TutorialHelper.profileKeys[5],
-                          'Enable Content Browsing and Receiving Recommendations',
+                        const Divider(),
+                        CardWidgetivider(
+                          key: (widget.useGKey)
+                              ? TutorialHelper.profileKeys[3]
+                              : null,
+                          'Allow xBUG AI Financial Assitant Using Your Data',
                           BugSwitch(
-                            value: pushContent,
+                            value: useGPT,
                             onChanged: (value) {
                               setState(() {
-                                pushContent = value;
+                                useGPT = value;
+                                useThirdPartyGPT = value && useThirdPartyGPT;
                               });
                               updateUserPrivacy();
                             },
-                          )),
-                      // CardWidgetivider(
-                      //   'Backup',
-                      //   DropdownButton<String>(
-                      //     dropdownColor: HIGHTLIGHT_COLOR,
-                      //     value: backupFrequency,
-                      //     items: [
-                      //       "No Backup",
-                      //       "First Transaction In A Day",
-                      //       "First Transaction In A Month",
-                      //       "Every Transaction",
-                      //     ].map((String value) {
-                      //       return DropdownMenuItem<String>(
-                      //         value: value,
-                      //         child: Text(value),
-                      //       );
-                      //     }).toList(),
-                      //     onChanged: (newValue) {
-                      //       if (newValue != null) {
-                      //         setState(() {
-                      //           backupFrequency = newValue;
-                      //         });
-                      //         updateUserPrivacy();
-                      //       }
-                      //     },
-                      //   ),
-                      // ),
-                      CardWidgetivider(
-                          key: TutorialHelper.profileKeys[6],
-                        'Always Prompt You to Add Transaction Proof',
-                        BugSwitch(
-                          value: promptProof,
-                          onChanged: (value) {
-                            setState(() {
-                              promptProof = value;
-                            });
-                            updateUserPrivacy();
-                          },
+                          ),
                         ),
-                      ),
-                      
-                      CardWidgetivider(
-                          key: TutorialHelper.profileKeys[7],
-                        'Allow to use your Google Drive to backup your data',
-                        BugSwitch(
-                          value: useGoogleDriveBackup,
-                          onChanged: (value) {
-                            setState(() {
-                              useGoogleDriveBackup = value;
-                            });
-                            updateUserPrivacy();
-                          },
+
+                        CardWidgetivider(
+                          key: (widget.useGKey)
+                              ? TutorialHelper.profileKeys[4]
+                              : null,
+                          'Allow Third Party AI Financial Assitant Using Your Data for Higher Performance',
+                          BugSwitch(
+                            value: useThirdPartyGPT,
+                            onChanged: (value) {
+                              setState(() {
+                                //useThirdPartyGPT = value;
+                                useThirdPartyGPT = value && useGPT;
+                              });
+                              updateUserPrivacy();
+                            },
+                          ),
                         ),
-                      ),
+                        CardWidgetivider(
+                            key: (widget.useGKey)
+                                ? TutorialHelper.profileKeys[5]
+                                : null,
+                            'Enable Content Browsing and Receiving Recommendations',
+                            BugSwitch(
+                              value: pushContent,
+                              onChanged: (value) {
+                                setState(() {
+                                  pushContent = value;
+                                });
+                                updateUserPrivacy();
+                              },
+                            )),
+                        // CardWidgetivider(
+                        //   'Backup',
+                        //   DropdownButton<String>(
+                        //     dropdownColor: HIGHTLIGHT_COLOR,
+                        //     value: backupFrequency,
+                        //     items: [
+                        //       "No Backup",
+                        //       "First Transaction In A Day",
+                        //       "First Transaction In A Month",
+                        //       "Every Transaction",
+                        //     ].map((String value) {
+                        //       return DropdownMenuItem<String>(
+                        //         value: value,
+                        //         child: Text(value),
+                        //       );
+                        //     }).toList(),
+                        //     onChanged: (newValue) {
+                        //       if (newValue != null) {
+                        //         setState(() {
+                        //           backupFrequency = newValue;
+                        //         });
+                        //         updateUserPrivacy();
+                        //       }
+                        //     },
+                        //   ),
+                        // ),
+                        CardWidgetivider(
+                          key: (widget.useGKey)
+                              ? TutorialHelper.profileKeys[6]
+                              : null,
+                          'Always Prompt You to Add Transaction Proof',
+                          BugSwitch(
+                            value: promptProof,
+                            onChanged: (value) {
+                              setState(() {
+                                promptProof = value;
+                              });
+                              updateUserPrivacy();
+                            },
+                          ),
+                        ),
 
-                      BlocBuilder<AuthBloc, AuthState>(
-                          builder: (context, state) {
-                        if (state is UserBackUpRunning) {
-                          return CardWidgetivider(
-                            'Back up in progress...',
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    SUCCESS_COLOR),
+                        CardWidgetivider(
+                          key: (widget.useGKey)
+                              ? TutorialHelper.profileKeys[7]
+                              : null,
+                          'Allow to use your Google Drive to backup your data',
+                          BugSwitch(
+                            value: useGoogleDriveBackup,
+                            onChanged: (value) {
+                              setState(() {
+                                useGoogleDriveBackup = value;
+                              });
+                              updateUserPrivacy();
+                            },
+                          ),
+                        ),
+
+                        BlocBuilder<AuthBloc, AuthState>(
+                            builder: (context, state) {
+                          if (state is UserBackUpRunning) {
+                            return CardWidgetivider(
+                              'Back up in progress...',
+                              Expanded(
+                                child: LinearProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      SUCCESS_COLOR),
+                                ),
                               ),
-                            ),
-                          );
-                        } else {
-                          return CardWidgetivider(
-                              'Your data will backup automatically everyday',
-                              BugIconButton(
-                                  text: 'Backup now',
-                                  onPressed: () async {
-                                    BlocProvider.of<AuthBloc>(context)
-                                        .add(UserStartBackup());
-                                  },
-                                  icon: Icons.backup));
-                        }
-                      }),
+                            );
+                          } else {
+                            return CardWidgetivider(
+                                'Your data will backup automatically everyday',
+                                BugIconButton(
+                                    text: 'Backup now',
+                                    onPressed: () async {
+                                      BlocProvider.of<AuthBloc>(context)
+                                          .add(UserStartBackup());
+                                    },
+                                    icon: Icons.backup));
+                          }
+                        }),
 
-                      BlocBuilder<AuthBloc, AuthState>(
-                          builder: (context, state) {
-                        if (state is UserRestoreRunning) {
-                          return CardWidgetivider(
-                            'Restore in progress...',
-                            Expanded(
-                              child: LinearProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    SUCCESS_COLOR),
+                        BlocBuilder<AuthBloc, AuthState>(
+                            builder: (context, state) {
+                          if (state is UserRestoreRunning) {
+                            return CardWidgetivider(
+                              'Restore in progress...',
+                              Expanded(
+                                child: LinearProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      SUCCESS_COLOR),
+                                ),
                               ),
-                            ),
-                          );
-                        } else {
-                          return CardWidgetivider(
-                              'Last Backup: ${UserBackup.lastBackUpTime?.toString().substring(0, 16) ?? ''}',
-                              BugIconButton(
-                                  text: 'Restore now',
-                                  onPressed: () {
-                                    showRestoreDialog(context);
-                                  },
-                                  icon: Icons.restore),
-                              isLast: true);
-                        }
-                      }),
+                            );
+                          } else {
+                            return CardWidgetivider(
+                                'Last Backup: ${UserBackup.lastBackUpTime?.toString().substring(0, 16) ?? ''}',
+                                BugIconButton(
+                                    text: 'Restore now',
+                                    onPressed: () {
+                                      showRestoreDialog(context);
+                                    },
+                                    icon: Icons.restore),
+                                isLast: true);
+                          }
+                        }),
 
-                      SizedBox(
-                        height: ResStyle.spacing / 2,
-                      )
-                    ],
+                        SizedBox(
+                          height: ResStyle.spacing / 2,
+                        )
+                      ],
+                    ),
                   ),
-                ),
-                SizedBox(height: ResStyle.spacing),
-                // Action Buttons
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: ResStyle.spacing),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      BugPrimaryButton(
-                        key: TutorialHelper.profileKeys[8],
-                          text: "Tour Guide",
-                          onPressed: (){
-                            Navigator.of(context).pop();
-                            BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
-                          },
-                          color: RM1_COLOR),
-                           SizedBox(height: ResStyle.spacing),
-                      BugPrimaryButton(
-                          text: "Change Password",
-                          onPressed: showChangePasswordDialog,
-                          color: TITLE_COLOR),
-                      SizedBox(height: ResStyle.spacing),
-                      BugPrimaryButton(
-                          text: "Log Out",
-                          onPressed: logOut,
-                          color: DANGER_COLOR),
-                    ],
+                  SizedBox(height: ResStyle.spacing),
+                  // Action Buttons
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: ResStyle.spacing),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        BugPrimaryButton(
+                            key: (widget.useGKey)
+                                ? TutorialHelper.profileKeys[8]
+                                : null,
+                            text: "Tour Guide",
+                            onPressed: () {
+                              while (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              }
+                              BlocProvider.of<AuthBloc>(context)
+                                  .add(UserTourGuide());
+                            },
+                            color: RM1_COLOR),
+                        SizedBox(height: ResStyle.spacing),
+                        BugPrimaryButton(
+                            text: "Change Password",
+                            onPressed: showChangePasswordDialog,
+                            color: TITLE_COLOR),
+                        SizedBox(height: ResStyle.spacing),
+                        BugPrimaryButton(
+                            text: "Log Out",
+                            onPressed: logOut,
+                            color: DANGER_COLOR),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

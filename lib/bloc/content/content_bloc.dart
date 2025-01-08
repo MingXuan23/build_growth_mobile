@@ -28,7 +28,8 @@ class ContentBloc extends Bloc<ContentEvent, ContentState> {
           microlearning_id = result['microlearning_id'].toString();
           content_list.clear();
           content_list.addAll(contentList);
-          emit(ContentReadyState(list: contentList));
+          List<String> r = (result['recommendations'] as List).map((x)=>x.toString()).toList();
+          emit(ContentReadyState(list: contentList, recommendations: r));
         }
       },
     );

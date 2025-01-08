@@ -62,77 +62,114 @@ class Transaction {
     return await DatabaseHelper().deleteData('Transactions', id);
   }
 
-  static Future<(List<Transaction>, List<Transaction>, double)>
-      getTransactionList({int? month, int? year}) async {
-    var db = await DatabaseHelper().database;
-    List<Map<String, dynamic>> maps = [];
+ static Future<(List<Transaction>, List<Transaction>, double)>
+    getTransactionList({int? month, int? year, int? asset_id, int? debt_id}) async {
+  var db = await DatabaseHelper().database;
+  List<Map<String, dynamic>> maps = [];
 
-    if (year != null && month != null) {
-      var range = '$year-$month';
+  if (year != null && month != null) {
+    var range = '$year-${month.toString().padLeft(2, '0')}';
 
-// Query the database for all transactions with status true (1)
-       maps = await db.query(
-        'Transactions',
-        where: 'user_code = ? AND strftime("%Y-%m", created_at) = ?',
-        whereArgs: [UserToken.user_code, range],
-      );
-    } else {
-      // Query the database for all transactions with status true (1)
-      maps = await db.query('Transactions',
-          where: 'user_code = "${UserToken.user_code}"');
+    // Base query
+    String whereClause = 'user_code = ? AND strftime("%Y-%m", created_at) = ?';
+    List<dynamic> whereArgs = [UserToken.user_code, range];
+
+    // Add filters for asset_id and debt_id
+    if (asset_id != null) {
+      whereClause += ' AND asset_id = ?';
+      whereArgs.add(asset_id);
     }
 
-
-    // Use Future.wait to handle multiple async operations
-    List<Transaction> transactions = [];
-    List<Transaction> cashFlowtransactions = [];
-
-    double total_expense = 0;
-    for (var map in maps) {
-      int? assetId = map['asset_id'];
-      int? debtId = map['debt_id'];
-
-      // Fetch asset and debt asynchronously
-      Asset? asset = await Asset.getAssetById(assetId ?? -1);
-      Debt? debt = await Debt.getDebtById(debtId ?? -1);
-
-      // Create a new Transaction and add it to the list
-      transactions.add(Transaction(map['user_code'],
-          id: map['id'],
-          amount: map['amount'],
-          desc: map['desc'],
-          asset_id: assetId,
-          debt_id: debtId,
-          created_at: DateTime.parse(map['created_at']),
-          asset: asset,
-          debt: debt,
-          transaction_type: map['transaction_type'] ?? 1,
-          image: map['image']));
-
-      if (asset?.type == "Cash" ||
-          asset?.type == "Bank Card" ||
-          asset?.type == "Other Asset") {
-        cashFlowtransactions.add(Transaction(map['user_code'],
-            id: map['id'],
-            amount: map['amount'],
-            desc: map['desc'],
-            asset_id: map['asset_id'], // Assuming `assetId` comes from `map`
-            debt_id: map['debt_id'], // Assuming `debtId` comes from `map`
-            created_at: DateTime.parse(map['created_at']),
-            asset: map['asset'], // Assuming `asset` comes from `map`
-            debt: map['debt'], // Assuming `debt` comes from `map`
-            transaction_type: map['transaction_type'] ?? 1,
-            image: map['image']));
-      }
-
-      if (debt?.type == 'Expenses' &&
-          FormatterHelper.isSameMonthYear(DateTime.parse(map['created_at']))) {
-        total_expense += map['amount'];
-      }
+    if (debt_id != null) {
+      whereClause += ' AND debt_id = ?';
+      whereArgs.add(debt_id);
     }
 
-    return (transactions, cashFlowtransactions, total_expense);
+    // Query the database
+    maps = await db.query(
+      'Transactions',
+      where: whereClause,
+      whereArgs: whereArgs,
+    );
+  } else {
+    // Base query for all transactions
+    String whereClause = 'user_code = ?';
+    List<dynamic> whereArgs = [UserToken.user_code];
+
+    // // Add filters for asset_id and debt_id
+    // if (asset_id != null) {
+    //   whereClause += ' AND asset_id = ?';
+    //   whereArgs.add(asset_id);
+    // }
+
+    // if (debt_id != null) {
+    //   whereClause += ' AND debt_id = ?';
+    //   whereArgs.add(debt_id);
+    // }
+
+    // Query the database
+    maps = await db.query(
+      'Transactions',
+      where: whereClause,
+      whereArgs: whereArgs,
+    );
   }
+
+  // Use Future.wait to handle multiple async operations
+  List<Transaction> transactions = [];
+  List<Transaction> cashFlowtransactions = [];
+  double total_expense = 0;
+
+  for (var map in maps) {
+    int? assetId = map['asset_id'];
+    int? debtId = map['debt_id'];
+
+    // Fetch asset and debt asynchronously
+    Asset? asset = await Asset.getAssetById(assetId ?? -1);
+    Debt? debt = await Debt.getDebtById(debtId ?? -1);
+
+    // Create a new Transaction and add it to the list
+    transactions.add(Transaction(
+      map['user_code'],
+      id: map['id'],
+      amount: map['amount'],
+      desc: map['desc'],
+      asset_id: assetId,
+      debt_id: debtId,
+      created_at: DateTime.parse(map['created_at']),
+      asset: asset,
+      debt: debt,
+      transaction_type: map['transaction_type'] ?? 1,
+      image: map['image'],
+    ));
+
+    if (asset?.type == "Cash" ||
+        asset?.type == "Bank Card" ||
+        asset?.type == "Other Asset") {
+      cashFlowtransactions.add(Transaction(
+        map['user_code'],
+        id: map['id'],
+        amount: map['amount'],
+        desc: map['desc'],
+        asset_id: assetId,
+        debt_id: debtId,
+        created_at: DateTime.parse(map['created_at']),
+        asset: asset,
+        debt: debt,
+        transaction_type: map['transaction_type'] ?? 1,
+        image: map['image'],
+      ));
+    }
+
+    if (debt?.type == 'Expenses' &&
+        FormatterHelper.isSameMonthYear(DateTime.parse(map['created_at']))) {
+      total_expense += map['amount'];
+    }
+  }
+
+  return (transactions, cashFlowtransactions, total_expense);
+}
+
 
   static Future<double> getTotalExpense() async {
     var db = await DatabaseHelper().database;

@@ -172,8 +172,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     on<UserTourGuide>(
-      (event, emit) {
+      (event, emit) async{
         emit(UserTourGuiding());
+        await Future.delayed(Duration(milliseconds: 300));
+        emit(UserTourGuideEnd());
       },
     );
     on<AuthServiceNotAvailable>(
@@ -210,6 +212,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         }
       },
     );
+
+    on<UserPrivacyUpdated>((event, emit) {
+      emit(UserPrivacyReload());
+    },);
 
     // on<AutoLoginRequest>(
     //   (event, emit) async {

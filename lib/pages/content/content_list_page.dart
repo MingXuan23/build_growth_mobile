@@ -4,10 +4,12 @@ import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:build_growth_mobile/pages/content/clicked_content_Page.dart';
 import 'package:build_growth_mobile/pages/content/enrolled_content_page.dart';
+import 'package:build_growth_mobile/pages/widget_tree/home_page.dart';
 import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
+import 'package:build_growth_mobile/widget/bug_emoji.dart';
 import 'package:build_growth_mobile/widget/web_view.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,14 +29,69 @@ class _ContentPageState extends State<ContentListPage> {
                 header: name,
               )),
     );
-
-    FocusScope.of(context).unfocus();
+    await Future.delayed(Duration(milliseconds: 50));
+    BlocProvider.of<ContentBloc>(context).add(ContentRequest());
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: BugAppBar('Content For You', context, gkey: TutorialHelper.profileKeys[0]),
+      appBar: BugAppBarWithContainer(
+        'Contnent For You',
+        context,
+        containerChild: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            BugRoundGradientButton(
+              icon: Icons.emoji_events,
+              text_color: HIGHTLIGHT_COLOR,
+              color: RM20_COLOR,
+              label: 'Enrollment',
+              onPressed: () async {
+                var link = await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => AttendacneListenPage()));
+
+                if (link != null && link is String) {
+                  openWebView(link, 'Content Info');
+                }
+               // await Future.delayed(Duration(milliseconds: 50));
+                FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
+                // if (MediaQuery.of(context).viewInsets.bottom > 0)
+                //v {
+                //   FocusManager.instance.primaryFocus?.unfocus();
+                // }
+              },
+            ),
+            BugRoundGradientButton(
+              icon: Icons.history_rounded,
+              text_color: HIGHTLIGHT_COLOR,
+              color: RM20_COLOR,
+              label: 'History',
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => EnrolledContentPage()));
+
+                FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+            ),
+            BugRoundGradientButton(
+              icon: Icons.visibility_sharp,
+              text_color: HIGHTLIGHT_COLOR,
+              color: RM20_COLOR,
+              label: 'Viewed',
+              onPressed: () async {
+                await Navigator.of(context).push(MaterialPageRoute(
+                    builder: (context) => ClickedContentPage()));
+              
+                FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
+              },
+            ),
+          ],
+        ),
+      ), // BugAppBar('Content For You', context, gkey: TutorialHelper.profileKeys[0]),
       backgroundColor: HIGHTLIGHT_COLOR,
       body: BlocBuilder<ContentBloc, ContentState>(
         builder: (context, state) {
@@ -48,62 +105,91 @@ class _ContentPageState extends State<ContentListPage> {
                     (x) => x.content_category != ContentBloc.microlearning_id)
                 .toList();
 
+            final recommendations = state.recommendations;
+
+var d = MediaQuery.of(context).viewInsets.bottom;
+            if (HomePage.currentIndex == 2 
+                ) {
+              FocusManager.instance.primaryFocus?.unfocus();
+            }
+
             BlocProvider.of<ContentBloc>(context).add(ViewContentEvent());
 
             return SingleChildScrollView(
-              padding: EdgeInsets.all(ResStyle.spacing),
+              padding: EdgeInsets.only(
+                left: ResStyle.spacing,
+                right: ResStyle.spacing,
+                top: ResStyle.spacing,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Enrollment Button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      BugRoundButton(
-                        icon: Icons.emoji_events,
-                        color: RM20_COLOR,
-                        label: 'Enrollment',
-                        onPressed: () async {
-                          await Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => AttendacneListenPage()));
-                          FocusScope.of(context).unfocus();
-                        },
-                      ),
-                      BugRoundButton(
-                        icon: Icons.history_rounded,
-                        color: RM20_COLOR,
-                        label: 'History',
-                        onPressed: () async {
-                          await Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => EnrolledContentPage()));
-                         
-                          FocusScope.of(context).unfocus();
-                        },
-                      ),
-                      BugRoundButton(
-                        icon: Icons.visibility_sharp,
-                        color: RM20_COLOR,
-                        label: 'Viewed',
-                        onPressed: () async {
-                          await Navigator.of(context).push(MaterialPageRoute(
-                              builder: (context) => ClickedContentPage()));
-                          FocusScope.of(context).unfocus();
-                        },
-                      ),
-                    ],
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  //   children: [
+                  //     BugRoundButton(
+                  //       icon: Icons.emoji_events,
+                  //       color: RM20_COLOR,
+                  //       label: 'Enrollment',
+                  //       onPressed: () async {
+                  //        var link =  await Navigator.of(context).push(MaterialPageRoute(
+                  //             builder: (context) => AttendacneListenPage()));
+
+                  //         if(link!= null && link is String){
+                  //           openWebView(link, 'Content Info');
+                  //         }
+                  //         FocusScope.of(context).unfocus();
+                  //       },
+                  //     ),
+                  //     BugRoundButton(
+                  //       icon: Icons.history_rounded,
+                  //       color: RM20_COLOR,
+                  //       label: 'History',
+                  //       onPressed: () async {
+                  //         await Navigator.of(context).push(MaterialPageRoute(
+                  //             builder: (context) => EnrolledContentPage()));
+
+                  //         FocusScope.of(context).unfocus();
+                  //       },
+                  //     ),
+                  //     BugRoundButton(
+                  //       icon: Icons.visibility_sharp,
+                  //       color: RM20_COLOR,
+                  //       label: 'Viewed',
+                  //       onPressed: () async {
+                  //         await Navigator.of(context).push(MaterialPageRoute(
+                  //             builder: (context) => ClickedContentPage()));
+                  //         FocusScope.of(context).unfocus();
+                  //       },
+                  //     ),
+                  //   ],
+                  // ),
+                  BugEmoji(
+                    message:
+                        "Here are some recommendations we think you'll enjoy: ${recommendations.join(', ')}",
                   ),
-
-                  SizedBox(height: ResStyle.spacing),
-
-                  // Browse More Button
-
+                  // Text(
+                  //   "Here are some recommendations we think you'll enjoy: ${recommendations.join(', ')}",
+                  //   style: TextStyle(
+                  //     fontSize: ResStyle.small_font,
+                  //     fontWeight: FontWeight.normal,
+                  //     color: TITLE_COLOR,
+                  //     //height: 1.5,
+                  //   ),
+                  //   textAlign: TextAlign.justify,
+                  //   softWrap: true,
+                  //   overflow: TextOverflow.visible,
+                  // ),
+                  SizedBox(
+                    height: ResStyle.spacing,
+                  ),
                   Divider(),
-
                   Row(
                     children: [
                       Expanded(
                         child: Text(
-                          'Resource',
+                          'Micro Learning',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: ResStyle.body_font,
@@ -150,13 +236,23 @@ class _ContentPageState extends State<ContentListPage> {
                       })),
 
                   SizedBox(height: ResStyle.spacing * 2),
-                  BugPrimaryButton(
-                    text: 'Browse More',
-                    borderRadius: 8,
-                    onPressed: () {
-                      openWebView(CONTENT_URL, 'Content');
-                    },
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: BugIconGradientButton(
+                          text: 'Browse More',
+                          icon: Icons.switch_access_shortcut_add_outlined,
+                          fontSize: ResStyle.font,
+                          onPressed: () {
+                            openWebView(CONTENT_URL, 'Content');
+                          },
+                        ),
+                      )
+                    ],
                   ),
+
+                  SizedBox(height: ResStyle.spacing),
                 ],
               ),
             );

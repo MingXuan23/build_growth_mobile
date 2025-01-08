@@ -35,10 +35,12 @@ class ContentRepo {
 
         var list =
             data['contentList'].map((map) => Content.fromMap(map)).toList();
+        
         return {
           'result': response.statusCode,
           'list': list,
-          "microlearning_id": data['microlearning_id']
+          "microlearning_id": data['microlearning_id'],
+          'recommendations' : data['recommendations']
         };
       } else {
         return {'result': response.statusCode, 'list': []};
@@ -71,7 +73,7 @@ class ContentRepo {
     }
   }
 
-  static Future<int> saveContentEnrollment(
+  static Future<(int, String?)> saveContentEnrollment(
       String card_id, String verification_code) async {
     String url = "$HOST_URL/$content_prefix/save-content-attendance";
 
@@ -85,9 +87,10 @@ class ContentRepo {
           body: jsonEncode(
               {'card_id': card_id, 'verification_code': verification_code}));
 
-      return response.statusCode;
+      var body = jsonDecode(response.body);
+      return (response.statusCode, (body['link']??'').toString());
     } catch (e) {
-      return 500;
+      return (500, null);
     }
   }
 

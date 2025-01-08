@@ -1,8 +1,9 @@
-import 'dart:ffi';
+//import 'dart:ffi';
 import 'dart:math';
 
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
+import 'package:build_growth_mobile/golden_leaf/golden_leaf_page.dart';
 import 'package:build_growth_mobile/models/asset.dart';
 import 'package:build_growth_mobile/models/debt.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
@@ -16,6 +17,7 @@ import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
+import 'package:build_growth_mobile/widget/bug_design.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -24,7 +26,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 class FinancialPage extends StatefulWidget {
   const FinancialPage({Key? key}) : super(key: key);
-static PageController financialPageController = PageController(viewportFraction: 1.0);
+  static PageController financialPageController =
+      PageController(viewportFraction: 1.0);
   @override
   _FinancialPageState createState() => _FinancialPageState();
 }
@@ -36,7 +39,7 @@ class _FinancialPageState extends State<FinancialPage> {
   double totalCashFlow = 0;
   double totalExpense = 0;
   double alarming_limit = 0;
-  int debtCount =0;
+  int debtCount = 0;
   List<Transaction> transaction_history = [];
   List<Transaction> cashFlow_history = [];
 
@@ -51,25 +54,25 @@ class _FinancialPageState extends State<FinancialPage> {
     // TODO: implement initState
     super.initState();
     quick_actions = [
-      BugIconButton(
+      BugIconGradientButton(
           text: "Manage Asset",
           onPressed: () {
             pushPage(const AssetDetailPage());
           },
           icon: Icons.monetization_on),
-      BugIconButton(
+      BugIconGradientButton(
           text: "Manage Debt",
           onPressed: () {
             pushPage(const DebtDetailPage());
           },
           icon: Icons.payment),
-      BugIconButton(
+      BugIconGradientButton(
           text: "Asset Transfer",
           onPressed: () {
             pushPage(TransactionPage2(intention: 'Asset Transfer'));
           },
           icon: Icons.tap_and_play),
-      BugIconButton(
+      BugIconGradientButton(
           text: "Transaction History",
           onPressed: () {
             pushPage(TransactionHistoryPage());
@@ -87,7 +90,9 @@ class _FinancialPageState extends State<FinancialPage> {
 
   Future<void> pushPage(Widget page) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+
     FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
     BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
   }
 
@@ -106,7 +111,10 @@ class _FinancialPageState extends State<FinancialPage> {
           }
           alarming_limit = 0;
           var debt_with_alarming = transaction_history
-              .where((e) => e.debt != null && (e.debt?.alarming_limit ?? 0) > 0)
+              .where((e) =>
+                  e.debt != null &&
+                  (e.debt?.status ?? false) &&
+                  (e.debt?.alarming_limit ?? 0) > 0)
               .map((e) => e.debt)
               .toSet()
               .toList();
@@ -124,6 +132,7 @@ class _FinancialPageState extends State<FinancialPage> {
           }
 
           FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
           setState(() {});
         },
         child: vertical_body());
@@ -136,51 +145,54 @@ class _FinancialPageState extends State<FinancialPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Total Assets Card
-          Expanded(
-            key: TutorialHelper.financialKeys[1],
-            flex: 2,
-            child: AssetCard(
-              'Total Assets',
-              'RM${totalAssets.toStringAsFixed(2)}',
-              () => pushPage(const AssetDetailPage()),
-            ),
-          ),
-          SizedBox(height: ResStyle.spacing),
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Expanded(
-                   key: TutorialHelper.financialKeys[2],
-                  child: DebtCard(
-                    'Debts',
-                    'RM${totalDebts.toStringAsFixed(2)}',
+
+          // Expanded(
+          //   key: TutorialHelper.financialKeys[1],
+          //   flex: 2,
+          //   child: FoodCourtCard(
+          //      name:  'Total Assets',
+          //     value :'${totalAssets.toStringAsFixed(2)}',
+          //     onTap: () => pushPage(const AssetDetailPage()),
+          //   ),
+          // ),
+
+          Row(
+            children: [
+              Expanded(
+                key: TutorialHelper.financialKeys[2],
+                child: DebtCard('Debts', 'RM${totalDebts.toStringAsFixed(2)}',
                     () => pushPage(const DebtDetailPage()),
                     color: (debtCount == 0) ? RM5_COLOR : TITLE_COLOR,
-                     infotext: (debtCount > 0) ? '(${debtCount} unpaid debt)' : null,
+                    infotext: (debtCount > 0)
+                        ? '$debtCount ${debtCount > 1 ? "Debts" : "Debt"} Remaining'
+                        : 'Cleared',
                     font_color:
                         (debtCount == 0) ? TEXT_COLOR : WHITE_TEXT_COLOR,
-                  ),
-                ),
-                Expanded(
-                   key: TutorialHelper.financialKeys[3],
-                  child: DebtCard(
+                    icon: Icons.assignment),
+              ),
+            ],
+          ),
+          SizedBox(
+            height: ResStyle.spacing / 2,
+          ),
+          Row(
+            children: [
+              Expanded(
+                key: TutorialHelper.financialKeys[3],
+                child: DebtCard(
                     'Expenses',
                     'RM${totalExpense.abs().toStringAsFixed(2)}',
                     () => pushPage(const DebtDetailPage()),
                     color: (alarming_limit > 0) ? DANGER_COLOR : RM5_COLOR,
-                    infotext: (alarming_limit > 0) ? '(Over spending)' : null,
+                    infotext:
+                        (alarming_limit > 0) ? 'Over Limit' : 'Safe Limit',
                     font_color:
                         (alarming_limit > 0) ? WHITE_TEXT_COLOR : TEXT_COLOR,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SizedBox(),
-            flex: 1,
+                    icon: Icons.price_change_rounded),
+              ),
+            ],
           )
+
           // Total Debts Card
         ],
       ),
@@ -203,7 +215,7 @@ class _FinancialPageState extends State<FinancialPage> {
           ),
           itemBuilder: (context, index) {
             return SizedBox.expand(
-               key: TutorialHelper.financialKeys[4 +index],
+              key: TutorialHelper.financialKeys[4 + index],
               child: quick_actions[index],
             );
           },
@@ -268,44 +280,98 @@ class _FinancialPageState extends State<FinancialPage> {
 
   Widget vertical_body() {
     return Scaffold(
-      backgroundColor: HIGHTLIGHT_COLOR,
-      appBar: BugAppBar("Financial Page", context),
+      backgroundColor: HIGHTLIGHT_COLOR, // Maintains the plain background color
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(ResStyle.spacing),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Total Assets Card
-              Center(child: BugPageIndicator(FinancialPage.financialPageController, 3)),
-              Expanded(
-                flex: 3,
-                child: PageView(
-                  controller: FinancialPage.financialPageController,
-                  physics: ClampingScrollPhysics(),
-                  children: [
-                    AssetDebtSection(),
-                    // Page 1
-                    TransactionGraphSection(
-                      key: TutorialHelper.financialKeys[8],
-                      transactions: cashFlow_history,
-                      currentAsset: totalCashFlow,
-                      header: 'Cash Flow History',
-                    ),
-                    TransactionGraphSection(
-                      transactions: transaction_history,
-                      currentAsset: totalAssets,
-                      header: 'Asset Flow History',
-                    ),
-                    // Page 2
-                  ],
-                ),
+        child: Stack(
+          clipBehavior: Clip.none, // Allow overflow for negative positioning
+          children: [
+            // Background painter
+            Positioned.fill(
+              child: CustomPaint(
+                painter: HexagonBackgroundPainter(color: RM1_COLOR),
               ),
+            ),
+            // Custom AppBar in Stack
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: BugAppBarWithContainer(
+                'Financial Page',
+                context,
+              ),
+            ),
+            // Asset Card positioned above the AppBar
+            Positioned(
+              top: ResStyle.height * 0.15 -
+                  ResStyle.spacing * 4, // Adjust to place above the AppBar
+              left: ResStyle.spacing * 2,
+              right: ResStyle.spacing * 2,
+              child: SizedBox(
+                //height: ResStyle.spacing * 5,
+                child: Column(children: [
+                  AssetCard(
+                    'Total Assets',
+                    'RM${totalAssets.toStringAsFixed(2)}',
+                    fontColor: LOGO_COLOR,
+                    gkey: TutorialHelper.financialKeys[1],
+                    () => pushPage(const AssetDetailPage()),
+                  )
+                ]),
+              ),
+            ),
 
-              Expanded(flex: 2, child: QuickActionSection(2))
-              // Chart Card
-            ],
-          ),
+            // Body content below the AssetCard
+
+            Padding(
+              padding: EdgeInsets.only(
+                  top: ResStyle.height *
+                      0.16), // Push body content below the AssetCard
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: ResStyle.spacing * 1,
+                  ),
+                  Center(
+                    child: BugPageIndicator(
+                      FinancialPage.financialPageController,
+                      4,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: PageView(
+                      controller: FinancialPage.financialPageController,
+                      physics: const ClampingScrollPhysics(),
+                      children: [
+                        AssetDebtSection(),
+                        BugIconButton(text: 'Leaf', icon: Icons.energy_savings_leaf, onPressed: (){
+                          pushPage(GoldenLeafPage());
+                        }),
+                        TransactionGraphSection(
+                          key: TutorialHelper.financialKeys[8],
+                          transactions: cashFlow_history,
+                          currentAsset: totalCashFlow,
+                          header: 'Cash Flow History',
+                        ),
+                        TransactionGraphSection(
+                          transactions: transaction_history,
+                          currentAsset: totalAssets,
+                          header: 'Asset Flow History',
+                        ),
+                      ],
+                    ),
+                  ),
+                  QuickActionSection(2),
+                  SizedBox(
+                    height: ResStyle.spacing,
+                  ),
+                  // Expanded(flex: 1, child: Container(),)
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -349,10 +415,8 @@ class TransactionGraphSection extends StatelessWidget {
     List<FlSpot> spots = _calculateReverseCashFlowSpots();
 
     return Padding(
-
       padding: EdgeInsets.all(ResStyle.spacing),
       child: Column(
-        
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Row(
@@ -376,8 +440,8 @@ class TransactionGraphSection extends StatelessWidget {
             ],
           ),
           Container(
-               key: gkey,
-            height: ResStyle.height * 0.3,
+            key: gkey,
+            height: ResStyle.height * 0.25,
             padding: EdgeInsets.symmetric(
                 vertical: ResStyle.spacing, horizontal: ResStyle.spacing * 1.5),
             decoration: BoxDecoration(
@@ -395,7 +459,6 @@ class TransactionGraphSection extends StatelessWidget {
               children: [
                 Expanded(
                   child: LineChart(
-                 
                     curve: Curves.bounceIn,
                     LineChartData(
                       gridData: FlGridData(show: false),
@@ -461,13 +524,18 @@ class TransactionGraphSection extends StatelessWidget {
                 ),
                 BugSmallButton(
                     text: 'Details',
-                    onPressed: () {
-                      Navigator.of(context).push(MaterialPageRoute(
+                    onPressed: () async {
+                      await Navigator.of(context).push(MaterialPageRoute(
                           builder: (context) => TransactionGraphPage(
                                 currentAsset: currentAsset,
                                 transactions: transactions,
                                 header: header,
                               )));
+
+                      FocusScope.of(context).unfocus();
+                FocusManager.instance.primaryFocus?.unfocus();
+                      BlocProvider.of<FinancialBloc>(context)
+                          .add(FinancialLoadData());
                     }),
               ],
             ),

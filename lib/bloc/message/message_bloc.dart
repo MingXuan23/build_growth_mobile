@@ -38,7 +38,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
         List<Map<String,dynamic>> chat_histoy = [];
 
-        if(userMessages.length >=2){
+        if(userMessages.length >=3){
           chat_histoy.add({"role":"user", "content":userMessages[userMessages.length -1 ]});
         }
 

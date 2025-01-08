@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/env.dart';
@@ -9,9 +10,9 @@ import 'package:http/http.dart' as http;
 const prefix_url = 'api/gpt';
 
 class GptRepo {
-  static Stream<String> fastResponse(String prompt, {List<Map<String,dynamic>> ?chat_history }) async* {
-
-    if(chat_history?.isEmpty??true){
+  static Stream<String> fastResponse(String prompt,
+      {List<Map<String, dynamic>>? chat_history}) async* {
+    if (chat_history?.isEmpty ?? true) {
       chat_history = null;
     }
 
@@ -20,101 +21,129 @@ class GptRepo {
       Uri.parse('$HOST_URL/$prefix_url/fast-response'),
     );
 
-    var information = await UserPrivacy.getUserSummary(UserToken.user_code??'');
-      var tone = information['tone'];
-      information.remove('tone');
+    var information =
+        await UserPrivacy.getUserSummary(UserToken.user_code ?? '');
+    var tone = information['tone'];
+    information.remove('tone');
     request.headers['Content-Type'] = 'application/json';
     request.headers['Application-Id'] = appId;
     request.headers['Authorization'] = 'Bearer ${UserToken.remember_token}';
 
-    var contentList = jsonEncode(ContentBloc.content_list.map((e)=>e.toGPTMap()).toList());
-    request.body = json.encode({"prompt": prompt, "estimate_word": -2 ,"information": information, "tone":tone, "chat_history":chat_history, "use_content": UserPrivacy.pushContent,"contentList":contentList});
+    var contentList =
+        jsonEncode(ContentBloc.content_list.map((e) => e.toGPTMap()).toList());
+    request.body = json.encode({
+      "prompt": prompt,
+      "estimate_word": -2,
+      "information": information,
+      "tone": tone,
+      "chat_history": chat_history,
+      "use_content": UserPrivacy.pushContent,
+      "contentList": contentList
+    });
 
-    try {    
+    try {
       final response = await request.send();
 
       if (response.statusCode == 200) {
         String buffer = '';
         await for (var chunk in response.stream.transform(utf8.decoder)) {
-          if(chunk.isNotEmpty){
+          if (chunk.isNotEmpty) {
             yield chunk;
           }
-        //   buffer += chunk;
-        //   var parts = buffer.split('\n');
+          //   buffer += chunk;
+          //   var parts = buffer.split('\n');
 
-        //   for (var i = 0; i < parts.length - 1; i++) {
-        //     if (parts[i].trim().isNotEmpty) {
-        //       try {
-        //         //var jsonData = json.decode(parts[i]);
-        //         //var content = jsonData['message']['content'];
-        //         yield parts[i];
-        //       } catch (e) {
-        //         print('Error parsing chunk: $e');
-        //       }
-        //     }
-        //   }
-        //   buffer = parts.last;
-        //    print(buffer);
-        // }
-        // if (buffer.isNotEmpty) {
-        //   try {
-        //     yield buffer;
-        //   } catch (e) {
-        //     print('Error parsing final buffer: $e');
-        //   }
+          //   for (var i = 0; i < parts.length - 1; i++) {
+          //     if (parts[i].trim().isNotEmpty) {
+          //       try {
+          //         //var jsonData = json.decode(parts[i]);
+          //         //var content = jsonData['message']['content'];
+          //         yield parts[i];
+          //       } catch (e) {
+          //         print('Error parsing chunk: $e');
+          //       }
+          //     }
+          //   }
+          //   buffer = parts.last;
+          //    print(buffer);
+          // }
+          // if (buffer.isNotEmpty) {
+          //   try {
+          //     yield buffer;
+          //   } catch (e) {
+          //     print('Error parsing final buffer: $e');
+          //   }
         }
       } else {
-          yield "Oops!😅 Connection went bye-bye!😿, but I'm buzzing around to fix it!";
-
+        yield "Oops!😅 Connection went bye-bye!😿, but I'm buzzing around to fix it!";
       }
     } catch (e) {
-       yield "Oops😅! Connection went bye-bye!😿, but I'm buzzing around to fix it!";
+      yield "Oops😅! Connection went bye-bye!😿, but I'm buzzing around to fix it!";
 
       print('Error fetching response: $e');
-     
     }
   }
 
-
- static Stream<String> quickResponse(String prompt, {List<Map<String, dynamic>>? chat_history}) async* {
+  static Stream<String> quickResponse(String prompt,
+      {List<Map<String, dynamic>>? chat_history, int estimateWords =-2}) async* {
     if (chat_history?.isEmpty ?? true) {
       chat_history = null;
     }
 
-
-var estimateWords = -2;
- var final_prompt = '';
-  if (estimateWords == -1) {
-    final_prompt = '${prompt}. Response as short as possible.';
-  } else if (estimateWords == -2) {
-    final_prompt = '${prompt}. If related to financial domain or content, response within 200 words. If not related to the financial domain or unrealistic question, response in 30 words';
-  } else {
-    final_prompt = '${prompt}. Response in ${estimateWords} words.';
-  }
-
-
-  
+   
+    // var final_prompt = '';
+    // if (estimateWords == -1) {
+    //   final_prompt = '${prompt}. [Response as short as possible.]';
+    // } else if (estimateWords == -2) {
+    //   final_prompt =
+    //       '${prompt}. [If related to financial domain or content, response within 200 words. If not related to the financial domain or unrealistic question, response in 30 words]';
+    // } else {
+    //   final_prompt = '${prompt}. [Response in ${estimateWords} words.]';
+    // }
 
     // Fetch user information
     var userInfo = await UserPrivacy.getUserSummary(UserToken.user_code ?? '');
     var tone = userInfo['tone'];
     userInfo.remove('tone');
 
-    var contentList = jsonEncode(ContentBloc.content_list.map((e) => e.toGPTMap()).toList());
+    var contentList =
+        jsonEncode(ContentBloc.content_list.map((e) => e.toGPTMap()).toList());
+
+    var suggest_expense = userInfo['cash_flow'];
+    suggest_expense =
+        suggest_expense == null ? 30 : (suggest_expense * 0.01).clamp(15, 50);
+
+    final variables = {
+      'user_info': jsonEncode(userInfo),
+      'suggest_expense': suggest_expense,
+      'content_list': contentList.isNotEmpty
+          ? contentList
+          : "You may suggest the user explore the 'Content' section for self-investment opportunities.",
+      'tone': tone ?? '',
+      'estimate_word' : 180   
+    };
+
+    var system_content = "You need to reply 'I am ready.' only";
+    if (prompt != 'Initialising xBUG Ai... ') {
+       system_content = generateSystemInstruction(
+          protocol: THINKING_PROTOCOL, variables: variables);
+    }
 
     List<Map<String, dynamic>> messages = [
       {
         'role': 'system',
-        'content':
-            'Your name is xBUG Ai, an experienced financial advisor in the "Build Growth" Mobile App, '
-            'If user initialising you, you need to tell the user "I am ready" in one sentence.'
-            'who always considers the user\'s financial situation and provides practical solutions to financial issues. '
-            'You use RM (Ringgit Malaysia) as the main currency and respond in English. '
-            'If the user asks for financial advice, ${tone ?? ''}. '
-            'The app has two additional sections: "Financial" and "Content." '
-            'The average daily expenses (excluding debt and bills) should be controlled within RM20 to RM50. '
-            'You have read and understood the user\'s financial information from the "Financial Section": ${jsonEncode(userInfo)}.'
-            '${contentList.isNotEmpty ? " You may suggest courses and events from the 'Content' section to increase income: $contentList." : " You may suggest the user explore the 'Content' section for self-investment opportunities."}'
+        'content': system_content
+        // 'content': 'Your name is xBUG Ai, an experienced financial advisor in the "Build Growth" Mobile App, '
+        //     '${(prompt == 'Initialising xBUG Ai... ') ? 'When user said "Initialsing xBUG Ai...", you need to said "I am ready".' : 'Remember give simple greeting before response.'}'
+        //     'You must suggest the advice based on the user\'s financial situation and provides practical solutions to their financial issues. '
+        //     'You use RM (Ringgit Malaysia) as the main currency and respond in English. '
+        //     'If the user asks for financial advice, ${tone ?? ''}. '
+        //     'Your advice must based on user\'s assets and debts values and give budget plan with precise amount.'
+        //     'The app has two additional sections: "Financial" and "Content." '
+        //     'The average daily expenses (excluding debt and bills) should be controlled within RM$suggest_expense}'
+        //     'You have read and understood the user\'s financial information from the "Financial Section": ${jsonEncode(userInfo)}.'
+        //     'If necessary, suggest which expense should be reduce and which kind of asset or income should focus.'
+        //     '${contentList.isNotEmpty ? " You may suggest courses and events from the 'Content' section to increase income: $contentList." : " You may suggest the user explore the 'Content' section for self-investment opportunities."}'
       },
     ];
 
@@ -122,7 +151,7 @@ var estimateWords = -2;
       messages.addAll(chat_history);
     }
 
-    messages.add({'role': 'user', 'content': final_prompt});
+    messages.add({'role': 'user', 'content': prompt});
 
     final requestBody = {
       'messages': messages,
@@ -145,12 +174,13 @@ var estimateWords = -2;
 
       if (streamedResponse.statusCode == 200) {
         String buffer = '';
-        await for (var chunk in streamedResponse.stream.transform(utf8.decoder)) {
+        await for (var chunk
+            in streamedResponse.stream.transform(utf8.decoder)) {
           buffer += chunk;
-          
+
           // Split by newlines and process each line
           var lines = buffer.split('\n');
-          
+
           // Process all complete lines
           for (var i = 0; i < lines.length - 1; i++) {
             var line = lines[i].trim();
@@ -160,8 +190,8 @@ var estimateWords = -2;
                 if (line.startsWith('data: ')) {
                   line = line.substring(5);
                 }
-                
-                if (line == '[DONE]') continue;
+
+                if (line.contains('[DONE]')) continue;
 
                 final Map<String, dynamic> jsonData = jsonDecode(line);
                 if (jsonData['response'] != null) {
@@ -172,11 +202,11 @@ var estimateWords = -2;
               }
             }
           }
-          
+
           // Keep the last incomplete line in the buffer
           buffer = lines.last;
         }
-        
+
         // Process any remaining data in buffer
         if (buffer.isNotEmpty) {
           try {
@@ -199,7 +229,7 @@ var estimateWords = -2;
     } catch (e) {
       yield 'Error: Failed to connect to the server. Details: $e';
     }
- }
+  }
 
   static Future<String?> slowResponse(String prompt, int tokens) async {
     try {
@@ -207,13 +237,18 @@ var estimateWords = -2;
         return null;
       }
 
-
-      var information = await UserPrivacy.getUserSummary(UserToken.user_code??'');
+      var information =
+          await UserPrivacy.getUserSummary(UserToken.user_code ?? '');
       var tone = information['tone'];
       information.remove('tone');
       var request = await http.post(
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({"prompt": prompt, "estimate_word": tokens,"information": information, "tone":tone}),
+        body: json.encode({
+          "prompt": prompt,
+          "estimate_word": tokens,
+          "information": information,
+          "tone": tone
+        }),
         Uri.parse('$HOST_URL/gpt/slow-response'),
       );
 
@@ -319,4 +354,20 @@ var estimateWords = -2;
       return false;
     }
   }
+
+  static String generateSystemInstruction({
+    required String protocol,
+    required Map<String, dynamic> variables,
+  }) {
+    String updatedProtocol = protocol;
+
+    variables.forEach((key, value) {
+      final placeholder = '<variable_$key>';
+      updatedProtocol =
+          updatedProtocol.replaceAll(placeholder, value.toString());
+    });
+
+    return updatedProtocol;
+  }
 }
+

@@ -19,21 +19,21 @@ class DatabaseHelper {
     String databasesPath = await getDatabasesPath();
 
     // Concatenate the file path with the database name manually
-    String path = join(databasesPath, 'bug.db');
+    String path = join(databasesPath, 'xbug.db');
     
    // await databaseFactory.deleteDatabase(path);
 
     // Open the database
     return await openDatabase(
       path,
-      version: 3, // Increment version to trigger onUpgrade
+      version: 2, // Increment version to trigger onUpgrade
       onCreate: _onCreate,
       onUpgrade: _onUpgrade, // Handle upgrades
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-  if (oldVersion < 3) {
+  if (oldVersion < 2) {
     // Run only if upgrading from a version less than 2
     await db.execute('''
       ALTER TABLE Debt ADD COLUMN alarming_limit REAL DEFAULT -1
@@ -104,6 +104,8 @@ class DatabaseHelper {
     await db.execute('''
         ALTER TABLE Transactions ADD COLUMN image TEXT 
       ''');
+
+    _onUpgrade(db, 0, 3);
 
   }
 

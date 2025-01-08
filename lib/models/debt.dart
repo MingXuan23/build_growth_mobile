@@ -77,7 +77,7 @@ class Debt {
     total_expense = totalAmount;
   }
 
-  void getMonthlyTotal() async {
+  Future<void> getMonthlyTotal() async {
     // Get the database instance
     var db = await DatabaseHelper().database;
 
@@ -150,19 +150,17 @@ class Debt {
     );
 
     final List<Map<String, dynamic>> count = await db.rawQuery(
-      'SELECT COUNT(*) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = "${UserToken.user_code}"',
+      'SELECT COUNT(*) as total FROM $table WHERE status = 1 AND (strftime("%Y-%m", last_payment_date) != ? OR last_payment_date IS NULL) and user_code = "${UserToken.user_code}" and type != "Expenses"',
       [currentMonth],
     );
 
     // Retrieve the sum from the query result
 
-
     double totalDebt = result.first['total'] ?? 0.00;
-    int unpaidDebt =  count.first['total']??0;
+    int unpaidDebt = count.first['total'] ?? 0;
 
     return (totalDebt, unpaidDebt);
   }
-
 
   static Future<List<Debt>> getDebtList() async {
     var db = await DatabaseHelper().database;
@@ -174,7 +172,7 @@ class Debt {
         );
 
     // Convert the List<Map<String, dynamic>> into List<Debt>
-    return List.generate(maps.length, (i) {
+    var list = List.generate(maps.length, (i) {
       return Debt(maps[i]['user_code'],
           id: maps[i]['id'],
           name: maps[i]['name'],
@@ -192,6 +190,12 @@ class Debt {
               ? maps[i]['alarming_limit'] as double
               : -1);
     });
+
+    await Future.wait(list
+        .where((e) => e.type == 'Expenses')
+        .map((e) => e.getMonthlyTotal()));
+
+    return list;
   }
 
   static Future<Debt?> getDebtById(int debtId) async {

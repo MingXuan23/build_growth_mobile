@@ -43,7 +43,7 @@ class _ContentPageState extends State<ContentPage> {
         builder: (context, state) {
           if (!UserPrivacy.pushContent) {
             return Scaffold(
-              appBar: BugAppBar('Content', context, gkey: TutorialHelper.profileKeys[0]),
+              appBar: BugAppBar('Content', context),
               backgroundColor: HIGHTLIGHT_COLOR,
               body: Center(
                   child: Padding(
@@ -72,7 +72,7 @@ class _ContentPageState extends State<ContentPage> {
             );
           } else if (!UserToken.online) {
             return Scaffold(
-              appBar: BugAppBar('Content', context, gkey: TutorialHelper.profileKeys[0]),
+              appBar: BugAppBar('Content', context,),
               backgroundColor: HIGHTLIGHT_COLOR,
               body: Center(
                   child: Padding(

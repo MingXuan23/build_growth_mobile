@@ -11,7 +11,8 @@ final class AttendanceInitialState extends AttendanceState {}
 final class AttendanceSubmittedState extends AttendanceState {
 
   final String message;
-  AttendanceSubmittedState( this.message);
+  final String link;
+  AttendanceSubmittedState( this.message, this.link);
   
 }
 

@@ -124,6 +124,58 @@ Widget BugIconButton(
   );
 }
 
+Widget BugIconGradientButton({
+  required String text,
+  required IconData icon,
+  required VoidCallback onPressed,
+  Color startColor = LOGO_COLOR, // Start color for gradient
+  Color endColor = LOGO_COLOR, // End color for gradient
+  Color textColor = HIGHTLIGHT_COLOR,
+  double? fontSize // Text color
+}) {
+  
+  return Container(
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        colors: [startColor, endColor.withOpacity(0.7)], // Gradient colors
+        begin: Alignment.topLeft, // Starting point of gradient
+        end: Alignment.bottomRight, // Ending point of gradient
+      ),
+      borderRadius: BorderRadius.circular(8.0), // Rounded corners
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.15), // Shadow color and transparency
+          blurRadius: 8.0, // Blur radius
+          offset: Offset(0, 4), // Shadow position
+        ),
+      ],
+    ),
+    child: Padding(
+      padding:  EdgeInsets.symmetric(vertical: ResStyle.spacing),
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, color: textColor, size: ResStyle.spacing),
+        label: Text(
+          text,
+          style: TextStyle(color: textColor, fontSize:fontSize?? ResStyle.medium_font),
+          textAlign: TextAlign.center,
+        ),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(
+            horizontal: ResStyle.spacing,
+            vertical: ResStyle.spacing / 2, // Adjusted for balance
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8.0), // Matching border radius
+          ),
+          backgroundColor: Colors.transparent, // Transparent to show gradient
+        ),
+      ),
+    ),
+  );
+}
+
+
 Widget BugPageIndicator(PageController page_controller, int page_count) {
   return SmoothPageIndicator(
     controller: page_controller, // PageController for the PageView
@@ -208,6 +260,7 @@ Widget BugRoundButton(
     GlobalKey? key,
     Color color = HIGHTLIGHT_COLOR,
     Color text_color = TITLE_COLOR,
+    Color icon_color = TITLE_COLOR,
     double size = 50,
     String? label}) {
   return Column(
@@ -228,11 +281,11 @@ Widget BugRoundButton(
               color: color, // Background color of the circular container
               shape:
                   BoxShape.circle, // Ensures the container is always circular
-              border: Border.all(color: text_color, width: 2)),
+              border: Border.all(color: icon_color, width: 2)),
           alignment: Alignment.center, // Center the icon within the container
           child: Icon(
             icon,
-            color: text_color,
+            color: icon_color,
             size:
                 size * 0.6, // Adjust icon size to fit well within the container
           ),
@@ -242,11 +295,69 @@ Widget BugRoundButton(
         Text(
           label,
           style: TextStyle(
-              fontSize: ResStyle.small_font, fontWeight: FontWeight.bold),
+              fontSize: ResStyle.small_font, fontWeight: FontWeight.bold, color: text_color),
         )
     ],
   );
 }
+
+Widget BugRoundGradientButton(
+    {required IconData icon,
+    required VoidCallback onPressed,
+    GlobalKey? key,
+    Color color = HIGHTLIGHT_COLOR,
+    Color text_color = TITLE_COLOR,
+    Color icon_color = TITLE_COLOR,
+    double size = 50,
+    String? label}) {
+  return Column(
+    children: [
+      ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent, // Transparent button background
+          shadowColor: Colors.transparent, // Remove shadow
+          padding: EdgeInsets.zero, // Ensure the container determines the size
+        ),
+        child: Container(
+          key: key,
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                RM20_COLOR,
+ 
+                HIGHTLIGHT_COLOR, // Add black for a darker effect
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            shape: BoxShape.circle, // Ensures the container is circular
+            border: Border.all(color: icon_color, width: 2),
+          ),
+          alignment: Alignment.center, // Center the icon within the container
+          child: Icon(
+            icon,
+            color: icon_color,
+            size: size * 0.6, // Adjust icon size to fit well within the container
+          ),
+        ),
+      ),
+      if (label != null)
+        Text(
+          label,
+          style: TextStyle(
+              fontSize: ResStyle.small_font,
+              fontWeight: FontWeight.bold,
+              color: text_color),
+        )
+    ],
+  );
+}
+
+
+
 
 class CustomQuarterCircleButton extends StatelessWidget {
   final bool isRight;
@@ -283,7 +394,7 @@ class CustomQuarterCircleButton extends StatelessWidget {
                     : Alignment.topRight, // End gradient at bottom-right
                 colors: [
                   color,
-                  PRIMARY_COLOR.withOpacity(0.9)
+                  color.withOpacity(0.5)
                 ], // Define your gradient colors
               ),
             ),

@@ -27,6 +27,8 @@ const Color RM100_COLOR = Color(0xFF9C879E);
 
 const Color ALTERNATIVE_COLOR = Color(0xFF197DCA);
 
+const Color LOGO_COLOR = Color(0xFF091d40);
+
 
 
 const Color SUCCESS_COLOR = Color(0xFF91BFA9);

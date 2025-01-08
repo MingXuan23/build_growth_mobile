@@ -54,7 +54,7 @@ class UserToken {
   static Future<void> save() async {
     final prefs = await SharedPreferences.getInstance();
      final exists = prefs.getString('user_privacy_${UserToken.user_code}');
-     if(exists == null){
+     if(exists == null && user_code!=null){
         AuthBloc.first_user = true;
         UserPrivacy.saveToPreferences(UserToken.user_code??'');
      }

@@ -1,9 +1,15 @@
+import 'dart:convert';
+
+import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
+import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/auth/backup_page.dart';
+import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:build_growth_mobile/pages/content/content_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
@@ -13,6 +19,7 @@ import 'package:build_growth_mobile/pages/gpt/message_page.dart';
 import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/services/tutorial_helper.dart';
+import 'package:build_growth_mobile/widget/bug_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,21 +28,24 @@ import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
- static final GlobalKey<_HomePageState> homePageKey = GlobalKey<_HomePageState>();
+  static int currentIndex = 0;
+  static final GlobalKey<_HomePageState> homePageKey =
+      GlobalKey<_HomePageState>();
+
+
   @override
   State<HomePage> createState() => _HomePageState();
 
-   static void setTab(int index) {
+  static void setTab(int index) {
     homePageKey.currentState?._setTab(index);
   }
 }
 
 class _HomePageState extends State<HomePage> {
-
-   void _setTab(int index) {
-    if (index != currentIndex) {
+  void _setTab(int index) {
+    if (index != HomePage.currentIndex) {
       setState(() {
-        currentIndex = index;
+        HomePage.currentIndex = index;
       });
     }
   }
@@ -76,37 +86,57 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  List<Widget> tabs = [FinancialPage(), MessagePage(), ContentPage()];
+  List<Widget> tabs = [
+    FinancialPage(),
+    MessagePage(),
+    ContentPage(),
+    ProfilePage(gotoPrivacy: false,useGKey: true, useStaticController: true,)
+  ];
   //List<Widget> tabs = [FinancialPage(), MessagePage(),   DriveBackupWidget()];
-int currentIndex = 0;
-   
+ 
+
   @override
   void initState() {
     super.initState();
-    if (UserPrivacy.googleDriveBackup) {
-      GoogleDriveBackupHelper.initialize();
+    handleGoogleDriveBackup();
+    _startNFCReading();
+    if (AuthBloc.first_user) {
+      BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
+      AuthBloc.first_user = false;
+    }
+  }
 
-      if (!FormatterHelper.isToday(UserBackup.lastBackUpTime)) {
-        BlocProvider.of<AuthBloc>(context).add(UserStartBackup());
+  void handleGoogleDriveBackup() async {
+    try {
+      await UserPrivacy.loadFromPreferences(UserToken.user_code ?? '');
+      if (UserPrivacy.googleDriveBackup) {
+        bool status = await GoogleDriveBackupHelper.initialize();
+        if (!status) {
+          throw Exception();
+        }
+
+        if (!FormatterHelper.isToday(UserBackup.lastBackUpTime)) {
+          BlocProvider.of<AuthBloc>(context).add(UserStartBackup());
+        }
       }
+    } catch (e) {
+      UserPrivacy.googleDriveBackup = false;
+      UserPrivacy.saveToPreferences(UserToken.user_code!);
+      await AuthRepo.updateUserPrivacy(jsonEncode(UserPrivacy.toMap()));
+      ScaffoldMessenger.of(context).showSnackBar(BugSnackBar(
+          'Error during google drive backup. Please try again in the profile setting.',
+          5));
     }
 
     BlocProvider.of<MessageBloc>(context).add(
-      SendMessageEvent('Initialising xBUG Ai...'),
+      SendMessageEvent('Initialising xBUG Ai... '),
     );
-
-    if(AuthBloc.first_user){
-       BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
-       AuthBloc.first_user = false;
-    }
-    _startNFCReading();
   }
 
-   void _startNFCReading() async {
+  void _startNFCReading() async {
     try {
       var nfc_available = await NfcManager.instance.isAvailable();
 
-      
       //We first check if NFC is available on the device.
       if (nfc_available) {
         //If NFC is available, start an NFC session and listen for NFC tags to be discovered.
@@ -118,16 +148,24 @@ int currentIndex = 0;
               return;
             }
 
-            Navigator.of(context).push(MaterialPageRoute(builder: (context)=> AttendacneListenPage()));
-            
+            if (ContentBloc.content_list.isEmpty || !UserPrivacy.pushContent) {
+              showTopSnackBar(
+                  context,
+                  'Error when initialise the content. Please check at the content page.',
+                  5);
+              return;
+            }
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (context) => AttendacneListenPage()));
           },
         );
-      } 
+      }
     } catch (e) {
       debugPrint('Error reading NFC: $e');
     }
   }
 
+  Color backgroundColor = LOGO_COLOR;
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -137,62 +175,93 @@ int currentIndex = 0;
         final bool shouldPop = await _showBackDialog() ?? false;
       },
       child: DefaultTabController(
-       
         length: 3,
         child: Scaffold(
           body: IndexedStack(
             children: tabs,
-            index: currentIndex,
+            index: HomePage.currentIndex,
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            currentIndex: currentIndex,
-            onTap: (index) {
-              currentIndex = index;
-              FocusScope.of(context).unfocus();
+          bottomNavigationBar: Container(
+            height: ResStyle.height * 0.1,
+            color: backgroundColor,
+            child: BottomNavigationBar(
+              backgroundColor: backgroundColor,
+              currentIndex: HomePage.currentIndex,
+              onTap: (index) {
+                HomePage.currentIndex = index;
 
-              setState(() {});
-            },
-            items: [
-              BottomNavigationBarItem(
-                key: TutorialHelper.financialKeys[0],
-                  icon: Icon(
-                    Icons.monetization_on_rounded,
-                    color: currentIndex == 0
-                        ? TITLE_COLOR
-                        : HIGHTLIGHT_COLOR, // Customize icon color based on selection
-                    size: ResStyle.header_font, // Custom icon size
-                  ),
-                  label: 'Financial',
-                  backgroundColor: RM1_COLOR),
-              BottomNavigationBarItem(
-                key: TutorialHelper.gptKeys[0],
-                  icon: Icon(
-                    Icons.receipt,
-                    color: currentIndex == 1 ? TITLE_COLOR : HIGHTLIGHT_COLOR,
-                    size: ResStyle.header_font,
-                  ),
-                  label: 'Assistant',
-                  backgroundColor: RM50_COLOR),
-              BottomNavigationBarItem(
-                key: TutorialHelper.contentKeys[0],
-                  icon: Icon(
-                    Icons.article,
-                    color: currentIndex == 2 ? TITLE_COLOR : HIGHTLIGHT_COLOR,
-                    size: ResStyle.header_font,
-                  ),
-                  label: 'Content',
-                  backgroundColor: PRIMARY_COLOR),
-            ],
-            selectedItemColor: TITLE_COLOR, // Selected item color
-            unselectedItemColor: HIGHTLIGHT_COLOR, // Unselected item color
-            selectedFontSize: ResStyle.font, // Font size for selected label
-            unselectedFontSize:
-                ResStyle.medium_font, // Font size for unselected label
+                // if(index == 0){
+                //   backgroundColor = RM1_COLOR;
+                // }else if(index == 1){
+                //   backgroundColor = RM50_COLOR;
+                // }else if (index ==2 ){
+                //   backgroundColor = PRIMARY_COLOR;
+                // }else {
+                //   backgroundColor = RM1_COLOR;
+                // }
+                FocusScope.of(context).unfocus();
 
-            type: BottomNavigationBarType
-                .shifting, // Ensures all items are aligned properly
-            showSelectedLabels: true, // Ensures selected labels are visible
-            showUnselectedLabels: true, // Ensures unselected labels are visible
+                setState(() {});
+              },
+              items: [
+                BottomNavigationBarItem(
+                    key: TutorialHelper.financialKeys[0],
+                    icon: Icon(
+                      Icons.monetization_on_rounded,
+
+                       color: HomePage.currentIndex == 0
+                          ? RM1_COLOR
+                          : HIGHTLIGHT_COLOR , // Customize icon color based on selection
+                      size: ResStyle.body_font, // Custom icon size
+                    ),
+                    label: 'Financial',
+                    backgroundColor: RM1_COLOR),
+                BottomNavigationBarItem(
+                    key: TutorialHelper.gptKeys[0],
+                    icon: Icon(
+                      Icons.chat_rounded,
+                       color: HomePage.currentIndex == 1
+                          ? RM1_COLOR
+                          : HIGHTLIGHT_COLOR , 
+                      size: ResStyle.body_font,
+                    ),
+                    label: 'Assistant',
+                    backgroundColor: RM50_COLOR),
+                BottomNavigationBarItem(
+                    key: TutorialHelper.contentKeys[0],
+                    icon: Icon(
+                      Icons.article,
+                     color: HomePage.currentIndex == 2
+                          ? RM1_COLOR
+                          : HIGHTLIGHT_COLOR , 
+                      size: ResStyle.body_font,
+                    ),
+                    label: 'Content',
+                    backgroundColor: PRIMARY_COLOR),
+                BottomNavigationBarItem(
+                     key: TutorialHelper.profileKeys[0],
+                    icon: Icon(
+                      Icons.account_circle,
+                     color: HomePage.currentIndex == 3
+                          ? RM1_COLOR
+                          : HIGHTLIGHT_COLOR , // Customize icon color based on selection
+                      size: ResStyle.body_font, // Custom icon size
+                    ),
+                    label: 'Profile',
+                    backgroundColor: LOGO_COLOR),
+              ],
+              selectedItemColor: HIGHTLIGHT_COLOR, // Selected item color
+              unselectedItemColor: HIGHTLIGHT_COLOR, // Unselected item color
+              selectedFontSize: ResStyle.font, // Font size for selected label
+              unselectedFontSize:
+                  ResStyle.small_font, // Font size for unselected label
+
+              type: BottomNavigationBarType
+                  .fixed, // Ensures all items are aligned properly
+              showSelectedLabels: true, // Ensures selected labels are visible
+              showUnselectedLabels:
+                  true, // Ensures unselected labels are visible
+            ),
           ),
         ),
       ),

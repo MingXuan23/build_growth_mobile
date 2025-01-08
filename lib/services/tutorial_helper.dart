@@ -229,11 +229,12 @@ class TutorialHelper {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => AssetDetailPage()));
 
-    await Future.delayed(Duration(milliseconds: 200));
+     await Future.delayed(Duration(milliseconds: 100));
     if (AssetDetailPage.page_controller.hasClients) {
       AssetDetailPage.page_controller.animateToPage(1,
-          duration: Duration(milliseconds: 500), curve: Curves.fastOutSlowIn);
+          duration: Duration(milliseconds: 200), curve: Curves.fastOutSlowIn);
     }
+      await Future.delayed(Duration(milliseconds: 300));
 
     targets = [
       TargetFocus(
@@ -522,6 +523,25 @@ class TutorialHelper {
           ),
         ],
       ),
+       TargetFocus(
+        identify: "transaction history",
+        shape: ShapeLightFocus.RRect,
+        enableOverlayTab: true,
+        radius: ResStyle.spacing,
+        keyTarget: financialKeys[7],
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard(
+                  "You can view the transaction history here. You may add the proof after the transaction is made."),
+            ),
+          ),
+        ],
+      ),
     ];
 
     showTutorial(context, onFinish);
@@ -619,12 +639,13 @@ class TutorialHelper {
 
   static void profileTutorial(
       BuildContext context, Function()? onFinish) async {
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => ProfilePage(
-              gotoPrivacy: false,
-            )));
+    HomePage.setTab(3);
     isScrolling = true;
-    await Future.delayed(Duration(milliseconds: 200));
+     ProfilePage.scrollController.animateTo(
+         0,
+          duration: Duration(milliseconds: 100),
+          curve: Curves.fastOutSlowIn);
+    await Future.delayed(Duration(milliseconds: 300));
 
     targets = [
       TargetFocus(
@@ -646,7 +667,7 @@ class TutorialHelper {
         ],
       ),
       TargetFocus(
-        identify: "info",
+        identify: "info edit",
         shape: ShapeLightFocus.RRect,
         enableOverlayTab: true,
         radius: ResStyle.spacing,

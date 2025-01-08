@@ -8,12 +8,13 @@ class Content{
    double? enrollment_price;
    String? firstDate;
    String? place;
+   DateTime? update_at;
 
   final String content_category ;
 
   final bool? isLike;
 
-  Content({required this.name, required this.id, required this.desc, required this.image,  this.isLike, required this.link, required this.content_category, this.enrollment_price, this.firstDate, this.place});
+  Content({required this.name, required this.id, required this.desc, required this.image,  this.isLike, required this.link, required this.content_category, this.enrollment_price, this.firstDate, this.place, this.update_at});
 
  // Convert a Content object to a Map
   Map<String, dynamic> toMap() {
@@ -31,7 +32,7 @@ class Content{
    Map<String, dynamic> toGPTMap() {
     return {
       'name': name,
-      'id': id,
+      //'id': id,
       'desc': desc,
       
      
@@ -55,7 +56,8 @@ class Content{
       content_category: (map['content_type_id']??'').toString(),
       enrollment_price: double.tryParse(map['enrollment_price']??""),
       firstDate: map['first_date'],
-      place: map['place']
+      place: map['place'],
+      update_at: DateTime.tryParse(map['updated_at']??'') 
 
     );
   }

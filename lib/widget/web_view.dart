@@ -20,6 +20,15 @@ class WebViewWPage extends StatefulWidget {
 class _CustomWebViewWidgetState extends State<WebViewWPage> {
   late WebViewController _controller;
 
+  void waitForPop() async {
+    await Future.delayed(Duration(milliseconds: 100));
+    while (
+        WidgetsBinding.instance?.lifecycleState != AppLifecycleState.resumed) {
+      await Future.delayed(Duration(milliseconds: 300));
+    }
+    Navigator.of(context).pop();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -30,15 +39,22 @@ class _CustomWebViewWidgetState extends State<WebViewWPage> {
         NavigationDelegate(
           onNavigationRequest: (NavigationRequest request) async {
             // Check if the URL is an intent link (deep link to Google Maps).
-            if (request.url.startsWith('intent://')) {
+            if (request.url.startsWith('intent://') ||
+                request.url.startsWith('https://docs.google.com/forms') ||
+                request.url.startsWith('https://forms.office.com/')) {
               await launchUrl(Uri.parse(widget.url),
                   mode: LaunchMode.externalApplication);
+              waitForPop();
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
           },
-          onWebResourceError: (WebResourceError error) {
-            print("Error: ${error.description}");
+          onWebResourceError: (WebResourceError error) async {
+            Navigator.of(context).pop();
+            try {
+              await launchUrl(Uri.parse(widget.url),
+                  mode: LaunchMode.externalApplication);
+            } catch (e) {}
           },
         ),
       )

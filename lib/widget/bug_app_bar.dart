@@ -9,16 +9,16 @@ import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-
 PreferredSizeWidget BugAppBar(String title, BuildContext context,
     {bool show_icon = true, GlobalKey? gkey}) {
   return AppBar(
-    backgroundColor: TITLE_COLOR,
+    backgroundColor: LOGO_COLOR,
+    // surfaceTintColor: LOGO_COLOR,
     centerTitle: true,
     title: Text(
       title,
       style: TextStyle(
-        fontSize: ResStyle.body_font,
+        fontSize: ResStyle.font,
         fontWeight: FontWeight.bold,
         color: HIGHTLIGHT_COLOR,
       ),
@@ -27,7 +27,7 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
     actions: [
       if (show_icon)
         IconButton(
-         key:gkey,
+          key: gkey,
           icon: Icon(Icons.account_circle,
               color: HIGHTLIGHT_COLOR), // Profile icon
           onPressed: () {
@@ -39,18 +39,73 @@ PreferredSizeWidget BugAppBar(String title, BuildContext context,
   );
 }
 
+PreferredSizeWidget BugAppBarWithContainer(
+  String title,
+  BuildContext context, {
+  bool show_icon = true,
+  GlobalKey? gkey,
+  Widget? containerChild,
+}) {
+  return PreferredSize(
+    preferredSize: Size.fromHeight(kToolbarHeight +
+        ResStyle.height * 0.1), // Adjust height for the container
+    child: Column(
+      children: [
+        AppBar(
+          backgroundColor: LOGO_COLOR,
+          centerTitle: true,
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: ResStyle.font,
+              fontWeight: FontWeight.bold,
+              color: HIGHTLIGHT_COLOR,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            if (show_icon)
+              IconButton(
+                key: gkey,
+                icon: Icon(
+                  Icons.account_circle,
+                  color: HIGHTLIGHT_COLOR,
+                ), // Profile icon
+                onPressed: () {
+                  redirectToProfile(context, false);
+                },
+              ),
+          ],
+          iconTheme: IconThemeData(color: HIGHTLIGHT_COLOR),
+        ),
+        Container(
+          height: ResStyle.height * 0.1,
+          decoration: BoxDecoration(
+            color: LOGO_COLOR,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(20.0),
+              bottomRight: Radius.circular(20.0),
+            ),
+          ),
+          padding: EdgeInsets.all(8.0),
+          child: containerChild ?? Row(),
+        ),
+      ],
+    ),
+  );
+}
+
 void redirectToProfile(BuildContext context, bool gotoPrivacy) async {
   await Navigator.of(context).push(new MaterialPageRoute(
       builder: (context) => ProfilePage(
             gotoPrivacy: gotoPrivacy,
           )));
 
- BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
+  FocusScope.of(context).unfocus();
+  BlocProvider.of<FinancialBloc>(context).add(FinancialLoadData());
   BlocProvider.of<ContentBloc>(context).add(ContentRequest());
 
   BlocProvider.of<MessageBloc>(context).add(CheckMessageEvent());
-
-  FocusScope.of(context).unfocus();
 
   return;
 }
@@ -172,6 +227,9 @@ Widget BugBottomModal(
                   GestureDetector(
                     onTap: () {
                       Navigator.of(context).pop();
+                      if (MediaQuery.of(context).viewInsets.bottom > 0) {
+                        FocusManager.instance.primaryFocus?.unfocus();
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8),

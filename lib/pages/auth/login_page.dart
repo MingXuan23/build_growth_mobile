@@ -84,11 +84,22 @@ class _LoginPageState extends State<LoginPage> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 SizedBox(height: ResStyle.spacing),
-                                Image.asset(
+                                Container(
+                                 
+                                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.all(Radius.circular(12)) ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                     Image.asset(
                                   'lib/assets/playstore-icon.png',
                                   height: ResStyle.spacing * 5,
                                   width: ResStyle.spacing * 5,
                                 ),
+                                SizedBox(width: ResStyle.spacing,),
+                                Text('BUild Growth',style: TextStyle(color: LOGO_COLOR, fontSize: ResStyle.body_font, fontWeight: FontWeight.w900),),
+                                  ],),
+                                ),
+                               
                                 SizedBox(height: ResStyle.spacing),
                                 BugTextInput(
                                   controller: _emailController,

@@ -111,3 +111,5 @@ class UserTourGuide extends AuthEvent{
   
 }
 
+
+class UserPrivacyUpdated extends AuthEvent{}
