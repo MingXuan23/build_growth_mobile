@@ -1,4 +1,5 @@
 import 'package:build_growth_mobile/assets/style.dart';
+import 'package:build_growth_mobile/bloc/gold_leaf_bloc/gold_leaf_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/chat_history.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
@@ -347,17 +348,25 @@ class _MessagePageState extends State<MessagePage> {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(
                                       'Based on my cashflow, suggest the detailed budget plan for today, this month, and yearly goal'));
+                              BlocProvider.of<GoldLeafBloc>(context)
+                                  .add(ChatGoldLeafEvent());
                             } else if (label == 'Investment Tips') {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(
                                       'Based on my cashflow, suggest the short-term and long-term detailed investment plan that suitable for me'));
+                              BlocProvider.of<GoldLeafBloc>(context)
+                                  .add(ChatGoldLeafEvent());
                             } else if (label == 'Savings Advice') {
                               BlocProvider.of<MessageBloc>(context).add(
                                   SendMessageEvent(
                                       'Based on my cashflow and expense behaviour, what is the critical saving advice for me?'));
+                              BlocProvider.of<GoldLeafBloc>(context)
+                                  .add(ChatGoldLeafEvent());
                             } else {
                               BlocProvider.of<MessageBloc>(context)
                                   .add(SendMessageEvent(label));
+                              BlocProvider.of<GoldLeafBloc>(context)
+                                  .add(ChatGoldLeafEvent());
                             }
                           },
                           color: RM50_COLOR),
@@ -448,7 +457,8 @@ class _MessagePageState extends State<MessagePage> {
                               BlocProvider.of<MessageBloc>(context).add(
                                 SendMessageEvent(message),
                               );
-
+                              BlocProvider.of<GoldLeafBloc>(context)
+                                  .add(ChatGoldLeafEvent());
                               if (state is MessageSending ||
                                   state is MessageReply) {
                                 return;

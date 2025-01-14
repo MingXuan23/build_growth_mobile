@@ -113,11 +113,24 @@ class Asset {
   static Future<List<Asset>> getAssetList() async {
     var db = await DatabaseHelper().database;
 
-    final List<Map<String, dynamic>> maps = await db.query(
-      table,
-      where: 'status = ? AND user_code = ?',
-      whereArgs: [1, UserToken.user_code],
-    );
+   final List<Map<String, dynamic>> maps = await db.rawQuery('''
+    SELECT 
+      a.*
+    FROM 
+      $table AS a
+    LEFT JOIN 
+      transactions AS t
+    ON 
+      a.id = t.asset_id 
+      AND t.created_at >= DATE('now', '-30 days')
+    WHERE 
+      a.status = ? AND a.user_code = ?
+    GROUP BY 
+      a.id
+    ORDER BY 
+      COUNT(t.id) DESC
+
+  ''', [1, UserToken.user_code]);
 
     // Convert the List<Map<String, dynamic>> into List<Asset>
     return List.generate(maps.length, (i) {

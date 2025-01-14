@@ -3,6 +3,7 @@ import 'package:build_growth_mobile/pages/auth/profile_page.dart';
 import 'package:build_growth_mobile/pages/financial/asset_detail_page.dart';
 import 'package:build_growth_mobile/pages/financial/debt_detail_page.dart';
 import 'package:build_growth_mobile/pages/financial/financial_page.dart';
+import 'package:build_growth_mobile/pages/golden_leaf/golden_leaf_page.dart';
 import 'package:build_growth_mobile/pages/widget_tree/home_page.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +20,8 @@ class TutorialHelper {
   static final List<GlobalKey> contentKeys =
       List.generate(12, (_) => GlobalKey());
   static final List<GlobalKey> profileKeys =
+      List.generate(12, (_) => GlobalKey());
+  static final List<GlobalKey> goldleafKeys =
       List.generate(12, (_) => GlobalKey());
 
   static bool isClicking = false;
@@ -42,22 +45,30 @@ class TutorialHelper {
           continuefinancialTutorial2(context, () {
             debtTutorial(context, () {
               continuefinancialTutorial3(context, () {
-                graphTutorial(context, () {
-                  gptTutorial(context, () {
-                    contentTutorial(context, () {
-                      profileTutorial(context, () {
-                        isScrolling = false;
-                        while (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
-                        HomePage.setTab(0);
-                        if (FinancialPage.financialPageController.hasClients) {
-                          FinancialPage.financialPageController.animateToPage(
-                            0,
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.fastOutSlowIn,
-                          );
-                        }
+                goldLeafTutorial(context, () {
+                  goldLeafPageTutorial(context, () {
+                    goldLeafTutoria2(context, () {
+                      graphTutorial(context, () {
+                        gptTutorial(context, () {
+                          contentTutorial(context, () {
+                            profileTutorial(context, () {
+                              isScrolling = false;
+                              while (Navigator.of(context).canPop()) {
+                                Navigator.of(context).pop();
+                              }
+                              HomePage.setTab(0);
+                              if (FinancialPage
+                                  .financialPageController.hasClients) {
+                                FinancialPage.financialPageController
+                                    .animateToPage(
+                                  0,
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.fastOutSlowIn,
+                                );
+                              }
+                            });
+                          });
+                        });
                       });
                     });
                   });
@@ -195,7 +206,7 @@ class TutorialHelper {
     HomePage.setTab(0);
 
     await FinancialPage.financialPageController.animateToPage(
-      1,
+      2,
       duration: const Duration(milliseconds: 200),
       curve: Curves.fastOutSlowIn,
     );
@@ -225,16 +236,160 @@ class TutorialHelper {
     showTutorial(context, onFinish);
   }
 
+  static void goldLeafTutorial(
+      BuildContext context, Function()? onFinish) async {
+    while (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+
+    HomePage.setTab(0);
+
+    await FinancialPage.financialPageController.animateToPage(
+      1,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.fastOutSlowIn,
+    );
+
+    targets = [
+      TargetFocus(
+        identify: "gold leaf section",
+        keyTarget: goldleafKeys[0],
+        shape: ShapeLightFocus.RRect,
+        radius: ResStyle.spacing,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard(
+                  "Earn your Golden Leaf and witness your growth every day"),
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: "get leaf",
+        keyTarget: goldleafKeys[1],
+        shape: ShapeLightFocus.RRect,
+        radius: ResStyle.spacing,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard("Click here to get more leaf"),
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    showTutorial(context, onFinish);
+  }
+
+  static void goldLeafTutoria2(
+      BuildContext context, Function()? onFinish) async {
+    while (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+
+    HomePage.setTab(0);
+
+    await FinancialPage.financialPageController.animateToPage(
+      1,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.fastOutSlowIn,
+    );
+
+    targets = [
+      TargetFocus(
+        identify: "share",
+        keyTarget: goldleafKeys[4],
+        shape: ShapeLightFocus.RRect,
+        radius: ResStyle.spacing,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard("You can share your Golden Leaf to others."),
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    showTutorial(context, onFinish);
+  }
+
+  static void goldLeafPageTutorial(
+      BuildContext context, Function()? onFinish) async {
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (context) => GoldenLeafPage()));
+
+    targets = [
+      TargetFocus(
+        identify: "gold leaf mission",
+        keyTarget: goldleafKeys[2],
+        shape: ShapeLightFocus.RRect,
+        radius: ResStyle.spacing,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard(
+                  "Check out these simple missions. By completing a mission, and you will be rewarded with a green leaf!"),
+            ),
+          ),
+        ],
+      ),
+      TargetFocus(
+        identify: "golden leaf",
+        keyTarget: goldleafKeys[3],
+        shape: ShapeLightFocus.RRect,
+        radius: ResStyle.spacing,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: GestureDetector(
+              onTap: () {
+                tutorialCoachMark?.next();
+              },
+              child: TutorialCard(
+                  "After collecting 8 green leaves, you'll be rewarded with a Golden Leaf. You can earn only one Golden Leaf per day. Yeah! Don't forget to collect your Golden Leaf again tomorrow!"),
+            ),
+          ),
+        ],
+      ),
+    ];
+
+    showTutorial(context, onFinish);
+  }
+
   static void assetTutorial(BuildContext context, Function()? onFinish) async {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (context) => AssetDetailPage()));
 
-     await Future.delayed(Duration(milliseconds: 100));
+    await Future.delayed(Duration(milliseconds: 100));
     if (AssetDetailPage.page_controller.hasClients) {
       AssetDetailPage.page_controller.animateToPage(1,
           duration: Duration(milliseconds: 200), curve: Curves.fastOutSlowIn);
     }
-      await Future.delayed(Duration(milliseconds: 300));
+    await Future.delayed(Duration(milliseconds: 300));
 
     targets = [
       TargetFocus(
@@ -523,7 +678,7 @@ class TutorialHelper {
           ),
         ],
       ),
-       TargetFocus(
+      TargetFocus(
         identify: "transaction history",
         shape: ShapeLightFocus.RRect,
         enableOverlayTab: true,
@@ -641,10 +796,8 @@ class TutorialHelper {
       BuildContext context, Function()? onFinish) async {
     HomePage.setTab(3);
     isScrolling = true;
-     ProfilePage.scrollController.animateTo(
-         0,
-          duration: Duration(milliseconds: 100),
-          curve: Curves.fastOutSlowIn);
+    ProfilePage.scrollController.animateTo(0,
+        duration: Duration(milliseconds: 100), curve: Curves.fastOutSlowIn);
     await Future.delayed(Duration(milliseconds: 300));
 
     targets = [

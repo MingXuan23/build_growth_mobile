@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/api_services/auth_repo.dart';
 import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/bloc/auth/auth_bloc.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/bloc/gold_leaf_bloc/gold_leaf_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/models/user_backup.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
@@ -50,7 +51,11 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<bool?> _showBackDialog() {
+  Future<bool?> _showBackDialog() async {
+     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed ||
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.inactive) {
+    return false;
+  }
     return showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -104,6 +109,7 @@ class _HomePageState extends State<HomePage> {
       BlocProvider.of<AuthBloc>(context).add(UserTourGuide());
       AuthBloc.first_user = false;
     }
+    BlocProvider.of<GoldLeafBloc>(context).add(LoadGoldLeafEvent());
   }
 
   void handleGoogleDriveBackup() async {

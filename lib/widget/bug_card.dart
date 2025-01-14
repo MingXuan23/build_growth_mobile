@@ -1248,11 +1248,12 @@ class _TransactionCardState extends State<TransactionCard> {
       if (UserToken.online && UserPrivacy.googleDriveBackup) {
         try {
           await GoogleDriveBackupHelper.uploadTransactionImage(t);
+            ScaffoldMessenger.of(context)
+          .showSnackBar(BugSnackBar('Add Transaction Proof Successfully!', 3));
         } catch (e) {}
       }
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(BugSnackBar('Add Transaction Proof Successfully!', 3));
+    
     }
   }
 

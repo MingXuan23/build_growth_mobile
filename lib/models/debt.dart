@@ -166,10 +166,24 @@ class Debt {
     var db = await DatabaseHelper().database;
 
     // Query the database for all debts
-    final List<Map<String, dynamic>> maps = await db.query(table,
-        where:
-            'status = 1 and user_code = "${UserToken.user_code}"' // Replace with the specific month-year you want to filter
-        );
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+    SELECT 
+      d.*
+   
+    FROM 
+      $table AS d
+    LEFT JOIN 
+      transactions AS t
+    ON 
+      d.id = t.debt_id 
+      AND t.created_at >= DATE('now', '-30 days')
+    WHERE 
+      d.status = ? AND d.user_code = ?
+    GROUP BY 
+    d.id
+    ORDER BY 
+      count(t.id) DESC
+  ''', [1, UserToken.user_code]);
 
     // Convert the List<Map<String, dynamic>> into List<Debt>
     var list = List.generate(maps.length, (i) {

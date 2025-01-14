@@ -26,7 +26,10 @@ class _CustomWebViewWidgetState extends State<WebViewWPage> {
         WidgetsBinding.instance?.lifecycleState != AppLifecycleState.resumed) {
       await Future.delayed(Duration(milliseconds: 300));
     }
-    Navigator.of(context).pop();
+
+    try {
+      Navigator.of(context).pop();
+    } catch (e) {}
   }
 
   @override
@@ -42,7 +45,7 @@ class _CustomWebViewWidgetState extends State<WebViewWPage> {
             if (request.url.startsWith('intent://') ||
                 request.url.startsWith('https://docs.google.com/forms') ||
                 request.url.startsWith('https://forms.office.com/')) {
-              await launchUrl(Uri.parse(widget.url),
+              await launchUrl(Uri.parse(request.url),
                   mode: LaunchMode.externalApplication);
               waitForPop();
               return NavigationDecision.prevent;

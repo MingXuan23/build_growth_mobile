@@ -12,6 +12,8 @@ part 'message_state.dart';
 class MessageBloc extends Bloc<MessageEvent, MessageState> {
  static   List<String> userMessages = [];
   static  List<String> gptReplies = [];
+
+  static  String? advice_list ;
   bool ready = false;
   StreamSubscription<String>? _streamSubscription;
 
@@ -27,7 +29,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         return;
       }
       emit(MessageSending());
-
+      if(advice_list == null){
+        advice_list = await GptRepo.getFinancialAdvice();
+      }
       try {
         // Add user's message to the list
         userMessages.add(event.message);

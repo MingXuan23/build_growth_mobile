@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:build_growth_mobile/bloc/gold_leaf_bloc/gold_leaf_bloc.dart';
 import 'package:build_growth_mobile/env.dart';
+import 'package:build_growth_mobile/models/golden_leaf.dart';
 import 'package:build_growth_mobile/models/user_info.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
@@ -302,6 +304,62 @@ class AuthRepo {
       return response.statusCode == 200;
     } catch (e) {
       return false;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getLeafStatus() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$HOST_URL/$url_prefix/get-leaf-status'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
+      );
+      //body: jsonEncode({'user_privacy': detail}));
+
+    if(response.statusCode ==200){
+ var body = jsonDecode(response.body);
+
+      return {'status': true, 'data': body['data']};
+    }
+     return {
+        'status': false,
+      };
+      // return response.statusCode == 200;
+    } catch (e) {
+      return {
+        'status': false,
+      };
+    }
+  }
+
+  static Future<String> addNewLeaf(String detail) async {
+    try {
+      final response =
+          await http.post(Uri.parse('$HOST_URL/$url_prefix/add-new-leaf'),
+              headers: {
+                'Content-Type': 'application/json',
+                'Application-Id': appId,
+                'Authorization': 'Bearer ${UserToken.remember_token}'
+              },
+              body: jsonEncode({'detail': detail}));
+
+      if (response.statusCode == 201) {
+        var body = jsonDecode(response.body);
+        GoldLeafBloc.leafData = body['data'];
+        return 'Yey! You collected Golden Leaf today.';
+      } else if (response.statusCode == 200) {
+        var body = jsonDecode(response.body);
+        GoldLeafBloc.leafData = body['data'];
+        return ' You have collected Golden Leaf.';
+
+      }
+    
+      return 'Too much Traffic. Please try again';
+    } catch (e) {
+      return 'Error in handling your request';
     }
   }
 }

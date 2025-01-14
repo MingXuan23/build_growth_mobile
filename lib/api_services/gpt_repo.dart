@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:ffi';
+import 'dart:math';
 
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
+import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/env.dart';
 import 'package:build_growth_mobile/models/user_privacy.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
@@ -85,12 +87,12 @@ class GptRepo {
   }
 
   static Stream<String> quickResponse(String prompt,
-      {List<Map<String, dynamic>>? chat_history, int estimateWords =-2}) async* {
+      {List<Map<String, dynamic>>? chat_history,
+      int estimateWords = -2}) async* {
     if (chat_history?.isEmpty ?? true) {
       chat_history = null;
     }
 
-   
     // var final_prompt = '';
     // if (estimateWords == -1) {
     //   final_prompt = '${prompt}. [Response as short as possible.]';
@@ -120,12 +122,13 @@ class GptRepo {
           ? contentList
           : "You may suggest the user explore the 'Content' section for self-investment opportunities.",
       'tone': tone ?? '',
-      'estimate_word' : 180   
+      'estimate_word': 180,
+      'advise_list':MessageBloc.advice_list
     };
 
     var system_content = "You need to reply 'I am ready.' only";
     if (prompt != 'Initialising xBUG Ai... ') {
-       system_content = generateSystemInstruction(
+      system_content = generateSystemInstruction(
           protocol: THINKING_PROTOCOL, variables: variables);
     }
 
@@ -151,7 +154,7 @@ class GptRepo {
       messages.addAll(chat_history);
     }
 
-    messages.add({'role': 'user', 'content': prompt});
+    messages.add({'role': 'user', 'content': '[User Question]: $prompt'});
 
     final requestBody = {
       'messages': messages,
@@ -162,10 +165,26 @@ class GptRepo {
 
     try {
       // Create a request object instead of using http.post
-      final request = http.Request('POST', Uri.parse(GPT_ALTERNATIVE_URL));
+      var url = GPT_ALTERNATIVE_URL;
+      var token = GPT_ALTERNATIVE_TOKEN;
+
+      Random rand = Random(DateTime.now().millisecond * DateTime.now().hour);
+
+      if(rand.nextBool()){
+         url = GPT_ALTERNATIVE_URL2;
+       token = GPT_ALTERNATIVE_TOKEN2;
+      }else  if(rand.nextBool()){
+         url = GPT_ALTERNATIVE_URL3;
+       token = GPT_ALTERNATIVE_TOKEN3;
+      } else if(rand.nextBool()){
+         url = GPT_ALTERNATIVE_URL4;
+       token = GPT_ALTERNATIVE_TOKEN4;
+      }
+
+      final request = http.Request('POST', Uri.parse(url));
       request.headers.addAll({
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $GPT_ALTERNATIVE_TOKEN',
+        'Authorization': 'Bearer $token',
       });
       request.body = jsonEncode(requestBody);
 
@@ -228,6 +247,33 @@ class GptRepo {
       }
     } catch (e) {
       yield 'Error: Failed to connect to the server. Details: $e';
+    }
+  }
+
+  static Future<String?> getFinancialAdvice() async {
+    try {
+      if (!UserPrivacy.useGPT) {
+        return null;
+      }
+
+      var request = await http.get(
+        headers: {
+          'Content-Type': 'application/json',
+          'Application-Id': appId,
+          'Authorization': 'Bearer ${UserToken.remember_token}'
+        },
+        Uri.parse('$HOST_URL/$prefix_url/get-financial-advice'),
+      );
+
+      if (request.statusCode != 200) {
+         return null;
+      }
+
+     
+
+      return request.body;
+    } catch (e) {
+        return null;
     }
   }
 
@@ -370,4 +416,3 @@ class GptRepo {
     return updatedProtocol;
   }
 }
-

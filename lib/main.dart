@@ -5,6 +5,7 @@ import 'package:build_growth_mobile/bloc/bank_card_nfc/bank_card_nfc_bloc.dart';
 import 'package:build_growth_mobile/bloc/content/content_bloc.dart';
 import 'package:build_growth_mobile/bloc/content_init/content_init_bloc.dart';
 import 'package:build_growth_mobile/bloc/financial/financial_bloc.dart';
+import 'package:build_growth_mobile/bloc/gold_leaf_bloc/gold_leaf_bloc.dart';
 import 'package:build_growth_mobile/bloc/message/message_bloc.dart';
 import 'package:build_growth_mobile/bloc/transaction/transaction_bloc.dart';
 import 'package:build_growth_mobile/models/user_token.dart';
@@ -61,7 +62,9 @@ class MyApp extends StatelessWidget {
         BlocProvider<BankCardNfcBloc>(
             create: (context) => BankCardNfcBloc(BankCardInitialState())),
         BlocProvider<AttendanceBloc>(
-            create: (context) => AttendanceBloc(AttendanceInitialState()))
+            create: (context) => AttendanceBloc(AttendanceInitialState())),
+        BlocProvider<GoldLeafBloc>(
+            create: (context) => GoldLeafBloc(GoldLeafInitState()))
         // BlocProvider<InfoBloc>(
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],

@@ -4,6 +4,7 @@ import 'package:build_growth_mobile/assets/style.dart';
 import 'package:build_growth_mobile/models/transaction.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:build_growth_mobile/widget/bug_card.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -22,8 +23,7 @@ class TransactionGraphPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _TransactionGraphSectionState createState() =>
-      _TransactionGraphSectionState();
+  _TransactionGraphSectionState createState() => _TransactionGraphSectionState();
 }
 
 class _TransactionGraphSectionState extends State<TransactionGraphPage>
@@ -33,10 +33,25 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
   late AnimationController _animationController;
   late Animation<double> _animation;
   bool _isLandscape = false;
+  
+  // Date range state
+  late DateTime _startDate;
+  late DateTime _endDate;
+  late DateTime _minDate;
+  List<Transaction> _filteredTransactions = [];
 
   @override
   void initState() {
     super.initState();
+    // Initialize date range
+    _endDate = DateTime.now();
+    _startDate = _endDate.subtract(const Duration(days: 30));
+    _minDate = widget.transactions.isNotEmpty 
+        ? widget.transactions.map((t) => t.created_at).reduce((a, b) => a.isBefore(b) ? a : b)
+        : _startDate;
+    
+    _filterTransactions();
+    
     // Force horizontal orientation
     spots = _calculateReverseCashFlowSpots();
     _calculateAxisRanges();
@@ -56,6 +71,52 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
     });
   }
 
+  void _filterTransactions() {
+    _filteredTransactions = widget.transactions.where((transaction) {
+      return transaction.created_at.isAfter(_startDate) && 
+             transaction.created_at.isBefore(_endDate.add(const Duration(days: 1)));
+    }).toList();
+    
+    setState(() {
+      spots = _calculateReverseCashFlowSpots();
+      _calculateAxisRanges();
+    });
+  }
+
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    var init_date =(isStartDate ? _startDate : _endDate);
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: init_date.isAfter(_minDate)?init_date:_minDate,
+      firstDate: _minDate,
+      lastDate: DateTime.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        if (isStartDate) {
+          if (picked.isBefore(_endDate)) {
+            _startDate = picked;
+            _filterTransactions();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Start date must be before end date')),
+            );
+          }
+        } else {
+          if (picked.isAfter(_startDate)) {
+            _endDate = picked;
+            _filterTransactions();
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('End date must be after start date')),
+            );
+          }
+        }
+      });
+    }
+  }
+
   Future<void> _setLandscapeOrientation() async {
     setState(() => _isLandscape = true);
     await _animationController.forward();
@@ -71,7 +132,6 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
 
   @override
   void dispose() {
-    // Restore orientation to default
     _restoreOrientation();
     _animationController.dispose();
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
@@ -82,22 +142,19 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
     List<FlSpot> spots = [];
     double backwardAsset = widget.currentAsset;
 
-    // Start with current asset
-    spots.add(FlSpot(widget.transactions.length.toDouble(), backwardAsset));
+    spots.add(FlSpot(_filteredTransactions.length.toDouble(), backwardAsset));
 
-    // Calculate backward from the latest transaction
-    for (int i = widget.transactions.length - 1; i >= 0; i--) {
-      backwardAsset -= widget.transactions[i].amount;
+    for (int i = _filteredTransactions.length - 1; i >= 0; i--) {
+      backwardAsset -= _filteredTransactions[i].amount;
       spots.add(FlSpot(i.toDouble(), backwardAsset));
     }
 
-    // Reverse the spots to maintain chronological order
     return spots.reversed.toList();
   }
 
   void _calculateAxisRanges() {
     minX = 0;
-    maxX = widget.transactions.length.toDouble();
+    maxX = _filteredTransactions.length.toDouble();
 
     if (spots.isEmpty) {
       minY = 0;
@@ -107,12 +164,10 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
       maxY = spots.map((spot) => spot.y).reduce((a, b) => a > b ? a : b);
     }
 
-    // Adjust padding to prevent overlap
-    double yPadding = (maxY - minY).abs() * 0.15; // Increased padding
+    double yPadding = (maxY - minY).abs() * 0.15;
     maxY += yPadding;
     minY -= yPadding;
 
-    // Ensure minY is not negative if data doesn't warrant it
     if (minY > 0) minY = 0;
   }
 
@@ -121,9 +176,34 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
     return rawInterval == 0 ? 1.0 : rawInterval.abs();
   }
 
+  Widget _buildDateRangeSelector() {
+    return Container(
+      padding: EdgeInsets.all(ResStyle.spacing),
+      decoration: BoxDecoration(
+        color: HIGHTLIGHT_COLOR,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: TEXT_COLOR.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          BugSmallButton(text: 'From: ${FormatterHelper.dateFormat(_startDate)}', onPressed:  () => _selectDate(context, true)),
+           BugSmallButton(text: 'To: ${FormatterHelper.dateFormat(_endDate)}', onPressed: () => _selectDate(context, false),),
+         
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final graphWidth = max(widget.transactions.length, 15) * 50.0;
+    final graphWidth = max(_filteredTransactions.length, 15) * 50.0;
 
     final horizontalInterval = _calculateSafeInterval(minY, maxY);
     final verticalInterval = _calculateSafeInterval(minX, maxX);
@@ -140,6 +220,8 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                 
+                 
                   Center(
                     child: Container(
                       height: MediaQuery.of(context).size.height * 0.7,
@@ -151,7 +233,7 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                           BoxShadow(
                             color: TEXT_COLOR.withOpacity(0.05),
                             blurRadius: 10,
-                            offset: Offset(0, 4),
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
@@ -182,16 +264,13 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                                       interval: horizontalInterval,
                                       reservedSize: ResStyle.width * 0.2,
                                       getTitlesWidget: (value, meta) {
-                                        // Format the value to avoid overlapping
                                         if ((value - minY).abs() < 0.01) {
-                                          return SizedBox
-                                              .shrink(); // Return an empty widget to hide the label
+                                          return const SizedBox.shrink();
                                         }
                                         return Padding(
-                                          padding: EdgeInsets.only(right: 0),
+                                          padding: const EdgeInsets.only(right: 0),
                                           child: Text(
-                                            FormatterHelper.toDoubleString(
-                                                value),
+                                            FormatterHelper.toDoubleString(value),
                                             style: TextStyle(
                                               color: TEXT_COLOR,
                                               fontSize: ResStyle.small_font,
@@ -207,10 +286,14 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                                   rightTitles: const AxisTitles(
                                     sideTitles: SideTitles(showTitles: false),
                                   ),
-                                  topTitles:  AxisTitles(
-                                    sideTitles: SideTitles(showTitles: true,   interval: verticalInterval,getTitlesWidget: (value, meta){
-                                      return SizedBox.shrink();
-                                    }),
+                                  topTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      interval: verticalInterval,
+                                      getTitlesWidget: (value, meta) {
+                                        return const SizedBox.shrink();
+                                      },
+                                    ),
                                   ),
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
@@ -219,19 +302,16 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                                       getTitlesWidget: (value, meta) {
                                         int index = value.toInt();
                                         if (index < 0 ||
-                                            index >=
-                                                widget.transactions.length) {
-                                          return SizedBox.shrink();
+                                            index >= _filteredTransactions.length) {
+                                          return const SizedBox.shrink();
                                         }
 
-                                        // Get the date of the transaction
-                                        String date =
-                                            FormatterHelper.dateFormat(
-                                          widget.transactions[index].created_at,
+                                        String date = FormatterHelper.dateFormat(
+                                          _filteredTransactions[index].created_at,
                                         );
 
                                         return Padding(
-                                          padding: EdgeInsets.only(top: 8),
+                                          padding: const EdgeInsets.only(top: 8),
                                           child: Text(
                                             date,
                                             style: TextStyle(
@@ -264,8 +344,7 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                                     barWidth: 2,
                                     dotData: FlDotData(
                                       show: true,
-                                      getDotPainter:
-                                          (spot, percent, barData, index) {
+                                      getDotPainter: (spot, percent, barData, index) {
                                         return FlDotCirclePainter(
                                           radius: 6,
                                           color: Colors.white,
@@ -305,10 +384,9 @@ class _TransactionGraphSectionState extends State<TransactionGraphPage>
                       ),
                     ),
                   ),
-                  // SizedBox(
-                  //   height: ResStyle.spacing,
-                  // ),
-                  // BugInfoCard('Incoming Feature')
+                  SizedBox(height: ResStyle.spacing,),
+                   _buildDateRangeSelector(),
+
                 ],
               ),
             ),

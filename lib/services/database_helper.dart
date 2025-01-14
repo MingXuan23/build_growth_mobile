@@ -20,8 +20,8 @@ class DatabaseHelper {
 
     // Concatenate the file path with the database name manually
     String path = join(databasesPath, 'xbug.db');
-    
-   // await databaseFactory.deleteDatabase(path);
+
+    // await databaseFactory.deleteDatabase(path);
 
     // Open the database
     return await openDatabase(
@@ -33,16 +33,28 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-  if (oldVersion < 2) {
-    // Run only if upgrading from a version less than 2
-    await db.execute('''
+    if (oldVersion < 2) {
+      // Run only if upgrading from a version less than 2
+      await db.execute('''
       ALTER TABLE Debt ADD COLUMN alarming_limit REAL DEFAULT -1
     ''');
-   
-  }
+    }
 
-  // Add future upgrades here by checking the version range
-}
+    if (oldVersion < 3) {
+      await db.execute('''
+CREATE TABLE GoldenLeaf (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date DATETIME, 
+  user_code TEXT,
+  chatRequest TEXT,
+  totalSubLeaf INTEGER NOT NULL
+);
+
+''');
+    }
+
+    // Add future upgrades here by checking the version range
+  }
 
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
@@ -97,7 +109,7 @@ class DatabaseHelper {
       )
     ''');
 
-     await db.execute('''
+    await db.execute('''
         ALTER TABLE Transactions ADD COLUMN transaction_type INTEGER NOT NULL DEFAULT 1
       ''');
 
@@ -106,9 +118,7 @@ class DatabaseHelper {
       ''');
 
     _onUpgrade(db, 0, 3);
-
   }
-
 
   // Insert data into a specific table
   Future<int> insertData(String tableName, Map<String, dynamic> data) async {
