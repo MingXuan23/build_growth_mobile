@@ -21,6 +21,7 @@ import 'package:build_growth_mobile/services/backup_helper.dart';
 import 'package:build_growth_mobile/services/formatter_helper.dart';
 import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -32,7 +33,6 @@ class HomePage extends StatefulWidget {
   static int currentIndex = 0;
   static final GlobalKey<_HomePageState> homePageKey =
       GlobalKey<_HomePageState>();
-
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -51,54 +51,17 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  Future<bool?> _showBackDialog() async {
-     if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed ||
-      WidgetsBinding.instance.lifecycleState == AppLifecycleState.inactive) {
-    return false;
-  }
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Are you sure?'),
-          content: const Text(
-            'Are you sure you want to leave this page?',
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
-              ),
-              child: const Text('Nevermind'),
-              onPressed: () {
-                Navigator.pop(context, false);
-                FocusScope.of(context).unfocus();
-              },
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                textStyle: Theme.of(context).textTheme.labelLarge,
-              ),
-              child: const Text('Leave'),
-              onPressed: () {
-                SystemNavigator.pop();
-                FocusScope.of(context).unfocus();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   List<Widget> tabs = [
     FinancialPage(),
     MessagePage(),
     ContentPage(),
-    ProfilePage(gotoPrivacy: false,useGKey: true, useStaticController: true,)
+    ProfilePage(
+      gotoPrivacy: false,
+      useGKey: true,
+      useStaticController: true,
+    )
   ];
   //List<Widget> tabs = [FinancialPage(), MessagePage(),   DriveBackupWidget()];
- 
 
   @override
   void initState() {
@@ -172,16 +135,54 @@ class _HomePageState extends State<HomePage> {
   }
 
   Color backgroundColor = LOGO_COLOR;
+
+  Future<bool?> _showBackDialog() async {
+     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed ) {
+    return false;
+  }
+    return showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Are you sure?'),
+          content: const Text(
+            'Are you sure you want to leave this page?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: const Text('Nevermind'),
+              onPressed: () {
+                Navigator.pop(context, false);
+                FocusScope.of(context).unfocus();
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                textStyle: Theme.of(context).textTheme.labelLarge,
+              ),
+              child: const Text('Leave'),
+              onPressed: () {
+                SystemNavigator.pop();
+                FocusScope.of(context).unfocus();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (bool pop) async {
-        // Show the confirmation dialog when user presses the back button
-        final bool shouldPop = await _showBackDialog() ?? false;
-      },
-      child: DefaultTabController(
-        length: 3,
+    return DefaultTabController(
+      length: 3,
+      child: PopScope(
+        onPopInvoked: (didPop) {
+          _showBackDialog();
+        },
         child: Scaffold(
           body: IndexedStack(
             children: tabs,
@@ -215,9 +216,9 @@ class _HomePageState extends State<HomePage> {
                     icon: Icon(
                       Icons.monetization_on_rounded,
 
-                       color: HomePage.currentIndex == 0
+                      color: HomePage.currentIndex == 0
                           ? RM1_COLOR
-                          : HIGHTLIGHT_COLOR , // Customize icon color based on selection
+                          : HIGHTLIGHT_COLOR, // Customize icon color based on selection
                       size: ResStyle.body_font, // Custom icon size
                     ),
                     label: 'Financial',
@@ -226,9 +227,9 @@ class _HomePageState extends State<HomePage> {
                     key: TutorialHelper.gptKeys[0],
                     icon: Icon(
                       Icons.chat_rounded,
-                       color: HomePage.currentIndex == 1
+                      color: HomePage.currentIndex == 1
                           ? RM1_COLOR
-                          : HIGHTLIGHT_COLOR , 
+                          : HIGHTLIGHT_COLOR,
                       size: ResStyle.body_font,
                     ),
                     label: 'Assistant',
@@ -237,20 +238,20 @@ class _HomePageState extends State<HomePage> {
                     key: TutorialHelper.contentKeys[0],
                     icon: Icon(
                       Icons.article,
-                     color: HomePage.currentIndex == 2
+                      color: HomePage.currentIndex == 2
                           ? RM1_COLOR
-                          : HIGHTLIGHT_COLOR , 
+                          : HIGHTLIGHT_COLOR,
                       size: ResStyle.body_font,
                     ),
                     label: 'Content',
                     backgroundColor: PRIMARY_COLOR),
                 BottomNavigationBarItem(
-                     key: TutorialHelper.profileKeys[0],
+                    key: TutorialHelper.profileKeys[0],
                     icon: Icon(
                       Icons.account_circle,
-                     color: HomePage.currentIndex == 3
+                      color: HomePage.currentIndex == 3
                           ? RM1_COLOR
-                          : HIGHTLIGHT_COLOR , // Customize icon color based on selection
+                          : HIGHTLIGHT_COLOR, // Customize icon color based on selection
                       size: ResStyle.body_font, // Custom icon size
                     ),
                     label: 'Profile',

@@ -12,6 +12,8 @@ import 'package:build_growth_mobile/pages/widget_tree/home_page.dart';
 import 'package:build_growth_mobile/services/deeplink_helper.dart';
 import 'package:build_growth_mobile/services/tutorial_helper.dart';
 import 'package:build_growth_mobile/widget/bug_app_bar.dart';
+import 'package:build_growth_mobile/widget/bug_button.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -33,21 +35,28 @@ class _StartPageState extends State<StartPage> {
   @override
   void initState() {
     super.initState();
-  
+
     BlocProvider.of<AuthBloc>(context).add(
       AutoLoginRequest(),
     );
 
-     WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       DeepLinkHelper.initUniLinks(context);
     });
-    
   }
 
   @override
   void dispose() {
     // Dispose of any resources here
     super.dispose();
+  }
+
+  void _showDialog() async {
+    await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return BugSmallButton(text: 'Exit', onPressed: () {});
+        });
   }
 
   @override
@@ -65,16 +74,14 @@ class _StartPageState extends State<StartPage> {
         } else if (state is AuthForgetPasswordResult) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar(state.message, 5));
-        }
-        else if (state is UserBackUpEnded) {
+        } else if (state is UserBackUpEnded) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar('Your Backup Is Completed', 5));
-        }
-        else if (state is UserBackUpEnded) {
+        } else if (state is UserBackUpEnded) {
           ScaffoldMessenger.of(context)
               .showSnackBar(BugSnackBar('Your Restore Is Completed', 5));
         }
-
+    
         setState(() {});
       },
       child: BlocBuilder<AuthBloc, AuthState>(
@@ -83,31 +90,37 @@ class _StartPageState extends State<StartPage> {
             builder: (BuildContext context, BoxConstraints constraints) {
               ResStyle.initialise(MediaQuery.of(context).size.width,
                   MediaQuery.of(context).size.height);
-             
+          
               if (state is LoginInitial) {
                 isHome = false;
                 return LoginPage(
                   email: state.email,
                 );
-              } else if (state is LoginSuccess || state is AuthChangePasswordResult || state is AuthUpdateProfileResult) {
-                 isHome = true;
-                return HomePage(key: HomePage.homePageKey,);
+              } else if (state is LoginSuccess ||
+                  state is AuthChangePasswordResult ||
+                  state is AuthUpdateProfileResult) {
+                isHome = true;
+              
+                return HomePage(
+                  key: HomePage.homePageKey,
+                );
               } else if (state is RegisterSuccess) {
                 isHome = false;
-
+          
                 return LoginPage();
               } else if (state is AuthLoading) {
                 return Scaffold(
                   body: BugLoading(),
                 );
-              }else if(isHome){
-
-                if(state is UserTourGuiding){
+              } else if (isHome) {
+                if (state is UserTourGuiding) {
                   TutorialHelper.loadTutorial(context);
                 }
-                return HomePage(key: HomePage.homePageKey);
+                return HomePage(
+                  key: HomePage.homePageKey,
+                );
               }
-
+          
               return LoginPage();
             },
           );

@@ -51,7 +51,7 @@ class _ContentPageState extends State<ContentListPage> {
                 var link = await Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => AttendacneListenPage()));
 
-                if (link != null && link is String) {
+                if (link != null && link is String && link!="") {
                   openWebView(link, 'Content Info');
                 }
                // await Future.delayed(Duration(milliseconds: 50));

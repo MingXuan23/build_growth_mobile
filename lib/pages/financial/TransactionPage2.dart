@@ -384,6 +384,7 @@ class _TransactionPage2State extends State<TransactionPage2> {
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),
+                     keyboardType: TextInputType.number,
                     readOnly: transaction_read_only,
                     onChanged: (value) {
                       if (value.isEmpty) {
@@ -731,6 +732,7 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                   // Transaction value input
                   BugTextInput(
                     controller: transactionController,
+                     keyboardType: TextInputType.number,
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),
@@ -966,6 +968,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
                   SizedBox(height: ResStyle.spacing),
                   BugTextInput(
                     controller: transaction_controller,
+                     keyboardType: TextInputType.number,
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),

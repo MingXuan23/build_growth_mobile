@@ -286,97 +286,104 @@ class _FinancialPageState extends State<FinancialPage> {
   }
 
   Widget vertical_body() {
-    return Scaffold(
-      backgroundColor: HIGHTLIGHT_COLOR, // Maintains the plain background color
-      body: SafeArea(
-        child: Stack(
-          clipBehavior: Clip.none, // Allow overflow for negative positioning
-          children: [
-            // Background painter
-            Positioned.fill(
-              child: CustomPaint(
-                painter: HexagonBackgroundPainter(color: RM1_COLOR),
+    return PopScope(
+      onPopInvoked: (didPop){
+        showDialog(context: context, builder: (context) {
+        return Text('test');
+      },);
+      },
+      child: Scaffold(
+        backgroundColor: HIGHTLIGHT_COLOR, // Maintains the plain background color
+        body: SafeArea(
+          child: Stack(
+            clipBehavior: Clip.none, // Allow overflow for negative positioning
+            children: [
+              // Background painter
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: HexagonBackgroundPainter(color: RM1_COLOR),
+                ),
               ),
-            ),
-            // Custom AppBar in Stack
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: BugAppBarWithContainer(
-                'Financial Page',
-                context,
+              // Custom AppBar in Stack
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: BugAppBarWithContainer(
+                  'Financial Page',
+                  context,
+                ),
               ),
-            ),
-            // Asset Card positioned above the AppBar
-            Positioned(
-              top: ResStyle.height * 0.15 -
-                  ResStyle.spacing * 4, // Adjust to place above the AppBar
-              left: ResStyle.spacing * 2,
-              right: ResStyle.spacing * 2,
-              child: SizedBox(
-                //height: ResStyle.spacing * 5,
-                child: Column(children: [
-                  AssetCard(
-                    'Total Assets',
-                    'RM${totalAssets.toStringAsFixed(2)}',
-                    fontColor: LOGO_COLOR,
-                    gkey: TutorialHelper.financialKeys[1],
-                    () => pushPage(const AssetDetailPage()),
-                  )
-                ]),
+              // Asset Card positioned above the AppBar
+              Positioned(
+                top: ResStyle.height * 0.15 -
+                    ResStyle.spacing * 4, // Adjust to place above the AppBar
+                left: ResStyle.spacing * 2,
+                right: ResStyle.spacing * 2,
+                child: SizedBox(
+                  //height: ResStyle.spacing * 5,
+                  child: Column(children: [
+                    AssetCard(
+                      'Total Assets',
+                      'RM${totalAssets.toStringAsFixed(2)}',
+                      fontColor: LOGO_COLOR,
+                      gkey: TutorialHelper.financialKeys[1],
+                      () => pushPage(const AssetDetailPage()),
+                    )
+                  ]),
+                ),
               ),
-            ),
-
-            // Body content below the AssetCard
-
-            Padding(
-              padding: EdgeInsets.only(
-                  top: ResStyle.height *
-                      0.16), // Push body content below the AssetCard
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    height: ResStyle.spacing * 1,
-                  ),
-                  Center(
-                    child: BugPageIndicator(
-                      FinancialPage.financialPageController,
-                      4,
+      
+              // Body content below the AssetCard
+      
+              Padding(
+                padding: EdgeInsets.only(
+                    top: ResStyle.height *
+                        0.16), // Push body content below the AssetCard
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      height: ResStyle.spacing * 1,
                     ),
-                  ),
-                  Expanded(
-                    flex: 3,
-                    child: PageView(
-                      controller: FinancialPage.financialPageController,
-                      physics: const ClampingScrollPhysics(),
-                      children: [
-                        AssetDebtSection(),
-                        GoldenLeafSection(header: 'BUild Growth'),
-                        TransactionGraphSection(
-                          key: TutorialHelper.financialKeys[8],
-                          transactions: cashFlow_history,
-                          currentAsset: totalCashFlow,
-                          header: 'Cash Flow History',
-                        ),
-                        TransactionGraphSection(
-                          transactions: transaction_history,
-                          currentAsset: totalAssets,
-                          header: 'Asset Flow History',
-                        ),
-                      ],
+                    Center(
+                      child: BugPageIndicator(
+                        FinancialPage.financialPageController,
+                        4,
+                      ),
                     ),
-                  ),
-                  QuickActionSection(2),
-                  SizedBox(
-                    height: ResStyle.spacing,
-                  ),
-                  // Expanded(flex: 1, child: Container(),)
-                ],
+                    Expanded(
+                      flex: 3,
+                      child: PageView(
+                        controller: FinancialPage.financialPageController,
+                        physics: const ClampingScrollPhysics(),
+                        children: [
+                          AssetDebtSection(),
+                          GoldenLeafSection(header: 'BUild Growth'),
+                          TransactionGraphSection(
+                            key: TutorialHelper.financialKeys[8],
+                            transactions: cashFlow_history,
+                            currentAsset: totalCashFlow,
+                            header: 'Cash Flow History',
+                          ),
+                          TransactionGraphSection(
+                            transactions: transaction_history,
+                            currentAsset: totalAssets,
+                            header: 'Asset Flow History',
+                          ),
+                        ],
+                      ),
+                    ),
+                    QuickActionSection(2),
+                    SizedBox(
+                      height: ResStyle.spacing,
+                    ),
+                    // Expanded(flex: 1, child: Container(),)
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

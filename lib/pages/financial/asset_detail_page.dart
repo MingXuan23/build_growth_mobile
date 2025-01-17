@@ -490,6 +490,7 @@ class _AssetDetailPageState extends State<AssetDetailPage>
                   controller: valueController,
                   label: 'Amount (RM)',
                   hint: 'Enter Amount (RM)',
+                  keyboardType: TextInputType.number,
                   prefixIcon: Icon(Icons.diamond_sharp),
                   onChanged: (value) {
                     FormatterHelper.implement_RM_format(valueController, value);

@@ -26,23 +26,31 @@ class _MessagePageState extends State<MessagePage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  bool isScrolling = false;
   void _scrollToBottom() {
+    if (isScrolling) {
+      return;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 100),
-          curve: Curves.easeOut,
-        );
-        await Future.delayed(Duration(milliseconds: 120));
-
-        if (_scrollController.position.pixels !=
+        isScrolling =true;
+         await Future.delayed(Duration(milliseconds: 100));
+        while (_scrollController.position.pixels !=
             _scrollController.position.maxScrollExtent) {
-          _scrollToBottom();
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 100),
+            curve: Curves.easeOut,
+          );
+          await Future.delayed(Duration(milliseconds: 100));
+          
         }
+        isScrolling =false;
       }
+      
     });
   }
+  
 
   void showMenu(int index) async {
     await showCupertinoModalPopup<void>(

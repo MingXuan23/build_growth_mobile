@@ -123,7 +123,7 @@ class GptRepo {
           : "You may suggest the user explore the 'Content' section for self-investment opportunities.",
       'tone': tone ?? '',
       'estimate_word': 180,
-      'advise_list':MessageBloc.advice_list
+      'advise_list': MessageBloc.advice_list
     };
 
     var system_content = "You need to reply 'I am ready.' only";
@@ -169,16 +169,16 @@ class GptRepo {
       var token = GPT_ALTERNATIVE_TOKEN;
 
       Random rand = Random(DateTime.now().millisecond * DateTime.now().hour);
-
-      if(rand.nextBool()){
-         url = GPT_ALTERNATIVE_URL2;
-       token = GPT_ALTERNATIVE_TOKEN2;
-      }else  if(rand.nextBool()){
-         url = GPT_ALTERNATIVE_URL3;
-       token = GPT_ALTERNATIVE_TOKEN3;
-      } else if(rand.nextBool()){
-         url = GPT_ALTERNATIVE_URL4;
-       token = GPT_ALTERNATIVE_TOKEN4;
+      int value = rand.nextInt(7);
+      if (value % 4 == 1) {
+        url = GPT_ALTERNATIVE_URL2;
+        token = GPT_ALTERNATIVE_TOKEN2;
+      } else if (value % 4 == 2) {
+        url = GPT_ALTERNATIVE_URL3;
+        token = GPT_ALTERNATIVE_TOKEN3;
+      } else if (value % 4 == 3) {
+        url = GPT_ALTERNATIVE_URL4;
+        token = GPT_ALTERNATIVE_TOKEN4;
       }
 
       final request = http.Request('POST', Uri.parse(url));
@@ -266,14 +266,12 @@ class GptRepo {
       );
 
       if (request.statusCode != 200) {
-         return null;
+        return null;
       }
-
-     
 
       return request.body;
     } catch (e) {
-        return null;
+      return null;
     }
   }
 
