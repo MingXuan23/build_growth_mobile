@@ -250,11 +250,11 @@ class AuthRepo {
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
 
-        if (data['user_privacy'] != null) {
-          UserPrivacy.fromMap((data['user_privacy']['detail']) is String
-              ? jsonDecode(data['user_privacy']['detail'])
-              : (data['user_privacy']['detail']));
-        }
+        // if (data['user_privacy'] != null) {
+        //   UserPrivacy.fromMap((data['user_privacy']['detail']) is String
+        //       ? jsonDecode(data['user_privacy']['detail'])
+        //       : (data['user_privacy']['detail']));
+        // }
 
         return {
           'user_info': UserInfo(

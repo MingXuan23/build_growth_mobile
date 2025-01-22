@@ -199,7 +199,10 @@ class _TransactionPage2State extends State<TransactionPage2> {
 
       if (selected_debt_id != -1) {
         debt.last_payment_date = DateTime.now();
-        debt.remaining_month = debt.remaining_month - 1;
+        if (debt.remaining_month > 0) {
+          debt.remaining_month = debt.remaining_month - 1;
+        }
+
         await Debt.updateDebt(debt);
       }
 
@@ -317,7 +320,6 @@ class _TransactionPage2State extends State<TransactionPage2> {
                               onPressed: () {
                                 Navigator.of(context).pop();
                                 Navigator.of(context).pop();
-
                               })
                         ]);
                   });
@@ -384,7 +386,7 @@ class _TransactionPage2State extends State<TransactionPage2> {
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),
-                     keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.number,
                     readOnly: transaction_read_only,
                     onChanged: (value) {
                       if (value.isEmpty) {
@@ -732,7 +734,7 @@ class _AssetTransactionPageState extends State<AssetTransactionPage> {
                   // Transaction value input
                   BugTextInput(
                     controller: transactionController,
-                     keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.number,
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),
@@ -968,7 +970,7 @@ class _AssetTransferPageState extends State<AssetTransferPage> {
                   SizedBox(height: ResStyle.spacing),
                   BugTextInput(
                     controller: transaction_controller,
-                     keyboardType: TextInputType.number,
+                    keyboardType: TextInputType.number,
                     label: 'Transaction Value',
                     hint: 'Transaction Value',
                     prefixIcon: const Icon(null),

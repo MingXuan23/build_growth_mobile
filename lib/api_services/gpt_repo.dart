@@ -12,6 +12,8 @@ import 'package:http/http.dart' as http;
 const prefix_url = 'api/gpt';
 
 class GptRepo {
+
+  
   static Stream<String> fastResponse(String prompt,
       {List<Map<String, dynamic>>? chat_history}) async* {
     if (chat_history?.isEmpty ?? true) {

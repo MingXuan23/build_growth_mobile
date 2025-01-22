@@ -1,3 +1,4 @@
+import 'package:build_growth_mobile/models/user_token.dart';
 import 'package:build_growth_mobile/pages/content/attendacne_listen_page.dart';
 import 'package:flutter/material.dart';
 import 'package:uni_links/uni_links.dart';
@@ -33,7 +34,9 @@ class DeepLinkHelper {
     switch (uri.host) {
       case 'open':
         // Example: Navigate to a specific page
-        Navigator.of(context).push(MaterialPageRoute(builder: (context)=> const AttendacneListenPage()));
+        if(UserToken.remember_token != null){
+          Navigator.of(context).push(MaterialPageRoute(builder: (context)=> const AttendacneListenPage()));
+        }
       //  Navigator.pushNamed(context, '/specific-page');
         break;
       // case 'action':

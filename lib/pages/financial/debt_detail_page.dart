@@ -99,7 +99,7 @@ class _DebtDetailPageState extends State<DebtDetailPage> {
             child: ListView.builder(
                 itemCount: debts.length,
                 itemBuilder: (context, index) {
-                  if (debts[index].type == 'Expenses') {
+                  if (debts[index].type == 'Expenses' ) {
                     return ExpenseDetailCard(
                       debts[index],
                       () => showActionSheet(debts[index]),

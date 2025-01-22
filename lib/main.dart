@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
         //     create: (context) => InfoBloc(InfoInitial(), InfoRepo()))
       ],
       child: MaterialApp(
-          title: 'BUild Growth',
+         // title: 'BUild Growth',
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: HIGHTLIGHT_COLOR),
